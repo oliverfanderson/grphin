@@ -80,6 +80,7 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
 
 def get_adjacency_list(G):
     adj_list = [{} for _ in range(len(G.nodes()))]
+    # adj_list_vector = [{} for _ in range(len(G.nodes()))]
 
     for i, j, data in G.edges(data=True):
         label = data.get("label")
@@ -94,36 +95,35 @@ def get_adjacency_list(G):
 
 def main():
     two_node_hash_table = get_two_node_hash_table()
-    G = generate_random_multi_graph(6)
+    G = generate_random_multi_graph(10)
 
     # adjacency matrix implementation
-    G_adj_matrix = nx.adjacency_matrix(G)
-    adj_matrix = [
-        [[0, 0, 0] for _ in range(len(G.nodes()))] for _ in range(len(G.nodes()))
-    ]
+    # G_adj_matrix = nx.adjacency_matrix(G)
+    # adj_matrix = [
+    #     [[0, 0, 0] for _ in range(len(G.nodes()))] for _ in range(len(G.nodes()))
+    # ]
 
-    for edge in G.edges(data=True):
-        # print(edge)
-        i = edge[0]
-        j = edge[1]
-        edge_type = edge[2]["label"]
+    # for edge in G.edges(data=True):
+    #     # print(edge)
+    #     i = edge[0]
+    #     j = edge[1]
+    #     edge_type = edge[2]["label"]
 
-        if edge_type == "ppi":
-            adj_matrix[i][j][0] = 1
-            adj_matrix[j][i][0] = 1
-        elif edge_type == "reg":
-            adj_matrix[i][j][1] = 1
-            adj_matrix[j][i][2] = 1
+    #     if edge_type == "ppi":
+    #         adj_matrix[i][j][0] = 1
+    #         adj_matrix[j][i][0] = 1
+    #     elif edge_type == "reg":
+    #         adj_matrix[i][j][1] = 1
+    #         adj_matrix[j][i][2] = 1
 
-    for i in range(len(adj_matrix)):
-        for j in range(len(adj_matrix[0])):
-            vector = adj_matrix[i][j] + adj_matrix[j][i]
-            if hash(tuple(vector)) in two_node_hash_table:
-                two_node_hash_table[hash(tuple(vector))] += 1
+    # for i in range(len(adj_matrix)):
+    #     for j in range(len(adj_matrix[0])):
+    #         vector = adj_matrix[i][j] + adj_matrix[j][i]
+    #         if hash(tuple(vector)) in two_node_hash_table:
+    #             two_node_hash_table[hash(tuple(vector))] += 1
 
     # adjacency list implementation
     G_adj_list = get_adjacency_list(G)
-
     for node in G_adj_list:
         print(f"current node: {node[0]}")
         for neighbor in node[1]:
