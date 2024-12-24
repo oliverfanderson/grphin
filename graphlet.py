@@ -6,8 +6,6 @@ import scipy as sp
 
 
 def get_two_node_hash_table():
-    print("hash function")
-
     # 2-node graphlet binary edge vectors
     # see diagram for reference
     a_1 = (1, 0, 0)
@@ -81,19 +79,18 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
 
 
 def get_adjacency_list(G):
-    nodes = G.nodes()
-    adj_list = [set() for i in range(len(G.nodes()))]
-    for node in nodes:
-        for neighbor in G.edges.data("label", node):
-            i = neighbor[0]
-            j = neighbor[1]
-            if neighbor[2] == "ppi":
-                adj_list[i].add(j)
-                adj_list[j].add(i)
-            elif neighbor[2] == "reg":
-                adj_list[i].add(j)
-    return None
+    adj_list = [{} for _ in range(len(G.nodes()))]
 
+    for i, j, data in G.edges(data=True):
+        label = data.get("label")
+        if label == "ppi":
+            adj_list[i][j] = "ppi"
+            adj_list[j][i] = "ppi"
+        elif label == "reg":
+            adj_list[i][j] = "reg"
+
+    final_adj_list = [(i, neighbors) for i, neighbors in enumerate(adj_list)]
+    return final_adj_list
 
 def main():
     two_node_hash_table = get_two_node_hash_table()
@@ -127,8 +124,18 @@ def main():
     # adjacency list implementation
     G_adj_list = get_adjacency_list(G)
 
+    for node in G_adj_list:
+        print(f"current node: {node[0]}")
+        for neighbor in node[1]:
+            print(f"{neighbor} : {node[1][neighbor]}")
+            i = node[0]
+            j = neighbor
+    
+        print()
+
+
     print(two_node_hash_table)
-    draw_labeled_multigraph(G, "label")
+    # draw_labeled_multigraph(G, "label")
     plt.show()
 
 
