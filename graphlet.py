@@ -32,7 +32,7 @@ def get_two_node_hash_table():
     return two_node_hash_table
 
 
-def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=0.4):
+def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=0.3):
     G = nx.MultiDiGraph()
     G.add_nodes_from(range(n))
     for i in range(n):
@@ -42,6 +42,8 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                     G.add_edge(i, j, label="ppi")
                 else:
                     G.add_edge(i, j, label="reg")
+                    if random.random() < 0.7:
+                        G.add_edge(j, i, label="reg")
             # want to generate a graph that is connected
             elif G.degree(j) == 0:
                 if random.random() < edge_label_probability:
@@ -79,23 +81,35 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
 
 
 def get_adjacency_list(G):
-    adj_list = [{} for _ in range(len(G.nodes()))]
-    # adj_list_vector = [{} for _ in range(len(G.nodes()))]
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
 
     for i, j, data in G.edges(data=True):
         label = data.get("label")
         if label == "ppi":
-            adj_list[i][j] = "ppi"
-            adj_list[j][i] = "ppi"
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1,0,0]
+            else:
+                adj_list_vector[i][j][0]+=1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1,0,0]
+            else:
+                adj_list_vector[j][i][0]+=1
         elif label == "reg":
-            adj_list[i][j] = "reg"
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0,1,0]
+            else:
+                adj_list_vector[i][j][1]+=1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0,0,1]
+            else:
+                adj_list_vector[j][i][2]+=1
 
-    final_adj_list = [(i, neighbors) for i, neighbors in enumerate(adj_list)]
-    return final_adj_list
+    final_adj_list_vector = [(i, neighbors) for i, neighbors in enumerate(adj_list_vector)]
+    return final_adj_list_vector
 
 def main():
     two_node_hash_table = get_two_node_hash_table()
-    G = generate_random_multi_graph(10)
+    G = generate_random_multi_graph(5)
 
     # adjacency matrix implementation
     # G_adj_matrix = nx.adjacency_matrix(G)
@@ -124,18 +138,13 @@ def main():
 
     # adjacency list implementation
     G_adj_list = get_adjacency_list(G)
+
     for node in G_adj_list:
-        print(f"current node: {node[0]}")
         for neighbor in node[1]:
-            print(f"{neighbor} : {node[1][neighbor]}")
-            i = node[0]
-            j = neighbor
-    
-        print()
+            print(f"P_{node[0]}P_{neighbor} vector = {node[1][neighbor]}")
 
-
-    print(two_node_hash_table)
-    # draw_labeled_multigraph(G, "label")
+    # print(two_node_hash_table)
+    draw_labeled_multigraph(G, "label")
     plt.show()
 
 
