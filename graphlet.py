@@ -80,14 +80,29 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
     )
 
 
+def get_adjacency_list(G):
+    nodes = G.nodes()
+    adj_list = [set() for i in range(len(G.nodes()))]
+    for node in nodes:
+        for neighbor in G.edges.data("label", node):
+            i = neighbor[0]
+            j = neighbor[1]
+            if neighbor[2] == "ppi":
+                adj_list[i].add(j)
+                adj_list[j].add(i)
+            elif neighbor[2] == "reg":
+                adj_list[i].add(j)
+    return None
+
+
 def main():
     two_node_hash_table = get_two_node_hash_table()
-    G = generate_random_multi_graph(50)
-    G_adj_matrix = nx.adjacency_matrix(G)
+    G = generate_random_multi_graph(6)
 
+    # adjacency matrix implementation
+    G_adj_matrix = nx.adjacency_matrix(G)
     adj_matrix = [
-        [[0, 0, 0] for _ in range(len(G.nodes()))]
-        for _ in range(len(G.nodes()))
+        [[0, 0, 0] for _ in range(len(G.nodes()))] for _ in range(len(G.nodes()))
     ]
 
     for edge in G.edges(data=True):
@@ -104,10 +119,13 @@ def main():
             adj_matrix[j][i][2] = 1
 
     for i in range(len(adj_matrix)):
-        for j in range(len(adj_matrix[0])): 
+        for j in range(len(adj_matrix[0])):
             vector = adj_matrix[i][j] + adj_matrix[j][i]
             if hash(tuple(vector)) in two_node_hash_table:
-                two_node_hash_table[hash(tuple(vector))]+=1
+                two_node_hash_table[hash(tuple(vector))] += 1
+
+    # adjacency list implementation
+    G_adj_list = get_adjacency_list(G)
 
     print(two_node_hash_table)
     draw_labeled_multigraph(G, "label")
