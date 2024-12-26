@@ -180,20 +180,18 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
 
 
 def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
-    G_adj_list = get_adjacency_list(G)
+    G_adj_list = get_two_node_adjacency_list(G)
     for neighbors in G_adj_list:
         i = neighbors[0]
         print((i / len(G.nodes())) * 100, end="\r")
         for j in neighbors[1]:
             vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
-            print(vectors)
-
             if hash(tuple(vectors)) in two_node_hash_table:
                 two_node_hash_table[hash(tuple(vectors))] += 1
     return two_node_hash_table
 
 
-def get_adjacency_list(G):
+def get_two_node_adjacency_list(G):
     """Get the adjacency list for a MultiDiGraph"""
     print("getting adjacency list")
 
@@ -259,6 +257,84 @@ def get_adjacency_matrix(G):
     return G_adj_matrix
 
 
+def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
+    three_node_hash = {}
+
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+
+    # create all the edge vectors
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+
+    for i, j, data in G.edges(data=True):
+        label = data.get("label")
+        if label == "ppi":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[i][j][0] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[j][i][0] += 1
+        elif label == "reg":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0, 1, 0]
+            else:
+                adj_list_vector[i][j][1] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0, 0, 1]
+            else:
+                adj_list_vector[j][i][2] += 1
+
+    # find all combinations of potential 3 node graphlets
+    # pick an edge between A and B
+    # for each edge pair, find the union of neighbors between A and B
+    three_node_combination = []
+    for (
+        i,
+        j,
+    ) in G.edges():
+        neighbors = G.edges([i, j])
+        for k in neighbors:
+            if k[1] != i and k[1] != j:
+                three_node_combination.append([i, j, k[1]])
+                a1 = a2 = b1 = b2 = c1 = c2 = 0
+                if j in adj_list_vector[i]:
+                    a1 = adj_list_vector[i][j]
+                else:
+                    a1 = [0, 0, 0]
+                if k[1] in adj_list_vector[i]:
+                    a2 = adj_list_vector[i][k[1]]
+                else:
+                    a2 = [0, 0, 0]
+                if i in adj_list_vector[j]:
+                    b1 = adj_list_vector[j][i]
+                else:
+                    b1 = [0, 0, 0]
+                if k[1] in adj_list_vector[j]:
+                    b2 = adj_list_vector[j][k[1]]
+                else:
+                    b2 = [0, 0, 0]
+                if i in adj_list_vector[k[1]]:
+                    c1 = adj_list_vector[k[1]][i]
+                else:
+                    c1 = [0, 0, 0]
+                if j in adj_list_vector[k[1]]:
+                    c2 = adj_list_vector[k[1]][j]
+                else:
+                    c2 = [0, 0, 0]
+
+                vector = a1 + a2 + b1 + b2 + c1 + c2
+
+                if hash(tuple(vector)) not in three_node_hash:
+                    three_node_hash[hash(tuple(vector))] = 0
+                else:
+                    three_node_hash[hash(tuple(vector))] += 1
+        print((i / len(G.nodes())) * 100, end="\r")
+
+    return three_node_hash
+
+
 def main():
     two_node_hash_table = get_two_node_hash_table()
     ppi_path = Path("data/fly_ppi.csv")
@@ -269,17 +345,20 @@ def main():
         ppi_path,
         reg_path,
         protein_id_dict,
-        node_size_limit=12,
-        edge_size_limit=3,
+        node_size_limit=999999999,
+        edge_size_limit=999999999,
     )
 
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
 
     # two_node_hash_table = get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table)
-    two_node_hash_table = get_two_node_graphlet_dist_adj_list(G, two_node_hash_table)
+    # two_node_hash_table = get_two_node_graphlet_dist_adj_list(G, two_node_hash_table)
+    # print(two_node_hash_table)
 
-    print(two_node_hash_table)
+    three_node_hash_table = get_three_node_graphlet_dist_adj_list(G)
+
+    print(three_node_hash_table)
     # draw_labeled_multigraph(G, "label")
     plt.show()
 
