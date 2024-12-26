@@ -178,6 +178,19 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
     )
 
 
+def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
+    G_adj_list = get_adjacency_list(G)
+    for neighbors in G_adj_list:
+        i = neighbors[0]
+        print((i / len(G.nodes())) * 100, end="\r")
+        for j in neighbors[1]:
+            vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
+            print(vectors)
+
+            if hash(tuple(vectors)) in two_node_hash_table:
+                two_node_hash_table[hash(tuple(vectors))] += 1
+    return two_node_hash_table
+
 def get_adjacency_list(G):
     """Get the adjacency list for a MultiDiGraph"""
     print("getting adjacency list")
@@ -189,12 +202,12 @@ def get_adjacency_list(G):
         if label == "ppi":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [1, 0, 0]
-            else:
-                adj_list_vector[i][j][0] += 1
+            # else:
+            #     adj_list_vector[i][j][0] += 1
             if i not in adj_list_vector[j]:
                 adj_list_vector[j][i] = [1, 0, 0]
-            else:
-                adj_list_vector[j][i][0] += 1
+            # else:
+            #     adj_list_vector[j][i][0] += 1
         elif label == "reg":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [0, 1, 0]
@@ -218,18 +231,6 @@ def get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table):
             vector = G_adj_matrix[i][j] + G_adj_matrix[j][i]
             if hash(tuple(vector)) in two_node_hash_table:
                 two_node_hash_table[hash(tuple(vector))] += 1
-    return two_node_hash_table
-
-
-def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
-    G_adj_list = get_adjacency_list(G)
-    for neighbors in G_adj_list:
-        i = neighbors[0]
-        print((i / len(G.nodes())) * 100, end="\r")
-        for j in neighbors[1]:
-            vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
-            if hash(tuple(vectors)) in two_node_hash_table:
-                two_node_hash_table[hash(tuple(vectors))] += 1
     return two_node_hash_table
 
 
