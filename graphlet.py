@@ -93,6 +93,7 @@ def process_edges(
     file_path, G, protein_id_dict, visited_nodes, label, node_limit, edge_limit
 ):
     """Helper function to process edges and add them to the graph."""
+    print(f"currently processing {label} edges")
     with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
         next(csv_reader)  # Skip header
@@ -100,6 +101,9 @@ def process_edges(
         edge_count = G.number_of_edges()
 
         for row in csv_reader:
+            if node_count > node_limit or edge_count > edge_limit:
+                break
+
             id1 = protein_id_dict[row[0]]
             id2 = protein_id_dict[row[1]]
 
@@ -113,9 +117,6 @@ def process_edges(
 
             G.add_edge(id1, id2, label=label)
             edge_count += 1
-
-            if node_count > node_limit or edge_count > edge_limit:
-                break
 
 
 def read_csv(
@@ -190,6 +191,7 @@ def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
             if hash(tuple(vectors)) in two_node_hash_table:
                 two_node_hash_table[hash(tuple(vectors))] += 1
     return two_node_hash_table
+
 
 def get_adjacency_list(G):
     """Get the adjacency list for a MultiDiGraph"""
@@ -267,8 +269,8 @@ def main():
         ppi_path,
         reg_path,
         protein_id_dict,
-        node_size_limit=99999999999,
-        edge_size_limit=99999999999,
+        node_size_limit=12,
+        edge_size_limit=3,
     )
 
     print(f"Number of nodes: {len(G.nodes())}")
