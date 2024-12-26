@@ -9,6 +9,10 @@ import csv
 
 
 def get_two_node_hash_table():
+    """
+    Get all 2-node graphlet binary edge vectors
+    see diagram for reference
+    """
     # 2-node graphlet binary edge vectors
     # see diagram for reference
     a_1 = (1, 0, 0)
@@ -36,6 +40,11 @@ def get_two_node_hash_table():
 
 
 def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=0.3):
+    """
+    Given the number of nodes ,n, and some edge and label probabilites,
+    generate a random MultiDiGraph
+    """
+
     print("Generating random graph")
     G = nx.MultiDiGraph()
     G.add_nodes_from(range(n))
@@ -57,43 +66,89 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                         G.add_edge(j, i, label="reg")
     return G
 
+
+def update_protein_id_dict(file_path, res_dict, start_index):
+    """Helper function to update the protein ID dictionary from a file."""
+    with open(file_path, "r") as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)  # Skip header
+        for row in csv_reader:
+            for protein_id in row[:2]:
+                res_dict.setdefault(protein_id, start_index)
+                if res_dict[protein_id] == start_index:
+                    start_index += 1
+    return start_index
+
+
 def get_protein_id_dict(ppi_path, reg_path):
+    """Creates a dictionary mapping protein IDs to unique integers."""
     res_dict = {}
-    i = 0
-    with open(ppi_path, "r") as file:
-        csv_reader = csv.reader(file)
-        next(csv_reader)
-        for row in csv_reader:
-            id1 = row[0]
-            id2 = row[1]
-
-            if id1 not in res_dict:
-                res_dict[id1] = i
-                i+=1
-            if id2 not in res_dict:
-                res_dict[id2] = i
-                i+=1
-
-    with open(reg_path, "r") as file:
-        csv_reader = csv.reader(file)
-        for row in csv_reader:
-            id1 = row[0]
-            id2 = row[1]
-
-            if id1 not in res_dict:
-                res_dict[id1] = i
-                i+=1
-            if id2 not in res_dict:
-                res_dict[id2] = i
-                i+=1
-
+    start_index = 0
+    start_index = update_protein_id_dict(ppi_path, res_dict, start_index)
+    update_protein_id_dict(reg_path, res_dict, start_index)
     return res_dict
 
-def read_csv(filepath, G: nx):
-    with open(filepath, "r") as file:
+
+def process_edges(
+    file_path, G, protein_id_dict, visited_nodes, label, node_limit, edge_limit
+):
+    """Helper function to process edges and add them to the graph."""
+    with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
+        next(csv_reader)  # Skip header
+        node_count = len(visited_nodes)
+        edge_count = G.number_of_edges()
+
         for row in csv_reader:
-            print(row[0], row[1])
+            id1 = protein_id_dict[row[0]]
+            id2 = protein_id_dict[row[1]]
+
+            if id1 not in visited_nodes:
+                visited_nodes.add(id1)
+                node_count += 1
+
+            if id2 not in visited_nodes:
+                visited_nodes.add(id2)
+                node_count += 1
+
+            G.add_edge(id1, id2, label=label)
+            edge_count += 1
+
+            if node_count > node_limit or edge_count > edge_limit:
+                break
+
+
+def read_csv(
+    ppi_path,
+    reg_path,
+    protein_id_dict,
+    node_size_limit=float("inf"),
+    edge_size_limit=float("inf"),
+):
+    """Reads CSV files and constructs a graph with edges labeled as 'ppi' or 'reg'."""
+    G = nx.MultiDiGraph()
+    visited_nodes = set()
+
+    process_edges(
+        ppi_path,
+        G,
+        protein_id_dict,
+        visited_nodes,
+        "ppi",
+        node_size_limit,
+        edge_size_limit,
+    )
+    process_edges(
+        reg_path,
+        G,
+        protein_id_dict,
+        visited_nodes,
+        "reg",
+        node_size_limit,
+        edge_size_limit,
+    )
+
+    return G
 
 
 def draw_labeled_multigraph(G, attr_name, ax=None):
@@ -124,6 +179,7 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
 
 
 def get_adjacency_list(G):
+    """Get the adjacency list for a MultiDiGraph"""
     print("getting adjacency list")
 
     adj_list_vector = [{} for _ in range(len(G.nodes()))]
@@ -155,7 +211,31 @@ def get_adjacency_list(G):
     return final_adj_list_vector
 
 
+def get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table):
+    G_adj_matrix = get_adjacency_matrix(G)
+    for i in range(len(G_adj_matrix)):
+        for j in range(len(G_adj_matrix[0])):
+            vector = G_adj_matrix[i][j] + G_adj_matrix[j][i]
+            if hash(tuple(vector)) in two_node_hash_table:
+                two_node_hash_table[hash(tuple(vector))] += 1
+    return two_node_hash_table
+
+
+def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
+    G_adj_list = get_adjacency_list(G)
+    for neighbors in G_adj_list:
+        i = neighbors[0]
+        print((i / len(G.nodes())) * 100, end="\r")
+        for j in neighbors[1]:
+            vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
+            if hash(tuple(vectors)) in two_node_hash_table:
+                two_node_hash_table[hash(tuple(vectors))] += 1
+    return two_node_hash_table
+
+
 def get_adjacency_matrix(G):
+    """Get the adjacency matrix for a MultiDiGraph"""
+
     G_adj_matrix = nx.adjacency_matrix(G)
     adj_matrix = [
         [[0, 0, 0] for _ in range(len(G.nodes()))] for _ in range(len(G.nodes()))
@@ -182,38 +262,19 @@ def main():
     reg_path = Path("data/fly_reg.csv")
 
     protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+    G = read_csv(
+        ppi_path,
+        reg_path,
+        protein_id_dict,
+        node_size_limit=99999999999,
+        edge_size_limit=99999999999,
+    )
 
-    for key in protein_id_dict.keys():
-        print(f"{key} : {protein_id_dict[key]}")
+    print(f"Number of nodes: {len(G.nodes())}")
+    print(f"Number of edges: {len(G.edges())}")
 
-    sys.exit()
-    G = nx.MultiDiGraph()
-
-    read_csv(ppi_path, G)
-
-    node_size = 10000
-    G = generate_random_multi_graph(node_size)
-    print(f"node size = {len(G.nodes())}")
-    print(f"edge size = {len(G.edges())}")
-
-    # adjacency matrix implementation
-
-    # G_adj_matrix = get_adjacency_matrix(G)
-    # for i in range(len(adj_matrix)):
-    #     for j in range(len(adj_matrix[0])):
-    #         vector = adj_matrix[i][j] + adj_matrix[j][i]
-    #         if hash(tuple(vector)) in two_node_hash_table:
-    #             two_node_hash_table[hash(tuple(vector))] += 1
-
-    # adjacency list implementation
-    G_adj_list = get_adjacency_list(G)
-    for neighbors in G_adj_list:
-        i = neighbors[0]
-        print((i / node_size) * 100, end="\r")
-        for j in neighbors[1]:
-            vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
-            if hash(tuple(vectors)) in two_node_hash_table:
-                two_node_hash_table[hash(tuple(vectors))] += 1
+    # two_node_hash_table = get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table)
+    two_node_hash_table = get_two_node_graphlet_dist_adj_list(G, two_node_hash_table)
 
     print(two_node_hash_table)
     # draw_labeled_multigraph(G, "label")
