@@ -1,8 +1,11 @@
+import sys
 from matplotlib import pyplot as plt
+from pathlib import Path
 import networkx as nx
 import numpy
 import random
 import scipy as sp
+import csv
 
 
 def get_two_node_hash_table():
@@ -53,6 +56,44 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                     else:
                         G.add_edge(j, i, label="reg")
     return G
+
+def get_protein_id_dict(ppi_path, reg_path):
+    res_dict = {}
+    i = 0
+    with open(ppi_path, "r") as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)
+        for row in csv_reader:
+            id1 = row[0]
+            id2 = row[1]
+
+            if id1 not in res_dict:
+                res_dict[id1] = i
+                i+=1
+            if id2 not in res_dict:
+                res_dict[id2] = i
+                i+=1
+
+    with open(reg_path, "r") as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            id1 = row[0]
+            id2 = row[1]
+
+            if id1 not in res_dict:
+                res_dict[id1] = i
+                i+=1
+            if id2 not in res_dict:
+                res_dict[id2] = i
+                i+=1
+
+    return res_dict
+
+def read_csv(filepath, G: nx):
+    with open(filepath, "r") as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            print(row[0], row[1])
 
 
 def draw_labeled_multigraph(G, attr_name, ax=None):
@@ -137,6 +178,19 @@ def get_adjacency_matrix(G):
 
 def main():
     two_node_hash_table = get_two_node_hash_table()
+    ppi_path = Path("data/fly_ppi.csv")
+    reg_path = Path("data/fly_reg.csv")
+
+    protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+
+    for key in protein_id_dict.keys():
+        print(f"{key} : {protein_id_dict[key]}")
+
+    sys.exit()
+    G = nx.MultiDiGraph()
+
+    read_csv(ppi_path, G)
+
     node_size = 10000
     G = generate_random_multi_graph(node_size)
     print(f"node size = {len(G.nodes())}")
