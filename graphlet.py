@@ -260,9 +260,7 @@ def get_adjacency_matrix(G):
 def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
     three_node_hash = {}
 
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
-
-    # create all the edge vectors
+    # create all the binary edge vectors
     adj_list_vector = [{} for _ in range(len(G.nodes()))]
 
     for i, j, data in G.edges(data=True):
@@ -298,6 +296,15 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
         for k in neighbors:
             if k[1] != i and k[1] != j:
                 three_node_combination.append([i, j, k[1]])
+
+                # for each triplet combination, we have to get all their binary edge vectors
+                # for nodes A, B, C, there are six binary edge vectors:
+                    # A-B
+                    # A-C
+                    # B-A
+                    # B-C
+                    # C-A
+                    # C-B
                 a1 = a2 = b1 = b2 = c1 = c2 = 0
                 if j in adj_list_vector[i]:
                     a1 = adj_list_vector[i][j]
