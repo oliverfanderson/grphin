@@ -344,13 +344,20 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
 
 def main():
     two_node_hash_table = get_two_node_hash_table()
-    ppi_path = Path("data/fly_ppi.csv")
-    reg_path = Path("data/fly_reg.csv")
-
-    protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+    fly_ppi_path = Path("data/fly_ppi.csv")
+    fly_reg_path = Path("data/fly_reg.csv")
+    bsub_ppi_path = Path("data/bsub_ppi.csv")
+    bsub_reg_path = Path("data/bsub_reg.csv")
+    ceravisiae_ppi_path = Path("data/ceravisiae_ppi.csv")
+    ceravisiae_reg_path = Path("data/ceravisiae_reg.csv")
+    drerio_ppi_path = Path("data/drerio_ppi.csv")
+    drerio_reg_path = Path("data/drerio_reg.csv")
+    elegans_ppi_path = Path("data/elegans_ppi.csv")
+    elegans_reg_path = Path("data/elegans_reg.csv")
+    protein_id_dict = get_protein_id_dict(fly_ppi_path, fly_reg_path)
     G = read_csv(
-        ppi_path,
-        reg_path,
+        fly_ppi_path,
+        fly_reg_path,
         protein_id_dict,
         node_size_limit=999999999,
         edge_size_limit=999999999,
