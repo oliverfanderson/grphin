@@ -179,16 +179,20 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
     )
 
 
-def get_two_node_graphlet_dist_adj_list(G, two_node_hash_table):
+def get_two_node_graphlet_stats(G, two_node_hash_table):
     G_adj_list = get_two_node_adjacency_list(G)
+    orbits_dict = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []}
     for neighbors in G_adj_list:
         i = neighbors[0]
-        print((i / len(G.nodes())) * 100, end="\r")
+        # print((i / len(G.nodes())) * 100, end="\r")
         for j in neighbors[1]:
             vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
+            orbits_dict = get_two_node_orbit_position(
+                i, j, G_adj_list[i][1][j], G_adj_list[j][1][i], orbits_dict
+            )
             if hash(tuple(vectors)) in two_node_hash_table:
                 two_node_hash_table[hash(tuple(vectors))] += 1
-    return two_node_hash_table
+    return two_node_hash_table, orbits_dict
 
 
 def get_two_node_adjacency_list(G):
@@ -222,6 +226,54 @@ def get_two_node_adjacency_list(G):
         (i, neighbors) for i, neighbors in enumerate(adj_list_vector)
     ]
     return final_adj_list_vector
+
+
+def get_two_node_orbit_position(a, b, a_vec, b_vec, orbit_dict):
+    # check orbit positioning via vectors
+    if a_vec == [1, 0, 0] and b_vec == [1, 0, 0]:
+        if a not in orbit_dict[1]:
+            orbit_dict[1] += [a]
+        if b not in orbit_dict[1]:
+            orbit_dict[1] += [b]
+    elif (
+        a_vec == [0, 1, 0]
+        and b_vec == [0, 0, 1]
+        or a_vec == [0, 0, 1]
+        and b_vec == [0, 1, 0]
+    ):
+        if a_vec == [0, 1, 0] and a not in orbit_dict[2]:
+            orbit_dict[2] += [a]
+            orbit_dict[3] += [b]
+        elif b not in orbit_dict[2]:
+            orbit_dict[2] += [b]
+            orbit_dict[3] += [a]
+
+    elif (
+        a_vec == [1, 1, 0]
+        and b_vec == [1, 0, 1]
+        or a_vec == [1, 0, 1]
+        and b_vec == [1, 1, 0]
+    ):
+        if a_vec == [1, 1, 0] and a not in orbit_dict[4]:
+            orbit_dict[4] += [a]
+            orbit_dict[5] += [b]
+        elif b not in orbit_dict[4]:
+            orbit_dict[4] += [b]
+            orbit_dict[5] += [a]
+
+    elif a_vec == [1, 1, 1] and b_vec == [1, 1, 1]:
+        if a not in orbit_dict[6]:
+            orbit_dict[6] += [a]
+        if b not in orbit_dict[6]:
+            orbit_dict[6] += [b]
+
+    elif a_vec == [0, 1, 1] and b_vec == [0, 1, 1]:
+        if a not in orbit_dict[7]:
+            orbit_dict[7] += [a]
+        if b not in orbit_dict[6]:
+            orbit_dict[7] += [b]
+
+    return orbit_dict
 
 
 def get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table):
@@ -299,12 +351,12 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
 
                 # for each triplet combination, we have to get all their binary edge vectors
                 # for nodes A, B, C, there are six binary edge vectors:
-                    # A-B
-                    # A-C
-                    # B-A
-                    # B-C
-                    # C-A
-                    # C-B
+                # A-B
+                # A-C
+                # B-A
+                # B-C
+                # C-A
+                # C-B
                 a1 = a2 = b1 = b2 = c1 = c2 = 0
                 if j in adj_list_vector[i]:
                     a1 = adj_list_vector[i][j]
@@ -367,12 +419,18 @@ def main():
     print(f"Number of edges: {len(G.edges())}")
 
     # two_node_hash_table = get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table)
-    # two_node_hash_table = get_two_node_graphlet_dist_adj_list(G, two_node_hash_table)
-    # print(two_node_hash_table)
+    two_node_hash_table, two_node_orbit_dict = get_two_node_graphlet_stats(
+        G, two_node_hash_table
+    )
+    print("\ntwo node graphlet counts")
+    for key in two_node_hash_table:
+        print(f"{key} = {two_node_hash_table[key]}")
+    print("\ntwo node graphlet orbit counts")
+    for key in two_node_orbit_dict:
+        print(f"{key} = {len(two_node_orbit_dict[key])}")
+    # three_node_hash_table = get_three_node_graphlet_dist_adj_list(G)
+    # print(three_node_hash_table)
 
-    three_node_hash_table = get_three_node_graphlet_dist_adj_list(G)
-
-    print(three_node_hash_table)
     # draw_labeled_multigraph(G, "label")
     plt.show()
 
