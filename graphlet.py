@@ -464,7 +464,7 @@ def dropdown_menu(stdscr, options):
             return None
 
 
-def type_answer(stdscr):
+def type_answer(stdscr, step):
     curses.start_color()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.curs_set(0)
@@ -474,7 +474,11 @@ def type_answer(stdscr):
 
     while True:
         stdscr.clear()
-        stdscr.addstr(0, 0, "Node limit? (Press ENTER for no limit)")
+        if step == 0:
+            stdscr.addstr(0, 0, "Node limit? (Press ENTER for no limit)")
+        elif step == 1:
+            stdscr.addstr(0, 0, "Edge limit? (Press ENTER for no limit)")
+
         stdscr.addstr(y, x, typed_number)
         stdscr.refresh()
 
@@ -490,33 +494,41 @@ def type_answer(stdscr):
 
 
 def main(stdscr):
-    network = [
-        "D. melanogaster",
-        "B. subtilis",
-        "S. cerevisiae",
-        "D. rerio",
-        "C. elegans",
-        "Test network",
-        "Exit",
-    ]
-    selected_network = dropdown_menu(stdscr, network)
-    stdscr.clear()
+    try:
+        network = [
+            "D. melanogaster",
+            "B. subtilis",
+            "S. cerevisiae",
+            "D. rerio",
+            "C. elegans",
+            "Test network",
+            "Exit",
+        ]
+        selected_network = dropdown_menu(stdscr, network)
+        stdscr.clear()
 
-    graphlet = ["2-node", "3-node", "Exit"]
-    selected_graphlet = dropdown_menu(stdscr, graphlet)
-    stdscr.clear()
+        graphlet = ["2-node", "3-node", "Exit"]
+        selected_graphlet = dropdown_menu(stdscr, graphlet)
+        stdscr.clear()
 
-    node_limit = type_answer(stdscr)
-    stdscr.clear()
+        node_limit = type_answer(stdscr, 0)
+        stdscr.clear()
 
-    stdscr.addstr(1, 2, f"First Selection: {selected_network}")
-    stdscr.addstr(2, 2, f"Second Selection: {selected_graphlet}")
-    stdscr.addstr(2, 2, f"third Selection: {node_limit}")
+        edge_limit = type_answer(stdscr, 1)
+        stdscr.clear()
 
-    stdscr.addstr(4, 2, "Press any key to exit.")
-    stdscr.refresh()
-    stdscr.getch()
-    curses.endwin()
+        stdscr.addstr(1, 2, f"First Selection: {selected_network}")
+        stdscr.addstr(2, 2, f"Second Selection: {selected_graphlet}")
+        stdscr.addstr(3, 2, f"third Selection: {node_limit}")
+        stdscr.addstr(4, 2, f"fourth Selection: {edge_limit}")
+        stdscr.addstr(5, 2, "Press any key to exit.")
+        stdscr.refresh()
+        stdscr.getch()
+    except Exception as e:
+        stdscr.addstr(0, 0, f"An error occurred: {str(e)}")
+        stdscr.getch()
+    finally:
+        curses.endwin()
 
     two_node_graphlet_dict = get_two_node_dict()
     fly_ppi_path = Path("data/fly_ppi.csv")
