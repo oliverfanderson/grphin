@@ -37,7 +37,8 @@ def get_two_node_dict():
     e_hash = hash(e_1 + e_2)
 
     two_node_graphlet_dict = {a_hash: 0, b_hash: 0, c_hash: 0, d_hash: 0, e_hash: 0}
-    return two_node_graphlet_dict
+    two_node_graphlet_labels = {a_hash: 1, b_hash: 2, c_hash: 3, d_hash: 4, e_hash: 5}
+    return two_node_graphlet_dict, two_node_graphlet_labels
 
 
 def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=0.3):
@@ -149,6 +150,7 @@ def read_csv(
         node_size_limit,
         edge_size_limit,
     )
+    print()
 
     return G
 
@@ -549,14 +551,6 @@ def main(stdscr):
 
         edge_limit = type_answer(stdscr, 1)
         stdscr.clear()
-
-        stdscr.addstr(1, 2, f"First Selection: {selected_network}")
-        stdscr.addstr(2, 2, f"Second Selection: {selected_graphlet}")
-        stdscr.addstr(3, 2, f"third Selection: {node_limit}")
-        stdscr.addstr(4, 2, f"fourth Selection: {edge_limit}")
-        stdscr.addstr(5, 2, "Press any key to exit.")
-        stdscr.refresh()
-        stdscr.getch()
     except Exception as e:
         stdscr.addstr(0, 0, f"An error occurred: {str(e)}")
         stdscr.getch()
@@ -567,16 +561,16 @@ def main(stdscr):
         selected_network, selected_graphlet
     )
 
-    two_node_graphlet_dict = get_two_node_dict()
+    two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
     protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
     G = read_csv(
         ppi_path,
         reg_path,
         protein_id_dict,
-        node_size_limit=999999999,
-        edge_size_limit=999999999,
+        node_size_limit=node_limit,
+        edge_size_limit=edge_limit,
     )
-
+    print(selected_network)
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
 
@@ -585,8 +579,8 @@ def main(stdscr):
             G, two_node_graphlet_dict
         )
         print("\ntwo node graphlet counts")
-        for key in two_node_graphlet_dict:
-            print(f"{key} = {two_node_graphlet_dict[key]}")
+        for key in two_node_graphlet_labels:
+            print(f"G_{two_node_graphlet_labels[key]} = {two_node_graphlet_dict[key]}")
         print("\ntwo node graphlet orbit counts")
         for key in two_node_orbit_dict:
             print(f"{key} = {len(two_node_orbit_dict[key])}")
@@ -595,8 +589,8 @@ def main(stdscr):
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    draw_labeled_multigraph(G, "label")
-    plt.show()
+    # draw_labeled_multigraph(G, "label")
+    # plt.show()
 
 
 if __name__ == "__main__":
