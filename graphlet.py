@@ -8,6 +8,7 @@ import scipy as sp
 import csv
 import curses
 
+
 def get_two_node_dict():
     """
     Get all 2-node graphlet binary edge vectors
@@ -345,18 +346,18 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
         i,
         j,
     ) in G.edges():
-        print()
+        # print()
         neighbors = list()
         for node in (i, j):
-            in_edges = list(G.in_edges(node)) 
+            in_edges = list(G.in_edges(node))
             if in_edges:
                 for edge in in_edges:
-                    if edge[1] not in neighbors: 
+                    if edge[1] not in neighbors:
                         neighbors.append(edge[1])
-            out_edges = list(G.out_edges(node))  
-            if out_edges:  
+            out_edges = list(G.out_edges(node))
+            if out_edges:
                 for edge in out_edges:
-                    if edge[1] not in neighbors: 
+                    if edge[1] not in neighbors:
                         neighbors.append(edge[1])
         for k in neighbors:
             if k != i and k != j:
@@ -401,16 +402,16 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                 for n in range(3):
                     vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
                 if vector_group not in graphlet_groups:
-                    graphlet_groups+= [vector_group]
-                print(f"{i} {j} {k} = {vector_group}")
+                    graphlet_groups += [vector_group]
+                # print(f"{i} {j} {k} = {vector_group}")
                 # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
 
                 if hash(tuple(vector)) not in three_node_graphlet_dict:
                     three_node_graphlet_dict[hash(tuple(vector))] = 0
                 else:
                     three_node_graphlet_dict[hash(tuple(vector))] += 1
-    print(graphlet_groups)
-        # print((i / len(G.nodes())) * 100, end="\r")
+    # print(graphlet_groups)
+    # print((i / len(G.nodes())) * 100, end="\r")
 
     return three_node_graphlet_dict
 
@@ -433,17 +434,15 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
 def dropdown_menu(stdscr, options):
     curses.start_color()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-
     curses.curs_set(0)
     current_index = 0
 
     while True:
         stdscr.clear()
-        h, w = stdscr.getmaxyx()
 
         for i, option in enumerate(options):
-            x = 2 
-            y = 1 + i 
+            x = 2
+            y = 1 + i
             if i == current_index:
                 stdscr.attron(curses.color_pair(1))
                 stdscr.addstr(y, x, option.ljust(20))
@@ -465,22 +464,59 @@ def dropdown_menu(stdscr, options):
             return None
 
 
+def type_answer(stdscr):
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.curs_set(0)
+    x = 0
+    y = 1
+    typed_number = ""
+
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Node limit? (Press ENTER for no limit)")
+        stdscr.addstr(y, x, typed_number)
+        stdscr.refresh()
+
+        key = stdscr.getkey()
+
+        # Check if key is a digit (0-9)
+        if key.isdigit():
+            typed_number += key
+        elif key in ("\n", "\r") and typed_number == "" or int(typed_number) == 0:
+            return 999999999
+        elif key in ("\n", "\r") and int(typed_number) != 0:
+            return int(typed_number)
+
+
 def main(stdscr):
-    options1 = ["Option 1", "Option 2", "Option 3", "Exit"]
-    selected_option1 = dropdown_menu(stdscr, options1)
+    network = [
+        "D. melanogaster",
+        "B. subtilis",
+        "S. cerevisiae",
+        "D. rerio",
+        "C. elegans",
+        "Test network",
+        "Exit",
+    ]
+    selected_network = dropdown_menu(stdscr, network)
     stdscr.clear()
 
-    options2 = ["New 1", "New 2", "Option 3", "Exit"]
-    selected_option2 = dropdown_menu(stdscr, options2)
+    graphlet = ["2-node", "3-node", "Exit"]
+    selected_graphlet = dropdown_menu(stdscr, graphlet)
     stdscr.clear()
 
-    stdscr.addstr(1, 2, f"First Selection: {selected_option1}")
-    stdscr.addstr(2, 2, f"Second Selection: {selected_option2}")
+    node_limit = type_answer(stdscr)
+    stdscr.clear()
+
+    stdscr.addstr(1, 2, f"First Selection: {selected_network}")
+    stdscr.addstr(2, 2, f"Second Selection: {selected_graphlet}")
+    stdscr.addstr(2, 2, f"third Selection: {node_limit}")
+
     stdscr.addstr(4, 2, "Press any key to exit.")
     stdscr.refresh()
     stdscr.getch()
-
-    sys.exit()
+    curses.endwin()
 
     two_node_graphlet_dict = get_two_node_dict()
     fly_ppi_path = Path("data/fly_ppi.csv")
@@ -499,25 +535,25 @@ def main(stdscr):
         elegans_reg_path,
         protein_id_dict,
         node_size_limit=999999999,
-        edge_size_limit=10,
+        edge_size_limit=999999999,
     )
 
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
 
-    two_node_graphlet_dict = get_two_node_graphlet_dist_adj_matrix(G, two_node_graphlet_dict)
+    # two_node_graphlet_dict = get_two_node_graphlet_dist_adj_matrix(G, two_node_graphlet_dict)
     two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
         G, two_node_graphlet_dict
     )
-    print("\ntwo node graphlet counts")
-    for key in two_node_graphlet_dict:
-        print(f"{key} = {two_node_graphlet_dict[key]}")
-    print("\ntwo node graphlet orbit counts")
-    for key in two_node_orbit_dict:
-        print(f"{key} = {len(two_node_orbit_dict[key])}")
+    # print("\ntwo node graphlet counts")
+    # for key in two_node_graphlet_dict:
+    #     print(f"{key} = {two_node_graphlet_dict[key]}")
+    # print("\ntwo node graphlet orbit counts")
+    # for key in two_node_orbit_dict:
+    #     print(f"{key} = {len(two_node_orbit_dict[key])}")
     three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
-    for key in three_node_graphlet_dict:
-        print(f"{key} = {three_node_graphlet_dict[key]}")
+    # for key in three_node_graphlet_dict:
+    #     print(f"{key} = {three_node_graphlet_dict[key]}")
 
     draw_labeled_multigraph(G, "label")
     plt.show()
