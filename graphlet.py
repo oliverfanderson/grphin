@@ -344,6 +344,7 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
     # for each edge pair, find the union of neighbors between A and B
     three_node_combination = []
     graphlet_groups = []
+    max_reg = 0
     for (
         i,
         j,
@@ -398,8 +399,23 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                 else:
                     cb = [0, 0, 0]
 
+                reg_sum = (
+                    ab[1]
+                    + ab[2]
+                    + bc[1]
+                    + bc[2]
+                    + ca[1]
+                    + ca[2]
+                    + ab[0]
+                    + bc[0]
+                    + ca[0]
+                )
+                max_reg = max(reg_sum, max_reg)
+
+                # i < j < k
                 # print(f"{ab} + {ac} + {ba} + {bc} + {ca} + {cb}")
                 vector = ab + ac + ba + bc + ca + cb
+                # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
                 vector_group = []
                 for n in range(3):
                     vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
@@ -414,6 +430,7 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                     three_node_graphlet_dict[hash(tuple(vector))] += 1
     # print(graphlet_groups)
     # print((i / len(G.nodes())) * 100, end="\r")
+    print(f"max reg {max_reg}")
 
     return three_node_graphlet_dict
 
@@ -522,7 +539,7 @@ def get_user_inputs(selected_network, selected_graphlet):
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
-    elif selected_graphlet == "3=node":
+    elif selected_graphlet == "3-node":
         graphlet_option = 3
 
     return ppi_path, reg_path, graphlet_option
@@ -586,11 +603,12 @@ def main(stdscr):
             print(f"{key} = {len(two_node_orbit_dict[key])}")
     elif graphlet_mode == 3:
         three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        print("\nthree node graphlet counts")
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    # draw_labeled_multigraph(G, "label")
-    # plt.show()
+    draw_labeled_multigraph(G, "label")
+    plt.show()
 
 
 if __name__ == "__main__":
