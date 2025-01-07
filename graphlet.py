@@ -493,6 +493,39 @@ def type_answer(stdscr, step):
             return int(typed_number)
 
 
+def get_user_inputs(selected_network, selected_graphlet):
+    ppi_path = None
+    reg_path = None
+    graphlet_option = None
+
+    match selected_network:
+        case "D. melanogaster":
+            ppi_path = Path("data/fly_ppi.csv")
+            reg_path = Path("data/fly_reg.csv")
+        case "B. subtilis":
+            ppi_path = Path("data/bsub_ppi.csv")
+            reg_path = Path("data/bsub_reg.csv")
+        case "S. cerevisiae":
+            ppi_path = Path("data/ceravisiae_ppi.csv")
+            reg_path = Path("data/ceravisiae_reg.csv")
+        case "D. rerio":
+            ppi_path = Path("data/drerio_ppi.csv")
+            reg_path = Path("data/drerio_reg.csv")
+        case "C. elegans":
+            ppi_path = Path("data/elegans_ppi.csv")
+            reg_path = Path("data/elegans_reg.csv")
+        case "Test network":
+            ppi_path = Path("data/fly_ppi.csv")
+            reg_path = Path("data/fly_reg.csv")
+
+    if selected_graphlet == "2-node":
+        graphlet_option = 2
+    elif selected_graphlet == "3=node":
+        graphlet_option = 3
+
+    return ppi_path, reg_path, graphlet_option
+
+
 def main(stdscr):
     try:
         network = [
@@ -530,21 +563,15 @@ def main(stdscr):
     finally:
         curses.endwin()
 
+    ppi_path, reg_path, graphlet_mode = get_user_inputs(
+        selected_network, selected_graphlet
+    )
+
     two_node_graphlet_dict = get_two_node_dict()
-    fly_ppi_path = Path("data/fly_ppi.csv")
-    fly_reg_path = Path("data/fly_reg.csv")
-    bsub_ppi_path = Path("data/bsub_ppi.csv")
-    bsub_reg_path = Path("data/bsub_reg.csv")
-    ceravisiae_ppi_path = Path("data/ceravisiae_ppi.csv")
-    ceravisiae_reg_path = Path("data/ceravisiae_reg.csv")
-    drerio_ppi_path = Path("data/drerio_ppi.csv")
-    drerio_reg_path = Path("data/drerio_reg.csv")
-    elegans_ppi_path = Path("data/elegans_ppi.csv")
-    elegans_reg_path = Path("data/elegans_reg.csv")
-    protein_id_dict = get_protein_id_dict(elegans_ppi_path, elegans_reg_path)
+    protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
     G = read_csv(
-        elegans_ppi_path,
-        elegans_reg_path,
+        ppi_path,
+        reg_path,
         protein_id_dict,
         node_size_limit=999999999,
         edge_size_limit=999999999,
@@ -553,19 +580,20 @@ def main(stdscr):
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
 
-    # two_node_graphlet_dict = get_two_node_graphlet_dist_adj_matrix(G, two_node_graphlet_dict)
-    two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
-        G, two_node_graphlet_dict
-    )
-    # print("\ntwo node graphlet counts")
-    # for key in two_node_graphlet_dict:
-    #     print(f"{key} = {two_node_graphlet_dict[key]}")
-    # print("\ntwo node graphlet orbit counts")
-    # for key in two_node_orbit_dict:
-    #     print(f"{key} = {len(two_node_orbit_dict[key])}")
-    three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
-    # for key in three_node_graphlet_dict:
-    #     print(f"{key} = {three_node_graphlet_dict[key]}")
+    if graphlet_mode == 2:
+        two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
+            G, two_node_graphlet_dict
+        )
+        print("\ntwo node graphlet counts")
+        for key in two_node_graphlet_dict:
+            print(f"{key} = {two_node_graphlet_dict[key]}")
+        print("\ntwo node graphlet orbit counts")
+        for key in two_node_orbit_dict:
+            print(f"{key} = {len(two_node_orbit_dict[key])}")
+    elif graphlet_mode == 3:
+        three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        for key in three_node_graphlet_dict:
+            print(f"{key} = {three_node_graphlet_dict[key]}")
 
     draw_labeled_multigraph(G, "label")
     plt.show()
