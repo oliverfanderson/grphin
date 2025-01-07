@@ -6,8 +6,7 @@ import numpy
 import random
 import scipy as sp
 import csv
-
-
+import curses
 
 def get_two_node_dict():
     """
@@ -431,7 +430,58 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     return None
 
 
-def main():
+def dropdown_menu(stdscr, options):
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+
+    curses.curs_set(0)
+    current_index = 0
+
+    while True:
+        stdscr.clear()
+        h, w = stdscr.getmaxyx()
+
+        for i, option in enumerate(options):
+            x = 2 
+            y = 1 + i 
+            if i == current_index:
+                stdscr.attron(curses.color_pair(1))
+                stdscr.addstr(y, x, option.ljust(20))
+                stdscr.attroff(curses.color_pair(1))
+            else:
+                stdscr.addstr(y, x, option.ljust(20))
+
+        stdscr.refresh()
+
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP and current_index > 0:
+            current_index -= 1
+        elif key == curses.KEY_DOWN and current_index < len(options) - 1:
+            current_index += 1
+        elif key in [curses.KEY_ENTER, 10, 13]:
+            return options[current_index]
+        elif key == 27:
+            return None
+
+
+def main(stdscr):
+    options1 = ["Option 1", "Option 2", "Option 3", "Exit"]
+    selected_option1 = dropdown_menu(stdscr, options1)
+    stdscr.clear()
+
+    options2 = ["New 1", "New 2", "Option 3", "Exit"]
+    selected_option2 = dropdown_menu(stdscr, options2)
+    stdscr.clear()
+
+    stdscr.addstr(1, 2, f"First Selection: {selected_option1}")
+    stdscr.addstr(2, 2, f"Second Selection: {selected_option2}")
+    stdscr.addstr(4, 2, "Press any key to exit.")
+    stdscr.refresh()
+    stdscr.getch()
+
+    sys.exit()
+
     two_node_graphlet_dict = get_two_node_dict()
     fly_ppi_path = Path("data/fly_ppi.csv")
     fly_reg_path = Path("data/fly_reg.csv")
@@ -474,4 +524,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)
