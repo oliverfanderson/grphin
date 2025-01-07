@@ -340,15 +340,27 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
     # pick an edge between A and B
     # for each edge pair, find the union of neighbors between A and B
     three_node_combination = []
+    graphlet_groups = []
     for (
         i,
         j,
     ) in G.edges():
-        neighbors = G.edges([i, j])
+        print()
+        neighbors = list()
+        for node in (i, j):
+            in_edges = list(G.in_edges(node)) 
+            if in_edges:
+                for edge in in_edges:
+                    if edge[1] not in neighbors: 
+                        neighbors.append(edge[1])
+            out_edges = list(G.out_edges(node))  
+            if out_edges:  
+                for edge in out_edges:
+                    if edge[1] not in neighbors: 
+                        neighbors.append(edge[1])
         for k in neighbors:
-            if k[1] != i and k[1] != j:
-                three_node_combination.append([i, j, k[1]])
-
+            if k != i and k != j:
+                three_node_combination.append([i, j, k])
                 # for each triplet combination, we have to get all their binary edge vectors
                 # for nodes A, B, C, there are six binary edge vectors:
                 # A-B
@@ -357,41 +369,65 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                 # B-C
                 # C-A
                 # C-B
-                a1 = a2 = b1 = b2 = c1 = c2 = 0
+                ab = ac = ba = bc = ca = cb = 0
                 if j in adj_list_vector[i]:
-                    a1 = adj_list_vector[i][j]
+                    ab = adj_list_vector[i][j]
                 else:
-                    a1 = [0, 0, 0]
-                if k[1] in adj_list_vector[i]:
-                    a2 = adj_list_vector[i][k[1]]
+                    ab = [0, 0, 0]
+                if k in adj_list_vector[i]:
+                    ac = adj_list_vector[i][k]
                 else:
-                    a2 = [0, 0, 0]
+                    ac = [0, 0, 0]
                 if i in adj_list_vector[j]:
-                    b1 = adj_list_vector[j][i]
+                    ba = adj_list_vector[j][i]
                 else:
-                    b1 = [0, 0, 0]
-                if k[1] in adj_list_vector[j]:
-                    b2 = adj_list_vector[j][k[1]]
+                    ba = [0, 0, 0]
+                if k in adj_list_vector[j]:
+                    bc = adj_list_vector[j][k]
                 else:
-                    b2 = [0, 0, 0]
-                if i in adj_list_vector[k[1]]:
-                    c1 = adj_list_vector[k[1]][i]
+                    bc = [0, 0, 0]
+                if i in adj_list_vector[k]:
+                    ca = adj_list_vector[k][i]
                 else:
-                    c1 = [0, 0, 0]
-                if j in adj_list_vector[k[1]]:
-                    c2 = adj_list_vector[k[1]][j]
+                    ca = [0, 0, 0]
+                if j in adj_list_vector[k]:
+                    cb = adj_list_vector[k][j]
                 else:
-                    c2 = [0, 0, 0]
+                    cb = [0, 0, 0]
 
-                vector = a1 + a2 + b1 + b2 + c1 + c2
+                # print(f"{ab} + {ac} + {ba} + {bc} + {ca} + {cb}")
+                vector = ab + ac + ba + bc + ca + cb
+                vector_group = []
+                for n in range(3):
+                    vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
+                if vector_group not in graphlet_groups:
+                    graphlet_groups+= [vector_group]
+                print(f"{i} {j} {k} = {vector_group}")
+                # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
 
                 if hash(tuple(vector)) not in three_node_hash:
                     three_node_hash[hash(tuple(vector))] = 0
                 else:
                     three_node_hash[hash(tuple(vector))] += 1
-        print((i / len(G.nodes())) * 100, end="\r")
+    print(graphlet_groups)
+        # print((i / len(G.nodes())) * 100, end="\r")
 
     return three_node_hash
+
+
+def get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb):
+    e_v = [0, 0, 0]
+    ppi_v = [1, 0, 0]
+    reg1_v = [0, 1, 0]
+    reg2_v = [0, 0, 1]
+    ppi_reg1_v = [1, 1, 0]
+    ppi_reg2_v = [1, 0, 1]
+    both_v = [1, 1, 1]
+    reg_v = [0, 1, 1]
+
+    # lines
+
+    return None
 
 
 def main():
@@ -406,32 +442,35 @@ def main():
     drerio_reg_path = Path("data/drerio_reg.csv")
     elegans_ppi_path = Path("data/elegans_ppi.csv")
     elegans_reg_path = Path("data/elegans_reg.csv")
-    protein_id_dict = get_protein_id_dict(fly_ppi_path, fly_reg_path)
+    protein_id_dict = get_protein_id_dict(elegans_ppi_path, elegans_reg_path)
     G = read_csv(
-        fly_ppi_path,
-        fly_reg_path,
+        elegans_ppi_path,
+        elegans_reg_path,
         protein_id_dict,
         node_size_limit=999999999,
-        edge_size_limit=999999999,
+        edge_size_limit=10,
     )
 
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
 
     # two_node_hash_table = get_two_node_graphlet_dist_adj_matrix(G, two_node_hash_table)
-    two_node_hash_table, two_node_orbit_dict = get_two_node_graphlet_stats(
-        G, two_node_hash_table
-    )
-    print("\ntwo node graphlet counts")
-    for key in two_node_hash_table:
-        print(f"{key} = {two_node_hash_table[key]}")
-    print("\ntwo node graphlet orbit counts")
-    for key in two_node_orbit_dict:
-        print(f"{key} = {len(two_node_orbit_dict[key])}")
-    # three_node_hash_table = get_three_node_graphlet_dist_adj_list(G)
-    # print(three_node_hash_table)
+    # two_node_hash_table, two_node_orbit_dict = get_two_node_graphlet_stats(
+    #     G, two_node_hash_table
+    # )
+    # print("\ntwo node graphlet counts")
+    # for key in two_node_hash_table:
+    #     print(f"{key} = {two_node_hash_table[key]}")
+    # print("\ntwo node graphlet orbit counts")
+    # for key in two_node_orbit_dict:
+    #     print(f"{key} = {len(two_node_orbit_dict[key])}")
+    three_node_hash_table = get_three_node_graphlet_dist_adj_list(G)
+    i = 0
+    for key in three_node_hash_table:
+        print(f"{key} = {three_node_hash_table[key]}")
+        i+=1
 
-    # draw_labeled_multigraph(G, "label")
+    draw_labeled_multigraph(G, "label")
     plt.show()
 
 
