@@ -20,16 +20,16 @@ def get_two_node_dict():
     a_2 = (1, 0, 0)
     a_hash = hash(a_1 + a_2)
 
-    b_1 = (1, 1, 0)
-    b_2 = (1, 0, 1)
+    b_1 = (0, 1, 0)
+    b_2 = (0, 0, 1)
     b_hash = hash(b_1 + b_2)
 
-    c_1 = (1, 1, 1)
-    c_2 = (1, 1, 1)
+    c_1 = (1, 1, 0)
+    c_2 = (1, 0, 1)
     c_hash = hash(c_1 + c_2)
 
-    d_1 = (0, 1, 0)
-    d_2 = (0, 0, 1)
+    d_1 = (1, 1, 1)
+    d_2 = (1, 1, 1)
     d_hash = hash(d_1 + d_2)
 
     e_1 = (0, 1, 1)
@@ -373,47 +373,53 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                 # B-C
                 # C-A
                 # C-B
+
+                # i < j < k
+                combination = sorted([i, j, k])
+                # print(combination[0], combination[1], combination[2])
+                a = combination[0]
+                b = combination[1]
+                c = combination[2]
+
                 ab = ac = ba = bc = ca = cb = 0
-                if j in adj_list_vector[i]:
-                    ab = adj_list_vector[i][j]
+                if b in adj_list_vector[a]:
+                    ab = adj_list_vector[a][b]
                 else:
                     ab = [0, 0, 0]
-                if k in adj_list_vector[i]:
-                    ac = adj_list_vector[i][k]
+                if c in adj_list_vector[a]:
+                    ac = adj_list_vector[a][c]
                 else:
                     ac = [0, 0, 0]
-                if i in adj_list_vector[j]:
-                    ba = adj_list_vector[j][i]
+                if a in adj_list_vector[b]:
+                    ba = adj_list_vector[b][a]
                 else:
                     ba = [0, 0, 0]
-                if k in adj_list_vector[j]:
-                    bc = adj_list_vector[j][k]
+                if c in adj_list_vector[b]:
+                    bc = adj_list_vector[b][c]
                 else:
                     bc = [0, 0, 0]
-                if i in adj_list_vector[k]:
-                    ca = adj_list_vector[k][i]
+                if a in adj_list_vector[c]:
+                    ca = adj_list_vector[c][a]
                 else:
                     ca = [0, 0, 0]
-                if j in adj_list_vector[k]:
-                    cb = adj_list_vector[k][j]
+                if b in adj_list_vector[c]:
+                    cb = adj_list_vector[c][b]
                 else:
                     cb = [0, 0, 0]
 
-                reg_sum = (
-                    ab[1]
-                    + ab[2]
-                    + bc[1]
-                    + bc[2]
-                    + ca[1]
-                    + ca[2]
-                    + ab[0]
-                    + bc[0]
-                    + ca[0]
-                )
-                max_reg = max(reg_sum, max_reg)
+                # reg_sum = (
+                #     ab[1]
+                #     + ab[2]
+                #     + bc[1]
+                #     + bc[2]
+                #     + ca[1]
+                #     + ca[2]
+                #     + ab[0]
+                #     + bc[0]
+                #     + ca[0]
+                # )
+                # max_reg = max(reg_sum, max_reg)
 
-                # i < j < k
-                # print(f"{ab} + {ac} + {ba} + {bc} + {ca} + {cb}")
                 vector = ab + ac + ba + bc + ca + cb
                 # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
                 vector_group = []
@@ -423,11 +429,9 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                     graphlet_groups += [vector_group]
                 # print(f"{i} {j} {k} = {vector_group}")
                 # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
-
                 if hash(tuple(vector)) not in three_node_graphlet_dict:
                     three_node_graphlet_dict[hash(tuple(vector))] = 0
-                else:
-                    three_node_graphlet_dict[hash(tuple(vector))] += 1
+                three_node_graphlet_dict[hash(tuple(vector))] += 1
     # print(graphlet_groups)
     # print((i / len(G.nodes())) * 100, end="\r")
     print(f"max reg {max_reg}")
@@ -607,8 +611,8 @@ def main(stdscr):
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    draw_labeled_multigraph(G, "label")
-    plt.show()
+    # draw_labeled_multigraph(G, "label")
+    # plt.show()
 
 
 if __name__ == "__main__":
