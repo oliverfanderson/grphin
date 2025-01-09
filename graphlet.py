@@ -461,7 +461,7 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph, G_prime: nx.Graph)
 
     return three_node_graphlet_dict
 
-def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph):
+def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
 
     # create all the binary edge vectors
@@ -494,93 +494,21 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph):
     three_node_combination = []
     graphlet_groups = []
     
-    for i in G.nodes():
-        
-        neighbors = list()
-        for node in (i, j):
-            in_edges = list(G.in_edges(node))
-            if in_edges:
-                for edge in in_edges:
-                    if edge[1] not in neighbors:
-                        neighbors.append(edge[1])
-            out_edges = list(G.out_edges(node))
-            if out_edges:
-                for edge in out_edges:
-                    if edge[1] not in neighbors:
-                        neighbors.append(edge[1])
-        for k in neighbors:
-            if k != i and k != j:
-                three_node_combination.append([i, j, k])
-                # for each triplet combination, we have to get all their binary edge vectors
-                # for nodes A, B, C, there are six binary edge vectors:
-                # A-B
-                # A-C
-                # B-A
-                # B-C
-                # C-A
-                # C-B
-
-                # i < j < k
-                combination = sorted([i, j, k])
-                # print(combination[0], combination[1], combination[2])
-                a = combination[0]
-                b = combination[1]
-                c = combination[2]
-
-                ab = ac = ba = bc = ca = cb = 0
-                if b in adj_list_vector[a]:
-                    ab = adj_list_vector[a][b]
-                else:
-                    ab = [0, 0, 0]
-                if c in adj_list_vector[a]:
-                    ac = adj_list_vector[a][c]
-                else:
-                    ac = [0, 0, 0]
-                if a in adj_list_vector[b]:
-                    ba = adj_list_vector[b][a]
-                else:
-                    ba = [0, 0, 0]
-                if c in adj_list_vector[b]:
-                    bc = adj_list_vector[b][c]
-                else:
-                    bc = [0, 0, 0]
-                if a in adj_list_vector[c]:
-                    ca = adj_list_vector[c][a]
-                else:
-                    ca = [0, 0, 0]
-                if b in adj_list_vector[c]:
-                    cb = adj_list_vector[c][b]
-                else:
-                    cb = [0, 0, 0]
-
-                # reg_sum = (
-                #     ab[1]
-                #     + ab[2]
-                #     + bc[1]
-                #     + bc[2]
-                #     + ca[1]
-                #     + ca[2]
-                #     + ab[0]
-                #     + bc[0]
-                #     + ca[0]
-                # )
-                # max_reg = max(reg_sum, max_reg)
-
-                vector = ab + ac + ba + bc + ca + cb
-                # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
-                vector_group = []
-                for n in range(3):
-                    vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
-                if vector_group not in graphlet_groups:
-                    graphlet_groups += [vector_group]
-                # print(f"{i} {j} {k} = {vector_group}")
-                # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
-                if hash(tuple(vector)) not in three_node_graphlet_dict:
-                    three_node_graphlet_dict[hash(tuple(vector))] = 0
-                three_node_graphlet_dict[hash(tuple(vector))] += 1
-    # print(graphlet_groups)
-    # print((i / len(G.nodes())) * 100, end="\r")
-    print(f"max reg {max_reg}")
+    for i in G_prime.nodes():
+        i_neighbors = []
+        for edges in G_prime.edges(i):
+            j = edges[1]
+            i_neighbors.append(j)
+        for j in i_neighbors:
+            j_neighbors = []
+            for edges in G_prime.edges(j):
+                k = edges[1]
+                if i < k:
+                    j_neighbors.append(k)
+            for k in j_neighbors:
+                if {i, j, k} not in three_node_combination:
+                    three_node_combination.append({i, j, k})
+                    print(f"triplet", i ,j, k)
 
     return three_node_graphlet_dict
 
@@ -768,13 +696,14 @@ def main(stdscr):
         for key in two_node_orbit_dict:
             print(f"{key} = {len(two_node_orbit_dict[key])}")
     elif graphlet_mode == 3:
-        three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        # three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list_v2(G, G_prime)
         print("\nthree node graphlet counts")
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    draw_labeled_multigraph(G, "label")
-    plt.show()
+    # draw_labeled_multigraph(G, "label")
+    # plt.show()
 
     nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     plt.show()
