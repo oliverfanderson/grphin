@@ -68,6 +68,29 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                         G.add_edge(j, i, label="reg")
     return G
 
+import networkx as nx
+
+def simplify_graph_to_undirected(G):
+    """
+    Simplify the given graph to a new undirected graph with only one edge per connected node pair.
+
+    Parameters:
+    G (networkx.Graph): The original graph (can be directed or undirected, multigraph or simple).
+
+    Returns:
+    G_prime (networkx.Graph): The simplified undirected graph.
+    """
+    # Create an empty undirected graph
+    G_prime = nx.Graph()
+
+    # Add all nodes to G_prime
+    G_prime.add_nodes_from(G.nodes())
+
+    # Add a single undirected edge for every connected node pair in G
+    for u, v in G.edges():
+        G_prime.add_edge(u, v)
+
+    return G_prime
 
 def update_protein_id_dict(file_path, res_dict, start_index):
     """Helper function to update the protein ID dictionary from a file."""
@@ -312,7 +335,7 @@ def get_adjacency_matrix(G):
     return G_adj_matrix
 
 
-def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
+def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
 
     # create all the binary edge vectors
@@ -438,20 +461,114 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
 
     return three_node_graphlet_dict
 
+def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Graph):
+    three_node_graphlet_dict = {}
+
+    # create all the binary edge vectors
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+
+    for i, j, data in G.edges(data=True):
+        label = data.get("label")
+        if label == "ppi":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[i][j][0] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[j][i][0] += 1
+        elif label == "reg":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0, 1, 0]
+            else:
+                adj_list_vector[i][j][1] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0, 0, 1]
+            else:
+                adj_list_vector[j][i][2] += 1
+
+    # find all combinations of potential 3 node graphlets
+    # pick an edge between A and B
+    # for each edge pair, find the union of neighbors between A and B
+    three_node_combination = []
+    
+    for i in G_prime.nodes():
+        i_neighbors = []
+        for edges in G_prime.edges(i):
+            j = edges[1]
+            i_neighbors.append(j)
+        for j in i_neighbors:
+            j_neighbors = []
+            for edges in G_prime.edges(j):
+                k = edges[1]
+                if i < k:
+                    j_neighbors.append(k)
+            for k in j_neighbors:
+                if {i, j, k} not in three_node_combination:
+                    three_node_combination.append({i, j, k})
+                    print(f"triplet", i ,j, k)
+
+                    a = i
+                    b = j
+                    c = k
+
+                    ab = ac = ba = bc = ca = cb = 0
+                    if b in adj_list_vector[a]:
+                        ab = adj_list_vector[a][b]
+                    else:
+                        ab = [0, 0, 0]
+                    if c in adj_list_vector[a]:
+                        ac = adj_list_vector[a][c]
+                    else:
+                        ac = [0, 0, 0]
+                    if a in adj_list_vector[b]:
+                        ba = adj_list_vector[b][a]
+                    else:
+                        ba = [0, 0, 0]
+                    if c in adj_list_vector[b]:
+                        bc = adj_list_vector[b][c]
+                    else:
+                        bc = [0, 0, 0]
+                    if a in adj_list_vector[c]:
+                        ca = adj_list_vector[c][a]
+                    else:
+                        ca = [0, 0, 0]
+                    if b in adj_list_vector[c]:
+                        cb = adj_list_vector[c][b]
+                    else:
+                        cb = [0, 0, 0]
+                    a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(hash(tuple(ab)), hash(tuple(ac)), hash(tuple(ba)), hash(tuple(bc)), hash(tuple(ca)), hash(tuple(cb)))
+                    
+                    a_edges = tuple(sorted([a_b, a_c]))
+                    b_edges = tuple(sorted([b_a, b_c]))
+                    c_edges = tuple(sorted([c_a, c_b]))
+
+                   # Create a list of tuples
+                    tuples_list = [a_edges, b_edges, c_edges]
+
+                    # Sort the tuples first by the first index, then by the second index
+                    sorted_tuples = sorted(tuples_list, key=lambda x: (x[0], x[1]))
+
+                    print("Sorted tuples", sorted_tuples)
+
+    return three_node_graphlet_dict
+
 
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
-    e_v = [0, 0, 0]
-    ppi_v = [1, 0, 0]
-    reg1_v = [0, 1, 0]
-    reg2_v = [0, 0, 1]
-    ppi_reg1_v = [1, 1, 0]
-    ppi_reg2_v = [1, 0, 1]
-    both_v = [1, 1, 1]
-    reg_v = [0, 1, 1]
+    # Example of a simple dictionary
+    my_dict = {
+        hash((0, 0, 0)): "0",
+        hash((1, 0, 0)): "1",
+        hash((0, 1, 0)): "2",
+        hash((0, 0, 1)): "3",
+        hash((1, 1, 0)): "4",
+        hash((1, 0, 1)): "5",
+        hash((0, 1, 1)): "6",
+        hash((1, 1, 1)): "7",
+    }
 
-    # lines
-
-    return None
+    return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
 
 
 def dropdown_menu(stdscr, options):
@@ -538,8 +655,11 @@ def get_user_inputs(selected_network, selected_graphlet):
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
         case "Test network":
-            ppi_path = Path("data/fly_ppi.csv")
-            reg_path = Path("data/fly_reg.csv")
+            ppi_path = Path("data/test_ppi.csv")
+            reg_path = Path("data/test_reg.csv")
+        case "Toy network":
+            ppi_path = Path("data/toy_ppi.csv")
+            reg_path = Path("data/toy_reg.csv")
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
@@ -558,6 +678,7 @@ def main(stdscr):
             "D. rerio",
             "C. elegans",
             "Test network",
+            "Toy network",
             "Exit",
         ]
         selected_network = dropdown_menu(stdscr, network)
@@ -584,6 +705,10 @@ def main(stdscr):
 
     two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
     protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+
+    for protein in protein_id_dict:
+        print(f"Protein ID dictionary: {protein} {protein_id_dict[protein]}")
+    
     G = read_csv(
         ppi_path,
         reg_path,
@@ -594,6 +719,14 @@ def main(stdscr):
     print(selected_network)
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
+
+    # Simplify the graph G to G_prime
+    G_prime = simplify_graph_to_undirected(G)
+
+    # Print the simplified graph's details
+    print(f"\nSimplified Graph:")
+    print(f"Number of nodes: {len(G_prime.nodes())}")
+    print(f"Number of edges: {len(G_prime.edges())}")
 
     if graphlet_mode == 2:
         two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
@@ -606,12 +739,16 @@ def main(stdscr):
         for key in two_node_orbit_dict:
             print(f"{key} = {len(two_node_orbit_dict[key])}")
     elif graphlet_mode == 3:
-        three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        # three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
+        three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list_v2(G, G_prime)
         print("\nthree node graphlet counts")
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    # draw_labeled_multigraph(G, "label")
+    draw_labeled_multigraph(G, "label")
+    plt.show()
+
+    # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     # plt.show()
 
 
