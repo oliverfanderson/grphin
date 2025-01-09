@@ -492,7 +492,6 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Gra
     # pick an edge between A and B
     # for each edge pair, find the union of neighbors between A and B
     three_node_combination = []
-    graphlet_groups = []
     
     for i in G_prime.nodes():
         i_neighbors = []
@@ -510,22 +509,66 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Gra
                     three_node_combination.append({i, j, k})
                     print(f"triplet", i ,j, k)
 
+                    a = i
+                    b = j
+                    c = k
+
+                    ab = ac = ba = bc = ca = cb = 0
+                    if b in adj_list_vector[a]:
+                        ab = adj_list_vector[a][b]
+                    else:
+                        ab = [0, 0, 0]
+                    if c in adj_list_vector[a]:
+                        ac = adj_list_vector[a][c]
+                    else:
+                        ac = [0, 0, 0]
+                    if a in adj_list_vector[b]:
+                        ba = adj_list_vector[b][a]
+                    else:
+                        ba = [0, 0, 0]
+                    if c in adj_list_vector[b]:
+                        bc = adj_list_vector[b][c]
+                    else:
+                        bc = [0, 0, 0]
+                    if a in adj_list_vector[c]:
+                        ca = adj_list_vector[c][a]
+                    else:
+                        ca = [0, 0, 0]
+                    if b in adj_list_vector[c]:
+                        cb = adj_list_vector[c][b]
+                    else:
+                        cb = [0, 0, 0]
+                    a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(hash(tuple(ab)), hash(tuple(ac)), hash(tuple(ba)), hash(tuple(bc)), hash(tuple(ca)), hash(tuple(cb)))
+                    
+                    a_edges = tuple(sorted([a_b, a_c]))
+                    b_edges = tuple(sorted([b_a, b_c]))
+                    c_edges = tuple(sorted([c_a, c_b]))
+
+                   # Create a list of tuples
+                    tuples_list = [a_edges, b_edges, c_edges]
+
+                    # Sort the tuples first by the first index, then by the second index
+                    sorted_tuples = sorted(tuples_list, key=lambda x: (x[0], x[1]))
+
+                    print("Sorted tuples", sorted_tuples)
+
     return three_node_graphlet_dict
 
 
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
-    e_v = [0, 0, 0]
-    ppi_v = [1, 0, 0]
-    reg1_v = [0, 1, 0]
-    reg2_v = [0, 0, 1]
-    ppi_reg1_v = [1, 1, 0]
-    ppi_reg2_v = [1, 0, 1]
-    both_v = [1, 1, 1]
-    reg_v = [0, 1, 1]
+    # Example of a simple dictionary
+    my_dict = {
+        hash((0, 0, 0)): "0",
+        hash((1, 0, 0)): "1",
+        hash((0, 1, 0)): "2",
+        hash((0, 0, 1)): "3",
+        hash((1, 1, 0)): "4",
+        hash((1, 0, 1)): "5",
+        hash((0, 1, 1)): "6",
+        hash((1, 1, 1)): "7",
+    }
 
-    # lines
-
-    return None
+    return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
 
 
 def dropdown_menu(stdscr, options):
@@ -702,11 +745,11 @@ def main(stdscr):
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    # draw_labeled_multigraph(G, "label")
-    # plt.show()
-
-    nx.draw_networkx(G_prime, with_labels=True, font_size=10)
+    draw_labeled_multigraph(G, "label")
     plt.show()
+
+    # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
+    # plt.show()
 
 
 if __name__ == "__main__":
