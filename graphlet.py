@@ -68,6 +68,29 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                         G.add_edge(j, i, label="reg")
     return G
 
+import networkx as nx
+
+def simplify_graph_to_undirected(G):
+    """
+    Simplify the given graph to a new undirected graph with only one edge per connected node pair.
+
+    Parameters:
+    G (networkx.Graph): The original graph (can be directed or undirected, multigraph or simple).
+
+    Returns:
+    G_prime (networkx.Graph): The simplified undirected graph.
+    """
+    # Create an empty undirected graph
+    G_prime = nx.Graph()
+
+    # Add all nodes to G_prime
+    G_prime.add_nodes_from(G.nodes())
+
+    # Add a single undirected edge for every connected node pair in G
+    for u, v in G.edges():
+        G_prime.add_edge(u, v)
+
+    return G_prime
 
 def update_protein_id_dict(file_path, res_dict, start_index):
     """Helper function to update the protein ID dictionary from a file."""
@@ -312,7 +335,7 @@ def get_adjacency_matrix(G):
     return G_adj_matrix
 
 
-def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
+def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
 
     # create all the binary edge vectors
@@ -350,6 +373,129 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
         j,
     ) in G.edges():
         # print()
+        neighbors = list()
+        for node in (i, j):
+            in_edges = list(G.in_edges(node))
+            if in_edges:
+                for edge in in_edges:
+                    if edge[1] not in neighbors:
+                        neighbors.append(edge[1])
+            out_edges = list(G.out_edges(node))
+            if out_edges:
+                for edge in out_edges:
+                    if edge[1] not in neighbors:
+                        neighbors.append(edge[1])
+        for k in neighbors:
+            if k != i and k != j:
+                three_node_combination.append([i, j, k])
+                # for each triplet combination, we have to get all their binary edge vectors
+                # for nodes A, B, C, there are six binary edge vectors:
+                # A-B
+                # A-C
+                # B-A
+                # B-C
+                # C-A
+                # C-B
+
+                # i < j < k
+                combination = sorted([i, j, k])
+                # print(combination[0], combination[1], combination[2])
+                a = combination[0]
+                b = combination[1]
+                c = combination[2]
+
+                ab = ac = ba = bc = ca = cb = 0
+                if b in adj_list_vector[a]:
+                    ab = adj_list_vector[a][b]
+                else:
+                    ab = [0, 0, 0]
+                if c in adj_list_vector[a]:
+                    ac = adj_list_vector[a][c]
+                else:
+                    ac = [0, 0, 0]
+                if a in adj_list_vector[b]:
+                    ba = adj_list_vector[b][a]
+                else:
+                    ba = [0, 0, 0]
+                if c in adj_list_vector[b]:
+                    bc = adj_list_vector[b][c]
+                else:
+                    bc = [0, 0, 0]
+                if a in adj_list_vector[c]:
+                    ca = adj_list_vector[c][a]
+                else:
+                    ca = [0, 0, 0]
+                if b in adj_list_vector[c]:
+                    cb = adj_list_vector[c][b]
+                else:
+                    cb = [0, 0, 0]
+
+                # reg_sum = (
+                #     ab[1]
+                #     + ab[2]
+                #     + bc[1]
+                #     + bc[2]
+                #     + ca[1]
+                #     + ca[2]
+                #     + ab[0]
+                #     + bc[0]
+                #     + ca[0]
+                # )
+                # max_reg = max(reg_sum, max_reg)
+
+                vector = ab + ac + ba + bc + ca + cb
+                # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
+                vector_group = []
+                for n in range(3):
+                    vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
+                if vector_group not in graphlet_groups:
+                    graphlet_groups += [vector_group]
+                # print(f"{i} {j} {k} = {vector_group}")
+                # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
+                if hash(tuple(vector)) not in three_node_graphlet_dict:
+                    three_node_graphlet_dict[hash(tuple(vector))] = 0
+                three_node_graphlet_dict[hash(tuple(vector))] += 1
+    # print(graphlet_groups)
+    # print((i / len(G.nodes())) * 100, end="\r")
+    print(f"max reg {max_reg}")
+
+    return three_node_graphlet_dict
+
+def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph):
+    three_node_graphlet_dict = {}
+
+    # create all the binary edge vectors
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+
+    for i, j, data in G.edges(data=True):
+        label = data.get("label")
+        if label == "ppi":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[i][j][0] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[j][i][0] += 1
+        elif label == "reg":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0, 1, 0]
+            else:
+                adj_list_vector[i][j][1] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0, 0, 1]
+            else:
+                adj_list_vector[j][i][2] += 1
+
+    # find all combinations of potential 3 node graphlets
+    # pick an edge between A and B
+    # for each edge pair, find the union of neighbors between A and B
+    three_node_combination = []
+    graphlet_groups = []
+    
+    for i in G.nodes():
+        
         neighbors = list()
         for node in (i, j):
             in_edges = list(G.in_edges(node))
@@ -538,8 +684,11 @@ def get_user_inputs(selected_network, selected_graphlet):
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
         case "Test network":
-            ppi_path = Path("data/fly_ppi.csv")
-            reg_path = Path("data/fly_reg.csv")
+            ppi_path = Path("data/test_ppi.csv")
+            reg_path = Path("data/test_reg.csv")
+        case "Toy network":
+            ppi_path = Path("data/toy_ppi.csv")
+            reg_path = Path("data/toy_reg.csv")
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
@@ -558,6 +707,7 @@ def main(stdscr):
             "D. rerio",
             "C. elegans",
             "Test network",
+            "Toy network",
             "Exit",
         ]
         selected_network = dropdown_menu(stdscr, network)
@@ -584,6 +734,10 @@ def main(stdscr):
 
     two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
     protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+
+    for protein in protein_id_dict:
+        print(f"Protein ID dictionary: {protein} {protein_id_dict[protein]}")
+    
     G = read_csv(
         ppi_path,
         reg_path,
@@ -594,6 +748,14 @@ def main(stdscr):
     print(selected_network)
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
+
+    # Simplify the graph G to G_prime
+    G_prime = simplify_graph_to_undirected(G)
+
+    # Print the simplified graph's details
+    print(f"\nSimplified Graph:")
+    print(f"Number of nodes: {len(G_prime.nodes())}")
+    print(f"Number of edges: {len(G_prime.edges())}")
 
     if graphlet_mode == 2:
         two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
@@ -611,8 +773,11 @@ def main(stdscr):
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    # draw_labeled_multigraph(G, "label")
-    # plt.show()
+    draw_labeled_multigraph(G, "label")
+    plt.show()
+
+    nx.draw_networkx(G_prime, with_labels=True, font_size=10)
+    plt.show()
 
 
 if __name__ == "__main__":
