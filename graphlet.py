@@ -660,6 +660,9 @@ def get_user_inputs(selected_network, selected_graphlet):
         case "Toy network":
             ppi_path = Path("data/toy_ppi.csv")
             reg_path = Path("data/toy_reg.csv")
+        case "Shuffled toy network":
+            ppi_path = Path("data/toy2_ppi.csv")
+            reg_path = Path("data/toy2_reg.csv")
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
@@ -679,6 +682,7 @@ def main(stdscr):
             "C. elegans",
             "Test network",
             "Toy network",
+            "Shuffled toy network",
             "Exit",
         ]
         selected_network = dropdown_menu(stdscr, network)
