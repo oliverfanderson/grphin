@@ -8,6 +8,7 @@ import scipy as sp
 import csv
 import curses
 from itertools import combinations
+from collections import defaultdict
 
 
 def get_two_node_dict():
@@ -584,24 +585,17 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
     three_node_graphlet_dict = {}
 
     # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+    # Initialize adj_list_vector using defaultdict
+    adj_list_vector = [defaultdict(lambda: [0, 0, 0]) for _ in range(len(G.nodes()))]
 
     for i, j, data in G.edges(data=True):
         label = data.get("label")
         if label == "ppi":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [1, 0, 0]
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [1, 0, 0]
+            adj_list_vector[i][j] = [1, 0, 0]
+            adj_list_vector[j][i] = [1, 0, 0]
         elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
+            adj_list_vector[i][j][1] += 1
+            adj_list_vector[j][i][2] += 1
 
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
@@ -610,8 +604,11 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
 
     # Preprocess neighbors for each node once
     neighbors_dict = {i: set(G_prime.neighbors(i)) for i in G_prime.nodes()}
+    completed_i = set()
 
     for i in G_prime.nodes():
+        if i in completed_i:
+            continue  # Skip if i has already been processed
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j]:
                 if i < k:  # Ensure no duplicates by enforcing i < k
@@ -662,6 +659,8 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                         sorted_tuples = sorted(tuples_list, key=lambda x: (x[0], x[1]))
 
                         print("Sorted tuples", sorted_tuples)
+        # Once we're done processing i, mark it as completed
+        completed_i.add(i)
 
     return three_node_graphlet_dict
 
@@ -844,8 +843,8 @@ def main(stdscr):
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
 
-    draw_labeled_multigraph(G, "label")
-    plt.show()
+    # draw_labeled_multigraph(G, "label")
+    # plt.show()
 
     # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     # plt.show()
