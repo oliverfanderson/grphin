@@ -620,17 +620,8 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
 
     for i in G_prime.nodes():
         print(f"Node: {i}", end="\r")
-        # if i in completed_i:
-            # print(j, "in completed_i")  # Skip if i has already been processed
-            # continue  # Skip if i has already been processed
         for j in neighbors_dict[i]:
-            # if j in completed_i:
-            #     # print(j, "in completed_i")  # Skip if i has already been processed
-            #     continue  # Skip if i has already been processed
             for k in neighbors_dict[j].difference(completed_i):
-                # if k in completed_i:
-                #     # print(k, "in completed_i")
-                #     continue  # Skip if i has already been processed
                 if (i < k) and (i != j) and (j != k):  # Ensure no duplicates by enforcing i < k and i != j
                     triplet = tuple(sorted([i, j, k]))
                     if triplet not in three_node_combination:
