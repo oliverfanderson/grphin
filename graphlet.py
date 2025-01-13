@@ -658,15 +658,25 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                         else:
                             cb = [0, 0, 0]
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
-                        
-                        a_edges = tuple(sorted([a_b, a_c]))
-                        b_edges = tuple(sorted([b_a, b_c]))
-                        c_edges = tuple(sorted([c_a, c_b]))
 
-                        # Create a list of tuples
-                        tuples_list = [a_edges, b_edges, c_edges]
+                        # get unsorted edge values for A, B, C
+                        a_unsort = [a_b, a_c]
+                        b_unsort = [b_a, b_c]
+                        c_unsort = [c_a, c_b]
+                        
+                        # order A, B, C edge values internally
+                        a_sort = tuple(sorted(a_unsort))
+                        b_sort = tuple(sorted(b_unsort))
+                        c_sort = tuple(sorted(c_unsort))
+
+                        # Create a list of tuples in order [A, B, C]
+                        tuples_list = [a_sort, b_sort, c_sort]
+
+                        unsorted_tuples = tuple(tuples_list)
+
                         # Sort the tuples first by the first index, then by the second index
                         sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
+
                         # Add the graphlet if it has not been seen yet and update the count for the graphlet
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             three_node_graphlet_dict[hash(sorted_tuples)] = 0
