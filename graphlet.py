@@ -348,7 +348,7 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     ca = hash_tuple(ca)
     cb = hash_tuple(cb)
 
-    # Example of a simple dictionary
+    # Define the dictionary
     my_dict = {
         hash((0, 0, 0)): "0",
         hash((1, 0, 0)): "1",
@@ -362,226 +362,204 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
 
     return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
 
-# def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph, G_prime: nx.Graph):
-    three_node_graphlet_dict = {}
-
-    # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
-
-    for i, j, data in G.edges(data=True):
-        label = data.get("label")
-        if label == "ppi":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[i][j][0] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[j][i][0] += 1
-        elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
-
-    # find all combinations of potential 3 node graphlets
-    # pick an edge between A and B
-    # for each edge pair, find the union of neighbors between A and B
-    three_node_combination = []
-    graphlet_groups = []
-    max_reg = 0
-    for (
-        i,
-        j,
-    ) in G.edges():
-        # print()
-        neighbors = list()
-        for node in (i, j):
-            in_edges = list(G.in_edges(node))
-            if in_edges:
-                for edge in in_edges:
-                    if edge[1] not in neighbors:
-                        neighbors.append(edge[1])
-            out_edges = list(G.out_edges(node))
-            if out_edges:
-                for edge in out_edges:
-                    if edge[1] not in neighbors:
-                        neighbors.append(edge[1])
-        for k in neighbors:
-            if k != i and k != j:
-                three_node_combination.append([i, j, k])
-                # for each triplet combination, we have to get all their binary edge vectors
-                # for nodes A, B, C, there are six binary edge vectors:
-                # A-B
-                # A-C
-                # B-A
-                # B-C
-                # C-A
-                # C-B
-
-                # i < j < k
-                combination = sorted([i, j, k])
-                # print(combination[0], combination[1], combination[2])
-                a = combination[0]
-                b = combination[1]
-                c = combination[2]
-
-                ab = ac = ba = bc = ca = cb = 0
-                if b in adj_list_vector[a]:
-                    ab = adj_list_vector[a][b]
-                else:
-                    ab = [0, 0, 0]
-                if c in adj_list_vector[a]:
-                    ac = adj_list_vector[a][c]
-                else:
-                    ac = [0, 0, 0]
-                if a in adj_list_vector[b]:
-                    ba = adj_list_vector[b][a]
-                else:
-                    ba = [0, 0, 0]
-                if c in adj_list_vector[b]:
-                    bc = adj_list_vector[b][c]
-                else:
-                    bc = [0, 0, 0]
-                if a in adj_list_vector[c]:
-                    ca = adj_list_vector[c][a]
-                else:
-                    ca = [0, 0, 0]
-                if b in adj_list_vector[c]:
-                    cb = adj_list_vector[c][b]
-                else:
-                    cb = [0, 0, 0]
-
-                # reg_sum = (
-                #     ab[1]
-                #     + ab[2]
-                #     + bc[1]
-                #     + bc[2]
-                #     + ca[1]
-                #     + ca[2]
-                #     + ab[0]
-                #     + bc[0]
-                #     + ca[0]
-                # )
-                # max_reg = max(reg_sum, max_reg)
-
-                vector = ab + ac + ba + bc + ca + cb
-                # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
-                vector_group = []
-                for n in range(3):
-                    vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
-                if vector_group not in graphlet_groups:
-                    graphlet_groups += [vector_group]
-                # print(f"{i} {j} {k} = {vector_group}")
-                # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
-                if hash(tuple(vector)) not in three_node_graphlet_dict:
-                    three_node_graphlet_dict[hash(tuple(vector))] = 0
-                three_node_graphlet_dict[hash(tuple(vector))] += 1
-    # print(graphlet_groups)
-    # print((i / len(G.nodes())) * 100, end="\r")
-    print(f"max reg {max_reg}")
-
-    return three_node_graphlet_dict
-
-# def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Graph):
-    three_node_graphlet_dict = {}
-
-    # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
-
-    for i, j, data in G.edges(data=True):
-        label = data.get("label")
-        if label == "ppi":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[i][j][0] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[j][i][0] += 1
-        elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
-
-    # find all combinations of potential 3 node graphlets
-    # pick an edge between A and B
-    # for each edge pair, find the union of neighbors between A and B
-    three_node_combination = []
-    
-    for i in G_prime.nodes():
-        i_neighbors = []
-        for edges in G_prime.edges(i):
-            j = edges[1]
-            i_neighbors.append(j)
-        for j in i_neighbors:
-            j_neighbors = []
-            for edges in G_prime.edges(j):
-                k = edges[1]
-                if i < k:
-                    j_neighbors.append(k)
-            for k in j_neighbors:
-                if {i, j, k} not in three_node_combination:
-                    three_node_combination.append({i, j, k})
-                    print(f"triplet", i ,j, k)
-
-                    a = i
-                    b = j
-                    c = k
-
-                    ab = ac = ba = bc = ca = cb = 0
-                    if b in adj_list_vector[a]:
-                        ab = adj_list_vector[a][b]
-                    else:
-                        ab = [0, 0, 0]
-                    if c in adj_list_vector[a]:
-                        ac = adj_list_vector[a][c]
-                    else:
-                        ac = [0, 0, 0]
-                    if a in adj_list_vector[b]:
-                        ba = adj_list_vector[b][a]
-                    else:
-                        ba = [0, 0, 0]
-                    if c in adj_list_vector[b]:
-                        bc = adj_list_vector[b][c]
-                    else:
-                        bc = [0, 0, 0]
-                    if a in adj_list_vector[c]:
-                        ca = adj_list_vector[c][a]
-                    else:
-                        ca = [0, 0, 0]
-                    if b in adj_list_vector[c]:
-                        cb = adj_list_vector[c][b]
-                    else:
-                        cb = [0, 0, 0]
-                    a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(hash(tuple(ab)), hash(tuple(ac)), hash(tuple(ba)), hash(tuple(bc)), hash(tuple(ca)), hash(tuple(cb)))
-                    
-                    a_edges = tuple(sorted([a_b, a_c]))
-                    b_edges = tuple(sorted([b_a, b_c]))
-                    c_edges = tuple(sorted([c_a, c_b]))
-
-                   # Create a list of tuples
-                    tuples_list = [a_edges, b_edges, c_edges]
-
-                    # Sort the tuples first by the first index, then by the second index
-                    sorted_tuples = sorted(tuples_list, key=lambda x: (x[0], x[1]))
-
-                    print("Sorted tuples", sorted_tuples)
-
-    return three_node_graphlet_dict
-
 def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Graph):
+    three_node_graphlet_dict = {}
+    graphlet_mapper = {}
+    orbit_dict = {}
+    orbit_mapper = {}
+    start_time = time.time()
+
+    # create all the binary edge vectors
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+    for i, j, data in G.edges(data=True):
+        label = data.get("label")
+        if label == "ppi":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[i][j][0] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1, 0, 0]
+            # else:
+            #     adj_list_vector[j][i][0] += 1
+        elif label == "reg":
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0, 1, 0]
+            else:
+                adj_list_vector[i][j][1] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0, 0, 1]
+            else:
+                adj_list_vector[j][i][2] += 1
+
+    # find all combinations of potential 3 node graphlets
+    # pick an edge between A and B
+    # for each edge pair, find the union of neighbors between A and B
+    three_node_combination = set()  # Use a set for fast triplet lookups
+
+    # Preprocess neighbors for each node once
+    neighbors_dict = {i: set(G_prime.neighbors(i)) for i in G_prime.nodes()}
+    completed_i = set()
+
+    for i in G_prime.nodes():
+        print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
+        for j in neighbors_dict[i]:
+            for k in neighbors_dict[j].difference(completed_i):
+                if (i < k) and (i != j) and (j != k):  # Ensure no duplicates by enforcing i < k and i != j
+                    triplet = tuple(sorted([i, j, k]))
+                    if triplet not in three_node_combination:
+                        three_node_combination.add(triplet)
+
+                        a = i
+                        b = j
+                        c = k
+
+                        ab = ac = ba = bc = ca = cb = 0
+                        if b in adj_list_vector[a]:
+                            ab = adj_list_vector[a][b]
+                        else:
+                            ab = [0, 0, 0]
+                        if c in adj_list_vector[a]:
+                            ac = adj_list_vector[a][c]
+                        else:
+                            ac = [0, 0, 0]
+                        if a in adj_list_vector[b]:
+                            ba = adj_list_vector[b][a]
+                        else:
+                            ba = [0, 0, 0]
+                        if c in adj_list_vector[b]:
+                            bc = adj_list_vector[b][c]
+                        else:
+                            bc = [0, 0, 0]
+                        if a in adj_list_vector[c]:
+                            ca = adj_list_vector[c][a]
+                        else:
+                            ca = [0, 0, 0]
+                        if b in adj_list_vector[c]:
+                            cb = adj_list_vector[c][b]
+                        else:
+                            cb = [0, 0, 0]
+                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
+
+                        # order A, B, C edge values internally
+                        a_edges = tuple(sorted([a_b, a_c]))
+                        b_edges = tuple(sorted([b_a, b_c]))
+                        c_edges = tuple(sorted([c_a, c_b]))
+
+                        # Create a list of tuples in order [A, B, C]
+                        tuples_list = [a_edges, b_edges, c_edges]
+
+                        # Sort the tuples first by the first index, then by the second index
+                        sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
+
+                        # Add the graphlet if it has not been seen yet and update the count for the graphlet
+                        if hash(sorted_tuples) not in three_node_graphlet_dict:
+                            three_node_graphlet_dict[hash(sorted_tuples)] = 0
+                            graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
+                        three_node_graphlet_dict[hash(sorted_tuples)]+=1
+                        print(f'Graphlet: {sorted_tuples}')
+                        orbit_dict = get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k)
+
+        # Once we're done processing i, mark it as completed
+        completed_i.add(i)
+        # print(f"Completed node: {i}")
+
+    run_time =  time.time() - start_time
+    print("run time : %.3f seconds" % run_time)
+    return three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper
+
+def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k):
+
+    # # 3-node line basic only ppi example 1
+    # we can check which graphlet we are looking at via the sorted tuple
+    if sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
+        a_expected = ('0', '1')
+        b_expected = ('0', '1')
+        c_expected = ('1', '1')
+        #since we arbitrarily chose what i, j, and k is, 
+        # we need to check which of them match the a, b, c in the sorted tuple
+        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
+                                                 a_expected, b_expected, c_expected,
+                                                 i, j, k)
+
+        #store orbits with the key:
+        # graphlet_sorted_tuple + orbit_position
+        # i.e 
+        # (('0', '1'), ('0', '1'), ('1', '1') ('0','0')) this specific graphlet at its 0th orbit
+        # (('0', '1'), ('0', '1'), ('1', '1') ('1','1')) this specific graphlet at its 1th orbit
+        zero_orbit = ('G1', 0)
+        first_orbit = ('G1', 1)
+
+        a_orbit = sorted_tuples + zero_orbit
+        b_orbit = sorted_tuples + first_orbit
+        # c_orbit = graphlet_sorted_tuple + second_orbit
+
+        if hash(a_orbit) not in orbit_dict:
+            orbit_dict[hash(a_orbit)] = []
+            orbit_mapper[hash(a_orbit)] = "3-node line only ppi orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0]]
+        if hash(b_orbit) not in orbit_dict:
+            orbit_dict[hash(b_orbit)] = []
+            orbit_mapper[hash(b_orbit)] = "3-node line only ppi orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[1], orbit_change[2]]
+
+    elif sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
+        a_expected = ('0', '1')
+        b_expected = ('0', '1')
+        c_expected = ('1', '1')
+        #since we arbitrarily chose what i, j, and k is, 
+        # we need to check which of them match the a, b, c in the sorted tuple
+        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
+                                                 a_expected, b_expected, c_expected,
+                                                 i, j, k)
+
+        #store orbits with the key:
+        # graphlet_sorted_tuple + orbit_position
+        # i.e 
+        # (('0', '1'), ('0', '1'), ('1', '1') ('0','0')) this specific graphlet at its 0th orbit
+        # (('0', '1'), ('0', '1'), ('1', '1') ('1','1')) this specific graphlet at its 1th orbit
+        zero_orbit = (0, 0)
+        first_orbit = (1, 1)
+
+        a_orbit = sorted_tuples + zero_orbit
+        b_orbit = sorted_tuples + first_orbit
+        # c_orbit = graphlet_sorted_tuple + second_orbit
+
+        if hash(a_orbit) not in orbit_dict:
+            orbit_dict[hash(a_orbit)] = []
+            orbit_mapper[hash(a_orbit)] = "3-node line only ppi orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0]]
+        if hash(b_orbit) not in orbit_dict:
+            orbit_dict[hash(b_orbit)] = []
+            orbit_mapper[hash(b_orbit)] = "3-node line only ppi orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[1], orbit_change[2]]
+
+    return orbit_dict
+
+def get_orbit_position_change(a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k):
+    # a, b, c
+    if a_edges == a_expected and b_edges == b_expected and c_edges == c_expected:
+        return [i,j,k]
+    # a, c, b
+    if a_edges == a_expected and b_edges == c_expected and c_edges == b_expected:
+        return [i,k,j]
+    # b, a, c
+    if a_edges == b_expected and b_edges == a_expected and c_edges == c_expected:
+        return [j,i,k]
+    # b, c, a
+    if a_edges == b_expected and b_edges == c_expected and c_edges == a_expected:
+        return [j,k,i]
+    # c, a, b
+    if a_edges == c_expected and b_edges == a_expected and c_edges == b_expected:
+        return [k,i,j]
+    # c, b, a
+    if a_edges == c_expected and b_edges == b_expected and c_edges == a_expected:
+        return [k,j,i]
+    raise ValueError(
+        f"Unexpected edges configuration: a_edges={a_edges}, b_edges={b_edges}, c_edges={c_edges}"
+    )    
+
+def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
     graphlet_mapper = {}
     start_time = time.time()
@@ -658,15 +636,25 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                         else:
                             cb = [0, 0, 0]
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
-                        
-                        a_edges = tuple(sorted([a_b, a_c]))
-                        b_edges = tuple(sorted([b_a, b_c]))
-                        c_edges = tuple(sorted([c_a, c_b]))
 
-                        # Create a list of tuples
-                        tuples_list = [a_edges, b_edges, c_edges]
+                        # get unsorted edge values for A, B, C
+                        a_unsort = [a_b, a_c]
+                        b_unsort = [b_a, b_c]
+                        c_unsort = [c_a, c_b]
+                        
+                        # order A, B, C edge values internally
+                        a_sort = tuple(sorted(a_unsort))
+                        b_sort = tuple(sorted(b_unsort))
+                        c_sort = tuple(sorted(c_unsort))
+
+                        # Create a list of tuples in order [A, B, C]
+                        tuples_list = [a_sort, b_sort, c_sort]
+
+                        unsorted_tuples = tuple(tuples_list)
+
                         # Sort the tuples first by the first index, then by the second index
                         sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
+
                         # Add the graphlet if it has not been seen yet and update the count for the graphlet
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             three_node_graphlet_dict[hash(sorted_tuples)] = 0
@@ -677,161 +665,6 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
         completed_i.add(i)
         # print(f"Completed node: {i}")
 
-    run_time =  time.time() - start_time
-    print("run time : %.3f seconds" % run_time)
-    return three_node_graphlet_dict, graphlet_mapper
-
-def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Graph):
-    three_node_graphlet_dict = {}
-    graphlet_mapper = {}
-    start_time = time.time()
-
-
-    # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
-
-    for i, j, data in G.edges(data=True):
-        label = data.get("label")
-        if label == "ppi":
-            adj_list_vector[i][j] = [1, 0, 0]
-            adj_list_vector[j][i] = [1, 0, 0]
-        elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
-
-    # find all combinations of potential 3 node graphlets
-    # pick an edge between A and B
-    # for each edge pair, find the union of neighbors between A and B
-    count = 0
-    three_node_combination = set()
-    completed_i = set()
-    for i in sorted(G_prime.nodes(), key=lambda x: G_prime.degree(x)):
-
-        i_neighbors = {j for _, j in G_prime.edges(i) if j not in completed_i}  # Use set for neighbors
-        print(f"{i} : {len(i_neighbors)} - {G_prime.degree(i)}", end= "\r")
-
-        # Add combinations of two neighbors with the center node
-        for j, k in combinations(i_neighbors, 2):
-            # Ensure the triplet is unique by sorting or using frozenset
-            triplet = frozenset([i, j, k])
-            # if j not in completed_i and k not in completed_i:
-            if triplet not in three_node_combination:
-                # print(i,j,k)
-                three_node_combination.add(triplet)
-                a, b, c = i, j, k
-
-                ab = ac = ba = bc = ca = cb = 0
-                if b in adj_list_vector[a]:
-                    ab = adj_list_vector[a][b]
-                else:
-                    ab = [0, 0, 0]
-                if c in adj_list_vector[a]:
-                    ac = adj_list_vector[a][c]
-                else:
-                    ac = [0, 0, 0]
-                if a in adj_list_vector[b]:
-                    ba = adj_list_vector[b][a]
-                else:
-                    ba = [0, 0, 0]
-                if c in adj_list_vector[b]:
-                    bc = adj_list_vector[b][c]
-                else:
-                    bc = [0, 0, 0]
-                if a in adj_list_vector[c]:
-                    ca = adj_list_vector[c][a]
-                else:
-                    ca = [0, 0, 0]
-                if b in adj_list_vector[c]:
-                    cb = adj_list_vector[c][b]
-                else:
-                    cb = [0, 0, 0]
-
-                a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
-                    ab, ac, ba, 
-                    bc, ca, cb
-                )
-
-                a_edges = tuple(sorted([a_b, a_c]))
-                b_edges = tuple(sorted([b_a, b_c]))
-                c_edges = tuple(sorted([c_a, c_b]))
-
-                tuples_list = [a_edges, b_edges, c_edges]
-
-                # Sort the tuples first by the first index, then by the second index
-                sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
-                # print(i, j, k)
-                # print(hash(sorted_tuples))
-                if hash(sorted_tuples) not in three_node_graphlet_dict:
-                    three_node_graphlet_dict[hash(sorted_tuples)] = 0
-                    graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
-                three_node_graphlet_dict[hash(sorted_tuples)]+=1
-
-        # Add other graphlets by considering neighbors of neighbors
-        for j in i_neighbors:
-            j_neighbors = {k for _, k in G_prime.edges(j) if k != i and k not in completed_i}  # Avoid the center node `i`
-            for k in j_neighbors:
-                triplet = frozenset([i, j, k])
-                # if j not in completed_i and k not in completed_i:
-                if triplet not in three_node_combination:
-                    # print(i,j,k)
-                    three_node_combination.add(triplet)
-
-                    a, b, c = i, j, k
-
-                    ab = ac = ba = bc = ca = cb = 0
-                    if b in adj_list_vector[a]:
-                        ab = adj_list_vector[a][b]
-                    else:
-                        ab = [0, 0, 0]
-                    if c in adj_list_vector[a]:
-                        ac = adj_list_vector[a][c]
-                    else:
-                        ac = [0, 0, 0]
-                    if a in adj_list_vector[b]:
-                        ba = adj_list_vector[b][a]
-                    else:
-                        ba = [0, 0, 0]
-                    if c in adj_list_vector[b]:
-                        bc = adj_list_vector[b][c]
-                    else:
-                        bc = [0, 0, 0]
-                    if a in adj_list_vector[c]:
-                        ca = adj_list_vector[c][a]
-                    else:
-                        ca = [0, 0, 0]
-                    if b in adj_list_vector[c]:
-                        cb = adj_list_vector[c][b]
-                    else:
-                        cb = [0, 0, 0]
-
-                    a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
-                        ab, ac, ba, 
-                        bc, ca, cb
-                    )
-
-                    a_edges = tuple(sorted([a_b, a_c]))
-                    b_edges = tuple(sorted([b_a, b_c]))
-                    c_edges = tuple(sorted([c_a, c_b]))
-
-                    tuples_list = [a_edges, b_edges, c_edges]
-
-                    # Sort the tuples first by the first index, then by the second index
-                    sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
-                    # print(i, j, k)
-                    # print(hash(sorted_tuples))
-                    if hash(sorted_tuples) not in three_node_graphlet_dict:
-                        three_node_graphlet_dict[hash(sorted_tuples)] = 0
-                        graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
-                    three_node_graphlet_dict[hash(sorted_tuples)]+=1
-
-        completed_i.add(i)
-        count+=1
     run_time =  time.time() - start_time
     print("run time : %.3f seconds" % run_time)
     return three_node_graphlet_dict, graphlet_mapper
@@ -1009,9 +842,8 @@ def main(stdscr):
             print(f"{key} = {len(two_node_orbit_dict[key])}")
     elif graphlet_mode == 3:
         # three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
-        # three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list_v2(G, G_prime)
-        three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v3(G, G_prime)
         # three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v4(G, G_prime)
+        three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper = get_three_node_graphlet_dist_adj_list_v3(G, G_prime)        # three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v4(G, G_prime)
         print("\nthree node graphlet counts")
         count = 0 
         for key in three_node_graphlet_dict:
@@ -1020,9 +852,12 @@ def main(stdscr):
             count += three_node_graphlet_dict[key]
         print(f"Total graphlets found: {count}")
         print(f"\n unique graphlet counts : {len(three_node_graphlet_dict)}")
+        print(f"\n three node orbits")
+        for orbit in orbit_dict:
+            print(f"{orbit_mapper[orbit]} : {orbit_dict[orbit]}")
 
-    # draw_labeled_multigraph(G, "label")
-    # plt.show()
+    draw_labeled_multigraph(G, "label")
+    plt.show()
 
     # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     # plt.show()
