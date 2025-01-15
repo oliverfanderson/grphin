@@ -348,7 +348,7 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     ca = hash_tuple(ca)
     cb = hash_tuple(cb)
 
-    # Example of a simple dictionary
+    # Define the dictionary
     my_dict = {
         hash((0, 0, 0)): "0",
         hash((1, 0, 0)): "1",
@@ -441,18 +441,13 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                             cb = [0, 0, 0]
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
 
-                        # get unsorted edge values for A, B, C
-                        a_edges = [a_b, a_c]
-                        b_edges = [b_a, b_c]
-                        c_edges = [c_a, c_b]
-                        
                         # order A, B, C edge values internally
-                        a_sort = tuple(sorted(a_edges))
-                        b_sort = tuple(sorted(b_edges))
-                        c_sort = tuple(sorted(c_edges))
+                        a_edges = tuple(sorted([a_b, a_c]))
+                        b_edges = tuple(sorted([b_a, b_c]))
+                        c_edges = tuple(sorted([c_a, c_b]))
 
                         # Create a list of tuples in order [A, B, C]
-                        tuples_list = [a_sort, b_sort, c_sort]
+                        tuples_list = [a_edges, b_edges, c_edges]
 
                         # Sort the tuples first by the first index, then by the second index
                         sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
@@ -478,6 +473,37 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
     # # 3-node line basic only ppi example 1
     # we can check which graphlet we are looking at via the sorted tuple
     if sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
+        a_expected = ('0', '1')
+        b_expected = ('0', '1')
+        c_expected = ('1', '1')
+        #since we arbitrarily chose what i, j, and k is, 
+        # we need to check which of them match the a, b, c in the sorted tuple
+        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
+                                                 a_expected, b_expected, c_expected,
+                                                 i, j, k)
+
+        #store orbits with the key:
+        # graphlet_sorted_tuple + orbit_position
+        # i.e 
+        # (('0', '1'), ('0', '1'), ('1', '1') ('0','0')) this specific graphlet at its 0th orbit
+        # (('0', '1'), ('0', '1'), ('1', '1') ('1','1')) this specific graphlet at its 1th orbit
+        zero_orbit = ('G1', 0)
+        first_orbit = ('G1', 1)
+
+        a_orbit = sorted_tuples + zero_orbit
+        b_orbit = sorted_tuples + first_orbit
+        # c_orbit = graphlet_sorted_tuple + second_orbit
+
+        if hash(a_orbit) not in orbit_dict:
+            orbit_dict[hash(a_orbit)] = []
+            orbit_mapper[hash(a_orbit)] = "3-node line only ppi orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0]]
+        if hash(b_orbit) not in orbit_dict:
+            orbit_dict[hash(b_orbit)] = []
+            orbit_mapper[hash(b_orbit)] = "3-node line only ppi orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[1], orbit_change[2]]
+
+    elif sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
         a_expected = ('0', '1')
         b_expected = ('0', '1')
         c_expected = ('1', '1')
@@ -830,8 +856,8 @@ def main(stdscr):
         for orbit in orbit_dict:
             print(f"{orbit_mapper[orbit]} : {orbit_dict[orbit]}")
 
-    # draw_labeled_multigraph(G, "label")
-    # plt.show()
+    draw_labeled_multigraph(G, "label")
+    plt.show()
 
     # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     # plt.show()
