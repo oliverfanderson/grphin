@@ -530,8 +530,8 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
 
     elif sorted_tuples == ((0, 1), (0, 5), (1, 4)):
         a_expected = (0, 1)
-        b_expected = (0, 1)
-        c_expected = (0, 1)
+        b_expected = (0, 5)
+        c_expected = (1, 4)
         #since we arbitrarily chose what i, j, and k is, 
         # we need to check which of them match the a, b, c in the sorted tuple
         orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
