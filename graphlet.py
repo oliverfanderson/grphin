@@ -488,10 +488,10 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
             for idx, orbit in enumerate(graphlet["orbits"]):
                 if orbit == -1:  # Skip missing orbits
                     continue
-                graphlet_key = sorted_tuples + (f"G{graphlet_config.index(graphlet)+1}", orbit)
+                graphlet_key = (sorted_tuples, orbit)
                 if hash(graphlet_key) not in orbit_dict:
                     orbit_dict[hash(graphlet_key)] = []
-                    orbit_mapper[hash(graphlet_key)] = f"Graphlet {graphlet_config.index(graphlet)+1}, Orbit {orbit}"
+                    orbit_mapper[hash(graphlet_key)] = f"{graphlet_key}, Orbit {orbit}"
                 orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
 
     return orbit_dict
