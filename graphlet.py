@@ -9,6 +9,7 @@ import csv
 import curses
 from itertools import combinations
 import time
+import json
 
 
 def get_two_node_dict():
@@ -234,12 +235,8 @@ def get_two_node_adjacency_list(G):
         if label == "ppi":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[i][j][0] += 1
             if i not in adj_list_vector[j]:
                 adj_list_vector[j][i] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[j][i][0] += 1
         elif label == "reg":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [0, 1, 0]
@@ -350,14 +347,14 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
 
     # Define the dictionary
     my_dict = {
-        hash((0, 0, 0)): "0",
-        hash((1, 0, 0)): "1",
-        hash((0, 1, 0)): "2",
-        hash((0, 0, 1)): "3",
-        hash((1, 1, 0)): "4",
-        hash((1, 0, 1)): "5",
-        hash((0, 1, 1)): "6",
-        hash((1, 1, 1)): "7",
+        hash((0, 0, 0)): 0,
+        hash((1, 0, 0)): 1,
+        hash((0, 1, 0)): 2,
+        hash((0, 0, 1)): 3,
+        hash((1, 1, 0)): 4,
+        hash((1, 0, 1)): 5,
+        hash((0, 1, 1)): 6,
+        hash((1, 1, 1)): 7,
     }
 
     return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
@@ -376,12 +373,8 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
         if label == "ppi":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[i][j][0] += 1
             if i not in adj_list_vector[j]:
                 adj_list_vector[j][i] = [1, 0, 0]
-            # else:
-            #     adj_list_vector[j][i][0] += 1
         elif label == "reg":
             if j not in adj_list_vector[i]:
                 adj_list_vector[i][j] = [0, 1, 0]
@@ -457,7 +450,7 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                             three_node_graphlet_dict[hash(sorted_tuples)] = 0
                             graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
                         three_node_graphlet_dict[hash(sorted_tuples)]+=1
-                        print(f'Graphlet: {sorted_tuples}')
+                        # print(f'Graphlet: {sorted_tuples}')
                         orbit_dict = get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k)
 
         # Once we're done processing i, mark it as completed
@@ -472,10 +465,10 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
 
     # # 3-node line basic only ppi example 1
     # we can check which graphlet we are looking at via the sorted tuple
-    if sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
-        a_expected = ('0', '1')
-        b_expected = ('0', '1')
-        c_expected = ('1', '1')
+    if sorted_tuples == ((0, 1), (0, 1), (1, 1)):
+        a_expected = (0, 1)
+        b_expected = (0, 1)
+        c_expected = (1, 1)
         #since we arbitrarily chose what i, j, and k is, 
         # we need to check which of them match the a, b, c in the sorted tuple
         orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
@@ -496,17 +489,17 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
 
         if hash(a_orbit) not in orbit_dict:
             orbit_dict[hash(a_orbit)] = []
-            orbit_mapper[hash(a_orbit)] = "3-node line only ppi orbit 0"
-        orbit_dict[hash(a_orbit)] += [orbit_change[0]]
+            orbit_mapper[hash(a_orbit)] = "Graphlet 1, Orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0], orbit_change[1]]
         if hash(b_orbit) not in orbit_dict:
             orbit_dict[hash(b_orbit)] = []
-            orbit_mapper[hash(b_orbit)] = "3-node line only ppi orbit 1"
-        orbit_dict[hash(b_orbit)] += [orbit_change[1], orbit_change[2]]
+            orbit_mapper[hash(b_orbit)] = "Graphlet 1, Orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[2]]
 
-    elif sorted_tuples == (('0', '1'), ('0', '1'), ('1', '1')):
-        a_expected = ('0', '1')
-        b_expected = ('0', '1')
-        c_expected = ('1', '1')
+    elif sorted_tuples == ((0, 1), (0, 4), (1, 5)):
+        a_expected = (0, 1)
+        b_expected = (0, 4)
+        c_expected = (1, 5)
         #since we arbitrarily chose what i, j, and k is, 
         # we need to check which of them match the a, b, c in the sorted tuple
         orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
@@ -514,25 +507,86 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
                                                  i, j, k)
 
         #store orbits with the key:
-        # graphlet_sorted_tuple + orbit_position
-        # i.e 
-        # (('0', '1'), ('0', '1'), ('1', '1') ('0','0')) this specific graphlet at its 0th orbit
-        # (('0', '1'), ('0', '1'), ('1', '1') ('1','1')) this specific graphlet at its 1th orbit
-        zero_orbit = (0, 0)
-        first_orbit = (1, 1)
+        zero_orbit = ('G2', 0)
+        first_orbit = ('G2', 1)
+        second_orbit = ('G2', 2)
 
         a_orbit = sorted_tuples + zero_orbit
         b_orbit = sorted_tuples + first_orbit
-        # c_orbit = graphlet_sorted_tuple + second_orbit
+        c_orbit = sorted_tuples + second_orbit
 
         if hash(a_orbit) not in orbit_dict:
             orbit_dict[hash(a_orbit)] = []
-            orbit_mapper[hash(a_orbit)] = "3-node line only ppi orbit 0"
+            orbit_mapper[hash(a_orbit)] = "Graphlet 2, Orbit 0"
         orbit_dict[hash(a_orbit)] += [orbit_change[0]]
         if hash(b_orbit) not in orbit_dict:
             orbit_dict[hash(b_orbit)] = []
-            orbit_mapper[hash(b_orbit)] = "3-node line only ppi orbit 1"
-        orbit_dict[hash(b_orbit)] += [orbit_change[1], orbit_change[2]]
+            orbit_mapper[hash(b_orbit)] = "Graphlet 2, Orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[1]]
+        if hash(c_orbit) not in orbit_dict:
+            orbit_dict[hash(c_orbit)] = []
+            orbit_mapper[hash(c_orbit)] = "Graphlet 2, Orbit 2"
+        orbit_dict[hash(c_orbit)] += [orbit_change[2]]
+
+    elif sorted_tuples == ((0, 1), (0, 5), (1, 4)):
+        a_expected = (0, 1)
+        b_expected = (0, 1)
+        c_expected = (0, 1)
+        #since we arbitrarily chose what i, j, and k is, 
+        # we need to check which of them match the a, b, c in the sorted tuple
+        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
+                                                 a_expected, b_expected, c_expected,
+                                                 i, j, k)
+
+        #store orbits with the key:
+        zero_orbit = ('G3', 0)
+        first_orbit = ('G3', 1)
+        second_orbit = ('G3', 2)
+
+        a_orbit = sorted_tuples + zero_orbit
+        b_orbit = sorted_tuples + first_orbit
+        c_orbit = sorted_tuples + second_orbit
+
+        if hash(a_orbit) not in orbit_dict:
+            orbit_dict[hash(a_orbit)] = []
+            orbit_mapper[hash(a_orbit)] = "Graphlet 3, Orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0]]
+        if hash(b_orbit) not in orbit_dict:
+            orbit_dict[hash(b_orbit)] = []
+            orbit_mapper[hash(b_orbit)] = "Graphlet 3, Orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[1]]
+        if hash(c_orbit) not in orbit_dict:
+            orbit_dict[hash(c_orbit)] = []
+            orbit_mapper[hash(c_orbit)] = "Graphlet 3, Orbit 2"
+        orbit_dict[hash(c_orbit)] += [orbit_change[2]]
+
+    elif sorted_tuples == ((0, 4), (0, 4), (5, 5)):
+        a_expected = (0, 4)
+        b_expected = (0, 4)
+        c_expected = (5, 5)
+        #since we arbitrarily chose what i, j, and k is, 
+        # we need to check which of them match the a, b, c in the sorted tuple
+        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
+                                                 a_expected, b_expected, c_expected,
+                                                 i, j, k)
+
+        #store orbits with the key:
+        zero_orbit = ('G4', 0)
+        first_orbit = ('G4', 1)
+        # second_orbit = ('G3', 2)
+
+        a_orbit = sorted_tuples + zero_orbit
+        b_orbit = sorted_tuples + first_orbit
+        # c_orbit = sorted_tuples + second_orbit
+
+        if hash(a_orbit) not in orbit_dict:
+            orbit_dict[hash(a_orbit)] = []
+            orbit_mapper[hash(a_orbit)] = "Graphlet 4, Orbit 0"
+        orbit_dict[hash(a_orbit)] += [orbit_change[0], orbit_change[1]]
+        if hash(b_orbit) not in orbit_dict:
+            orbit_dict[hash(b_orbit)] = []
+            orbit_mapper[hash(b_orbit)] = "Graphlet 4, Orbit 1"
+        orbit_dict[hash(b_orbit)] += [orbit_change[2]]
 
     return orbit_dict
 
@@ -856,8 +910,8 @@ def main(stdscr):
         for orbit in orbit_dict:
             print(f"{orbit_mapper[orbit]} : {orbit_dict[orbit]}")
 
-    draw_labeled_multigraph(G, "label")
-    plt.show()
+    # draw_labeled_multigraph(G, "label")
+    # plt.show()
 
     # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
     # plt.show()
