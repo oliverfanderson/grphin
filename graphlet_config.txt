@@ -1,5 +1,0 @@
-key a_expected b_expected c_expected orbit1 orbit2 orbit3
-010111 01 01 11 0 0 1
-010415 01 04 15 0 1 2
-010514 01 05 14 0 1 2
-040455 04 04 55 0 0 1

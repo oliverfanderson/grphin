@@ -9,8 +9,8 @@ import csv
 import curses
 from itertools import combinations
 import time
-import json
-
+import csv
+import ast
 
 def get_two_node_dict():
     """
@@ -180,6 +180,20 @@ def read_csv(
 
     return G
 
+def load_graphlet_config(file_path):
+    """Load graphlet lookup table from a CSV file."""
+    graphlet_config = []
+    with open(file_path, mode='r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            graphlet_config.append({
+                "key": ast.literal_eval(row["key"]),
+                "a_expected": ast.literal_eval(row["a_expected"]),
+                "b_expected": ast.literal_eval(row["b_expected"]),
+                "c_expected": ast.literal_eval(row["c_expected"]),
+                "orbits": (int(row["orbit1"]), int(row["orbit2"]), int(row.get("orbit3", -1)))  # Handle missing orbit3
+            })
+    return graphlet_config
 
 def draw_labeled_multigraph(G, attr_name, ax=None):
     """
@@ -364,6 +378,7 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
     graphlet_mapper = {}
     orbit_dict = {}
     orbit_mapper = {}
+    graphlet_config = load_graphlet_config("graphlet_config.csv")
     start_time = time.time()
 
     # create all the binary edge vectors
@@ -451,7 +466,7 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                             graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
                         three_node_graphlet_dict[hash(sorted_tuples)]+=1
                         # print(f'Graphlet: {sorted_tuples}')
-                        orbit_dict = get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k)
+                        orbit_dict = get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k, graphlet_config)
 
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
@@ -461,7 +476,27 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
     print("run time : %.3f seconds" % run_time)
     return three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper
 
-def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k):
+def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k, graphlet_config):
+    """Assign orbit information based on the graphlet configuration."""
+    for graphlet in graphlet_config:
+        if sorted_tuples == graphlet["key"]:
+            orbit_change = get_orbit_position_change(
+                a_edges, b_edges, c_edges,
+                graphlet["a_expected"], graphlet["b_expected"], graphlet["c_expected"],
+                i, j, k
+            )
+            for idx, orbit in enumerate(graphlet["orbits"]):
+                if orbit == -1:  # Skip missing orbits
+                    continue
+                graphlet_key = sorted_tuples + (f"G{graphlet_config.index(graphlet)+1}", orbit)
+                if hash(graphlet_key) not in orbit_dict:
+                    orbit_dict[hash(graphlet_key)] = []
+                    orbit_mapper[hash(graphlet_key)] = f"Graphlet {graphlet_config.index(graphlet)+1}, Orbit {orbit}"
+                orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
+
+    return orbit_dict
+
+# def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k):
 
     # # 3-node line basic only ppi example 1
     # we can check which graphlet we are looking at via the sorted tuple
