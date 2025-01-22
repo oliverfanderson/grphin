@@ -2,7 +2,7 @@ import sys
 from matplotlib import pyplot as plt
 from pathlib import Path
 import networkx as nx
-import numpy
+import numpy as np
 import random
 import scipy as sp
 import csv
@@ -11,6 +11,9 @@ from itertools import combinations
 import time
 import csv
 import ast
+import re
+
+
 
 def get_two_node_dict():
     """
@@ -71,7 +74,9 @@ def generate_random_multi_graph(n, edge_probability=0.3, edge_label_probability=
                         G.add_edge(j, i, label="reg")
     return G
 
+
 import networkx as nx
+
 
 def simplify_graph_to_undirected(G):
     """
@@ -94,6 +99,7 @@ def simplify_graph_to_undirected(G):
         G_prime.add_edge(u, v)
 
     return G_prime
+
 
 def update_protein_id_dict(file_path, res_dict, start_index):
     """Helper function to update the protein ID dictionary from a file."""
@@ -180,20 +186,28 @@ def read_csv(
 
     return G
 
+
 def load_graphlet_config(file_path):
     """Load graphlet lookup table from a CSV file."""
     graphlet_config = []
-    with open(file_path, mode='r') as file:
+    with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            graphlet_config.append({
-                "key": ast.literal_eval(row["key"]),
-                "a_expected": ast.literal_eval(row["a_expected"]),
-                "b_expected": ast.literal_eval(row["b_expected"]),
-                "c_expected": ast.literal_eval(row["c_expected"]),
-                "orbits": (int(row["orbit1"]), int(row["orbit2"]), int(row.get("orbit3", -1)))  # Handle missing orbit3
-            })
+            graphlet_config.append(
+                {
+                    "key": ast.literal_eval(row["key"]),
+                    "a_expected": ast.literal_eval(row["a_expected"]),
+                    "b_expected": ast.literal_eval(row["b_expected"]),
+                    "c_expected": ast.literal_eval(row["c_expected"]),
+                    "orbits": (
+                        int(row["orbit1"]),
+                        int(row["orbit2"]),
+                        int(row.get("orbit3", -1)),
+                    ),  # Handle missing orbit3
+                }
+            )
     return graphlet_config
+
 
 def draw_labeled_multigraph(G, attr_name, ax=None):
     """
@@ -347,8 +361,10 @@ def get_adjacency_matrix(G):
 
     return G_adj_matrix
 
+
 def hash_tuple(xy):
     return hash(tuple(xy))
+
 
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     # Process into a hashed tuple
@@ -372,6 +388,7 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     }
 
     return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
+
 
 def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
@@ -413,7 +430,9 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
         print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
-                if (i < k) and (i != j) and (j != k):  # Ensure no duplicates by enforcing i < k and i != j
+                if (
+                    (i < k) and (i != j) and (j != k)
+                ):  # Ensure no duplicates by enforcing i < k and i != j
                     triplet = tuple(sorted([i, j, k]))
                     if triplet not in three_node_combination:
                         three_node_combination.add(triplet)
@@ -447,7 +466,9 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                             cb = adj_list_vector[c][b]
                         else:
                             cb = [0, 0, 0]
-                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
+                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
+                            ab, ac, ba, bc, ca, cb
+                        )
 
                         # order A, B, C edge values internally
                         a_edges = tuple(sorted([a_b, a_c]))
@@ -458,32 +479,63 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                         tuples_list = [a_edges, b_edges, c_edges]
 
                         # Sort the tuples first by the first index, then by the second index
-                        sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
+                        sorted_tuples = tuple(
+                            sorted(tuples_list, key=lambda x: (x[0], x[1]))
+                        )
 
                         # Add the graphlet if it has not been seen yet and update the count for the graphlet
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             three_node_graphlet_dict[hash(sorted_tuples)] = 0
                             graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
-                        three_node_graphlet_dict[hash(sorted_tuples)]+=1
+                        three_node_graphlet_dict[hash(sorted_tuples)] += 1
                         # print(f'Graphlet: {sorted_tuples}')
-                        orbit_dict = get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k, graphlet_config)
+                        orbit_dict = get_orbit_per_graphlet(
+                            orbit_dict,
+                            orbit_mapper,
+                            sorted_tuples,
+                            a_edges,
+                            b_edges,
+                            c_edges,
+                            i,
+                            j,
+                            k,
+                            graphlet_config,
+                        )
 
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
         # print(f"Completed node: {i}")
 
-    run_time =  time.time() - start_time
+    run_time = time.time() - start_time
     print("run time : %.3f seconds" % run_time)
-    return three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper
+    return three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper, run_time
 
-def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k, graphlet_config):
+
+def get_orbit_per_graphlet(
+    orbit_dict,
+    orbit_mapper,
+    sorted_tuples,
+    a_edges,
+    b_edges,
+    c_edges,
+    i,
+    j,
+    k,
+    graphlet_config,
+):
     """Assign orbit information based on the graphlet configuration."""
     for graphlet in graphlet_config:
         if sorted_tuples == graphlet["key"]:
             orbit_change = get_orbit_position_change(
-                a_edges, b_edges, c_edges,
-                graphlet["a_expected"], graphlet["b_expected"], graphlet["c_expected"],
-                i, j, k
+                a_edges,
+                b_edges,
+                c_edges,
+                graphlet["a_expected"],
+                graphlet["b_expected"],
+                graphlet["c_expected"],
+                i,
+                j,
+                k,
             )
             for idx, orbit in enumerate(graphlet["orbits"]):
                 if orbit == -1:  # Skip missing orbits
@@ -496,7 +548,7 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
 
     return orbit_dict
 
-# def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k):
+    # def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_edges, c_edges, i, j, k):
 
     # # 3-node line basic only ppi example 1
     # we can check which graphlet we are looking at via the sorted tuple
@@ -504,19 +556,19 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
         a_expected = (0, 1)
         b_expected = (0, 1)
         c_expected = (1, 1)
-        #since we arbitrarily chose what i, j, and k is, 
+        # since we arbitrarily chose what i, j, and k is,
         # we need to check which of them match the a, b, c in the sorted tuple
-        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
-                                                 a_expected, b_expected, c_expected,
-                                                 i, j, k)
+        orbit_change = get_orbit_position_change(
+            a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
+        )
 
-        #store orbits with the key:
+        # store orbits with the key:
         # graphlet_sorted_tuple + orbit_position
-        # i.e 
+        # i.e
         # (('0', '1'), ('0', '1'), ('1', '1') ('0','0')) this specific graphlet at its 0th orbit
         # (('0', '1'), ('0', '1'), ('1', '1') ('1','1')) this specific graphlet at its 1th orbit
-        zero_orbit = ('G1', 0)
-        first_orbit = ('G1', 1)
+        zero_orbit = ("G1", 0)
+        first_orbit = ("G1", 1)
 
         a_orbit = sorted_tuples + zero_orbit
         b_orbit = sorted_tuples + first_orbit
@@ -535,16 +587,16 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
         a_expected = (0, 1)
         b_expected = (0, 4)
         c_expected = (1, 5)
-        #since we arbitrarily chose what i, j, and k is, 
+        # since we arbitrarily chose what i, j, and k is,
         # we need to check which of them match the a, b, c in the sorted tuple
-        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
-                                                 a_expected, b_expected, c_expected,
-                                                 i, j, k)
+        orbit_change = get_orbit_position_change(
+            a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
+        )
 
-        #store orbits with the key:
-        zero_orbit = ('G2', 0)
-        first_orbit = ('G2', 1)
-        second_orbit = ('G2', 2)
+        # store orbits with the key:
+        zero_orbit = ("G2", 0)
+        first_orbit = ("G2", 1)
+        second_orbit = ("G2", 2)
 
         a_orbit = sorted_tuples + zero_orbit
         b_orbit = sorted_tuples + first_orbit
@@ -567,16 +619,16 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
         a_expected = (0, 1)
         b_expected = (0, 5)
         c_expected = (1, 4)
-        #since we arbitrarily chose what i, j, and k is, 
+        # since we arbitrarily chose what i, j, and k is,
         # we need to check which of them match the a, b, c in the sorted tuple
-        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
-                                                 a_expected, b_expected, c_expected,
-                                                 i, j, k)
+        orbit_change = get_orbit_position_change(
+            a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
+        )
 
-        #store orbits with the key:
-        zero_orbit = ('G3', 0)
-        first_orbit = ('G3', 1)
-        second_orbit = ('G3', 2)
+        # store orbits with the key:
+        zero_orbit = ("G3", 0)
+        first_orbit = ("G3", 1)
+        second_orbit = ("G3", 2)
 
         a_orbit = sorted_tuples + zero_orbit
         b_orbit = sorted_tuples + first_orbit
@@ -599,15 +651,15 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
         a_expected = (0, 4)
         b_expected = (0, 4)
         c_expected = (5, 5)
-        #since we arbitrarily chose what i, j, and k is, 
+        # since we arbitrarily chose what i, j, and k is,
         # we need to check which of them match the a, b, c in the sorted tuple
-        orbit_change = get_orbit_position_change(a_edges, b_edges, c_edges,
-                                                 a_expected, b_expected, c_expected,
-                                                 i, j, k)
+        orbit_change = get_orbit_position_change(
+            a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
+        )
 
-        #store orbits with the key:
-        zero_orbit = ('G4', 0)
-        first_orbit = ('G4', 1)
+        # store orbits with the key:
+        zero_orbit = ("G4", 0)
+        first_orbit = ("G4", 1)
         # second_orbit = ('G3', 2)
 
         a_orbit = sorted_tuples + zero_orbit
@@ -625,28 +677,32 @@ def get_orbit_per_graphlet(orbit_dict, orbit_mapper, sorted_tuples, a_edges, b_e
 
     return orbit_dict
 
-def get_orbit_position_change(a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k):
+
+def get_orbit_position_change(
+    a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
+):
     # a, b, c
     if a_edges == a_expected and b_edges == b_expected and c_edges == c_expected:
-        return [i,j,k]
+        return [i, j, k]
     # a, c, b
     if a_edges == a_expected and b_edges == c_expected and c_edges == b_expected:
-        return [i,k,j]
+        return [i, k, j]
     # b, a, c
     if a_edges == b_expected and b_edges == a_expected and c_edges == c_expected:
-        return [j,i,k]
+        return [j, i, k]
     # b, c, a
     if a_edges == b_expected and b_edges == c_expected and c_edges == a_expected:
-        return [j,k,i]
+        return [j, k, i]
     # c, a, b
     if a_edges == c_expected and b_edges == a_expected and c_edges == b_expected:
-        return [k,i,j]
+        return [k, i, j]
     # c, b, a
     if a_edges == c_expected and b_edges == b_expected and c_edges == a_expected:
-        return [k,j,i]
+        return [k, j, i]
     raise ValueError(
         f"Unexpected edges configuration: a_edges={a_edges}, b_edges={b_edges}, c_edges={c_edges}"
-    )    
+    )
+
 
 def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Graph):
     three_node_graphlet_dict = {}
@@ -689,7 +745,9 @@ def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Gra
         print(f"Node: {i}", end="\r")
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
-                if (i < k) and (i != j) and (j != k):  # Ensure no duplicates by enforcing i < k and i != j
+                if (
+                    (i < k) and (i != j) and (j != k)
+                ):  # Ensure no duplicates by enforcing i < k and i != j
                     triplet = tuple(sorted([i, j, k]))
                     if triplet not in three_node_combination:
                         three_node_combination.add(triplet)
@@ -724,13 +782,15 @@ def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Gra
                             cb = adj_list_vector[c][b]
                         else:
                             cb = [0, 0, 0]
-                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
+                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
+                            ab, ac, ba, bc, ca, cb
+                        )
 
                         # get unsorted edge values for A, B, C
                         a_unsort = [a_b, a_c]
                         b_unsort = [b_a, b_c]
                         c_unsort = [c_a, c_b]
-                        
+
                         # order A, B, C edge values internally
                         a_sort = tuple(sorted(a_unsort))
                         b_sort = tuple(sorted(b_unsort))
@@ -742,21 +802,24 @@ def get_three_node_graphlet_dist_adj_list_v4(G: nx.MultiDiGraph, G_prime: nx.Gra
                         unsorted_tuples = tuple(tuples_list)
 
                         # Sort the tuples first by the first index, then by the second index
-                        sorted_tuples = tuple(sorted(tuples_list, key=lambda x: (x[0], x[1])))
+                        sorted_tuples = tuple(
+                            sorted(tuples_list, key=lambda x: (x[0], x[1]))
+                        )
 
                         # Add the graphlet if it has not been seen yet and update the count for the graphlet
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             three_node_graphlet_dict[hash(sorted_tuples)] = 0
                             graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
-                        three_node_graphlet_dict[hash(sorted_tuples)]+=1
+                        three_node_graphlet_dict[hash(sorted_tuples)] += 1
 
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
         # print(f"Completed node: {i}")
 
-    run_time =  time.time() - start_time
+    run_time = time.time() - start_time
     print("run time : %.3f seconds" % run_time)
     return three_node_graphlet_dict, graphlet_mapper
+
 
 def dropdown_menu(stdscr, options):
     curses.start_color()
@@ -824,39 +887,48 @@ def get_user_inputs(selected_network, selected_graphlet):
     ppi_path = None
     reg_path = None
     graphlet_option = None
+    output_dir = None
 
     match selected_network:
         case "D. melanogaster":
             ppi_path = Path("data/fly_ppi.csv")
             reg_path = Path("data/fly_reg.csv")
+            output_dir = Path("output/fly")
         case "B. subtilis":
             ppi_path = Path("data/bsub_ppi.csv")
             reg_path = Path("data/bsub_reg.csv")
+            output_dir = Path("output/bsub")
         case "S. cerevisiae":
             ppi_path = Path("data/ceravisiae_ppi.csv")
             reg_path = Path("data/ceravisiae_reg.csv")
+            output_dir = Path("output/ceravisiae")
         case "D. rerio":
             ppi_path = Path("data/drerio_ppi.csv")
             reg_path = Path("data/drerio_reg.csv")
+            output_dir = Path("output/drerio")
         case "C. elegans":
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
+            output_dir = Path("output/elegans")
         case "Test network":
             ppi_path = Path("data/test_ppi.csv")
             reg_path = Path("data/test_reg.csv")
+            output_dir = Path("output/test")
         case "Toy network":
             ppi_path = Path("data/toy_ppi.csv")
             reg_path = Path("data/toy_reg.csv")
+            output_dir = Path("output/toy")
         case "Shuffled toy network":
             ppi_path = Path("data/toy2_ppi.csv")
             reg_path = Path("data/toy2_reg.csv")
+            output_dir = Path("output/toy2")
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
     elif selected_graphlet == "3-node":
         graphlet_option = 3
 
-    return ppi_path, reg_path, graphlet_option
+    return ppi_path, reg_path, graphlet_option, output_dir
 
 
 def main(stdscr):
@@ -890,7 +962,7 @@ def main(stdscr):
     finally:
         curses.endwin()
 
-    ppi_path, reg_path, graphlet_mode = get_user_inputs(
+    ppi_path, reg_path, graphlet_mode, output_dir = get_user_inputs(
         selected_network, selected_graphlet
     )
 
@@ -899,7 +971,7 @@ def main(stdscr):
 
     for protein in protein_id_dict:
         print(f"Protein ID dictionary: {protein} {protein_id_dict[protein]}")
-    
+
     G = read_csv(
         ppi_path,
         reg_path,
@@ -930,20 +1002,92 @@ def main(stdscr):
         for key in two_node_orbit_dict:
             print(f"{key} = {len(two_node_orbit_dict[key])}")
     elif graphlet_mode == 3:
+        graphlet_config = load_graphlet_config("graphlet_config.csv")
         # three_node_graphlet_dict = get_three_node_graphlet_dist_adj_list(G)
         # three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v4(G, G_prime)
-        three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper = get_three_node_graphlet_dist_adj_list_v3(G, G_prime)        # three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v4(G, G_prime)
-        print("\nthree node graphlet counts")
-        count = 0 
-        for key in three_node_graphlet_dict:
-            # print(f"{key} = {three_node_graphlet_dict[key]}")
-            print(f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}")
-            count += three_node_graphlet_dict[key]
-        print(f"Total graphlets found: {count}")
-        print(f"\n unique graphlet counts : {len(three_node_graphlet_dict)}")
-        print(f"\n three node orbits")
-        for orbit in orbit_dict:
-            print(f"{orbit_mapper[orbit]} : {orbit_dict[orbit]}")
+        three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper, run_time = (
+            get_three_node_graphlet_dist_adj_list_v3(G, G_prime)
+        )  # three_node_graphlet_dict, graphlet_mapper = get_three_node_graphlet_dist_adj_list_v4(G, G_prime)
+
+        count = 0
+        indexed_orbit_dict = {}
+        for graphlet in graphlet_config:
+            # print(graphlet["orbits"])
+            for i in set(graphlet["orbits"]):
+                indexed_orbit_dict[hash((graphlet["key"], i))] = count
+                count+=1
+                # print((graphlet["key"], i), hash((graphlet["key"], i)),  indexed_orbit_dict[hash((graphlet["key"], i))])
+                # if hash((graphlet["key"], i)) not in orbit_dict:
+                #     print(indexed_orbit_dict[hash((graphlet["key"], i))], ":", graphlet["key"], "none")
+                # else:
+                #     print(indexed_orbit_dict[hash((graphlet["key"], i))], ":", graphlet["key"], orbit_dict[hash((graphlet["key"], i))])
+
+        print()
+        # count = 0
+        # for orbit in orbit_dict:
+        #     match = re.match(r"(\(\(\(.*?\)\), \d+\)), Orbit \d+", orbit_mapper[orbit])
+        #     if match:
+        #         result = match.group(1)
+        #         # print(result)
+        #         for node in orbit_dict[orbit]:
+        #             orbit_index = indexed_orbit_dict[hash(result)]
+        #             node_orbit_arr[node][int(orbit_index)] = 1
+        #     count += len(orbit_dict[orbit])
+
+        node_orbit_arr = np.zeros((len(G.nodes), len(indexed_orbit_dict)), dtype=int)
+        with open(f"{output_dir}/stats.csv", "w") as f:
+            f.write(f"{selected_network}\n")
+            f.write(f"Number of nodes: {len(G.nodes())}\n")
+            f.write(f"Number of edges: {len(G.edges())}\n")
+            f.write(f"Simplified Graph:\n")
+            f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
+            f.write(f"Number of edges: {len(G_prime.edges())}\n")
+            f.write(f"run time : %.3f seconds\n" % run_time)
+            f.write("three node graphlet counts\n")
+            count = 0
+            for key in three_node_graphlet_dict:
+                # print(f"{key} = {three_node_graphlet_dict[key]}")
+                f.write(f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}\n")
+                count += three_node_graphlet_dict[key]
+            f.write(f"Total graphlets found: {count}\n")
+            f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
+            f.write(f"three node orbit counts\n")   
+            for orbit in orbit_dict:
+                f.write(f"{orbit_mapper[orbit]} : {len(orbit_dict[orbit])}\n")
+            count = 0
+            for orbit in orbit_dict:
+                match = re.match(r"(\(\(\(.*?\)\), \d+\)), Orbit \d+", orbit_mapper[orbit])
+                if match:
+                    result = match.group(1)
+                    try:
+                        result_tuple = ast.literal_eval(result)
+                    except (SyntaxError, ValueError) as e:
+                        print(f"Error converting result to tuple: {e}")
+                        result_tuple = None
+                    if result_tuple is not None:
+                        for node in orbit_dict[orbit]:
+                            # print(result, hash(result))
+                            if hash(result_tuple) in indexed_orbit_dict:
+                                orbit_index = indexed_orbit_dict[hash(result_tuple)]
+                                node_orbit_arr[node][int(orbit_index)] +=1
+                count += len(orbit_dict[orbit])
+            f.write(f"Total orbits found: {count}\n")
+            f.write(f"unique orbits counts : {len(orbit_dict)}\n")
+        f.close()
+        
+        np.savetxt(
+            f"{output_dir}/node_orbit.csv", 
+            node_orbit_arr[1:],  # Skip the first row
+            delimiter=",", 
+            fmt="%d"
+        )
+
+        with open(f"{output_dir}/protein_id_mapper.csv", "w") as f:
+            for protein in protein_id_dict:
+                f.write(f"{protein}, {protein_id_dict[protein]}\n")
+        f.close()
+        
+        print()
 
     # draw_labeled_multigraph(G, "label")
     # plt.show()
