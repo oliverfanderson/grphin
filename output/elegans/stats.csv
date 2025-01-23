@@ -4,7 +4,7 @@ Number of edges: 106053
 Simplified Graph:
 Number of nodes: 4098
 Number of edges: 91351
-run time : 412.947 seconds
+run time : 417.316 seconds
 three node graphlet counts
 ((0, 1), (0, 1), (1, 1)) = 1735169
 ((1, 1), (1, 1), (1, 1)) = 15814
