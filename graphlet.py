@@ -12,6 +12,8 @@ import time
 import csv
 import ast
 import re
+from scipy.stats import norm
+import seaborn as sns
 
 
 def get_two_node_dict():
@@ -542,8 +544,6 @@ def get_orbit_position_change(
 
 
 def plot_graphlet_distribution(graphlet_dict, graphlet_mapper, indexed_graphlet_dict, selected_network, output_dir):
-    graphlet_size = 100 # need to change this to take in the set amount of graphlets in the config file
-
     hist_data = []
     x_label = [*range(0, len(indexed_graphlet_dict), 1)]
     for graphlet in indexed_graphlet_dict:
@@ -556,26 +556,23 @@ def plot_graphlet_distribution(graphlet_dict, graphlet_mapper, indexed_graphlet_
             hist_data.append(graphlet_dict[graphlet])
         else:
             hist_data.append(0)
+    hist_data = [value if value > 0 else 1e-6 for value in hist_data]
+
     print(hist_data)
     print(x_label)
 
 
-    fig = plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(14, 6))
     plt.bar(x_label, hist_data, color='skyblue', edgecolor='black')
-
-    # Add titles and labels
+    plt.yscale('log')
     plt.title(f"{selected_network} Graphlet Count Distribution", fontsize=16)
     plt.xlabel("Graphlet Index", fontsize=14)
-    plt.ylabel("Count", fontsize=14)
-    plt.xticks(x_label, rotation=45, fontsize=12)
-    plt.yscale('log')
+    plt.ylabel("Count (log scale)", fontsize=14)
+    plt.xticks(x_label[::2], fontsize=8)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-    # Show the plot
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/graphlet_dist.pdf") 
+    plt.savefig(f"{output_dir}/graphlet_dist.pdf")
     plt.show()
-    
 
     return None
 
@@ -584,6 +581,7 @@ def get_stress_proteins(protein_id_dict, stress_path, delimiter):
     stress_proteins = []
 
     with open(stress_path, 'r') as file:
+        next(file)
         reader = csv.reader(file, delimiter=delimiter)
         for line in reader:
             if line[0] in protein_id_dict:
@@ -593,25 +591,15 @@ def get_stress_proteins(protein_id_dict, stress_path, delimiter):
 def plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict, stress_proteins_list, protein_id_dict, selected_network, output_dir):
     # print("Stress proteins : ", stress_proteins_list)
     stress_protein_orbit_dict = {}
-    count_stress_protein_orbit = [0] * len(orbit_dict)
+    for orbit in orbit_dict:
+        stress_protein_orbit_dict[orbit] = 0
+        for protein_id in stress_proteins_list:
+            stress_protein_orbit_dict[orbit] += orbit_dict[orbit].count(protein_id)
 
-    # print("each stress protein counts: ")
-    for protein_id in stress_proteins_list:
-        stress_protein_orbit_dict[protein_id] = [0] * len(orbit_dict)
-        orbit_index = 0
-        for orbit in orbit_dict:
-            if protein_id in orbit_dict[orbit]:
-                stress_protein_orbit_dict[protein_id][orbit_index] = orbit_dict[orbit].count(protein_id)
-                count_stress_protein_orbit[orbit_index] += orbit_dict[orbit].count(protein_id)
-            orbit_index+=1
-        # print(protein_id, stress_protein_orbit_dict[protein_id])
-    # print()
-    # print(count_stress_protein_orbit)
-    median_count_list = [x / len(stress_proteins_list) for x in count_stress_protein_orbit]
-    # print(median_count_list)
-    # print()
+    for orbit in stress_protein_orbit_dict:
+        stress_protein_orbit_dict[orbit] = stress_protein_orbit_dict[orbit] / len(stress_proteins_list)
 
-    sample = 500
+    sample = 3
     sample_size = 3
     alpha = 0.01
 
@@ -621,69 +609,45 @@ def plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict,
         if protein_id_dict[protein] not in stress_proteins_list:
             non_stress_proteins.append(protein_id_dict[protein])
 
-    # print(non_stress_proteins)
-    non_stress_protein_orbit_dict = {}
-    random_median_count_orbits = {}
+    sample_results = {}
     for i in range(0, sample):
-        # print("sample : ", i)
+        print("sample : ", i)
+        # randomly select n_number of non-stress proteins
         non_stress_sample = random.sample(non_stress_proteins, sample_size)
-        # print(non_stress_sample)
-        non_stress_protein_orbit_dict[i] = {}
-        count_non_stress_protein_orbit = [0] * len(orbit_dict)
-        for protein_id in non_stress_sample:
-            non_stress_protein_orbit_dict[i][protein_id] = [0] * len(orbit_dict)
-            orbit_index = 0
-            for orbit in orbit_dict:
-                if protein_id in orbit_dict[orbit]:
-                    non_stress_protein_orbit_dict[i][protein_id][orbit_index] = orbit_dict[orbit].count(protein_id)
-                    count_non_stress_protein_orbit[orbit_index] += orbit_dict[orbit].count(protein_id)
-                orbit_index+=1
-            # print(protein_id, non_stress_protein_orbit_dict[i][protein_id])
-            sample_median_count_list = [x / len(non_stress_sample) for x in count_non_stress_protein_orbit]
-        orbit_index = 0
-        for orbit in sample_median_count_list:
-            if orbit_index not in random_median_count_orbits:
-                random_median_count_orbits[orbit_index] = []
-            random_median_count_orbits[orbit_index] += [sample_median_count_list[orbit_index]]
-            orbit_index+=1
-    # print()
-
-    orbit_alpha_cutoff = []
-    orbit_index = 0
-    for key in random_median_count_orbits:
-        cutoff = np.percentile(random_median_count_orbits[key], 100 * (1 - alpha))
-        print(f"Cutoff for alpha={alpha} at orbit {key}: {cutoff}")
-        orbit_alpha_cutoff.append(cutoff)
-        orbit_index+=1
+        sample_non_stress_orbit_dict = {}
+        for orbit in orbit_dict:
+            sample_non_stress_orbit_dict[orbit] = 0
+            for protein_id in non_stress_sample:
+                sample_non_stress_orbit_dict[orbit] += orbit_dict[orbit].count(protein_id)
     
-    orbit_significance_dist = [0] * len(orbit_dict)
-    orbit_index = 0
-    for count in median_count_list:
-        if count >= orbit_alpha_cutoff[orbit_index]:
-            orbit_significance_dist[orbit_index] +=1
-        orbit_index+=1
-    print("orbit significance dist")
-    print(orbit_significance_dist)
+        for orbit in orbit_dict:
+            if orbit not in  sample_results:
+                sample_results[orbit] = []
+            sample_results[orbit] += [sample_non_stress_orbit_dict[orbit] / len(non_stress_sample)]
 
-    x_label = [*range(0, len(orbit_dict), 1)]
+    significance = {}
 
-    fig = plt.figure(figsize=(10, 6))
-    plt.bar(x_label, orbit_significance_dist, color='skyblue', edgecolor='black')
+    # Calculate significance for each orbit
+    for orbit in orbit_dict:
+        observed_median_count = stress_protein_orbit_dict[orbit]
+        random_median_count_dist = sample_results[orbit]
+        mean_random = np.mean(random_median_count_dist)
+        std_random = np.std(random_median_count_dist)
 
-    # Add titles and labels
-    plt.title(f"{selected_network} Stress Protein Significance Distribution", fontsize=16)
-    plt.xlabel("Graphlet Index", fontsize=14)
-    plt.ylabel("Count", fontsize=14)
-    plt.xticks(x_label, rotation=45, fontsize=12)
-    plt.yscale('log')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+        if std_random == 0:
+            z_score = np.nan
+            p_value = 1.0 
+        else:
+            z_score = (observed_median_count - mean_random) / std_random
+            p_value = 2 * (1 - norm.cdf(abs(z_score)))  # Two-tailed p-value
 
-    # Show the plot
-    plt.tight_layout()
-    plt.savefig(f"{output_dir}/stress_orbit_dist.pdf") 
-    plt.show()
+        significance[orbit] = {
+            'z_score': z_score,
+            'p_value': p_value
+        }
 
-
+    for orbit in orbit_dict:
+        print(indexed_orbit_dict[orbit], significance[orbit])
     return None
 
 
@@ -949,7 +913,7 @@ def main(stdscr):
         #     three_node_graphlet_dict, graphlet_mapper, indexed_graphlet_dict, selected_network, output_dir
         # )
 
-        stress_path = Path("data/stress_proteins/elegans_mapping_wb.tsv")
+        stress_path = Path("data/oxidative_stress/txid224308/txid224308-stress-proteins.csv")
         stress_proteins_list = get_stress_proteins(protein_id_dict, stress_path, '\t')
         print(stress_proteins_list)
 
