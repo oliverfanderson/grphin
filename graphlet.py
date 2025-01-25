@@ -899,9 +899,9 @@ def get_user_inputs(selected_network, selected_graphlet):
             reg_path = Path("data/bsub_reg.csv")
             output_dir = Path("output/bsub")
         case "S. cerevisiae":
-            ppi_path = Path("data/ceravisiae_ppi.csv")
-            reg_path = Path("data/ceravisiae_reg.csv")
-            output_dir = Path("output/ceravisiae")
+            ppi_path = Path("data/cerevisiae_ppi.csv")
+            reg_path = Path("data/cerevisiae_reg.csv")
+            output_dir = Path("output/cerevisiae")
         case "D. rerio":
             ppi_path = Path("data/drerio_ppi.csv")
             reg_path = Path("data/drerio_reg.csv")
