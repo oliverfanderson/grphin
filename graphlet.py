@@ -745,50 +745,50 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
         case "D. melanogaster":
             ppi_path = Path("data/fly_ppi.csv")
             reg_path = Path("data/fly_reg.csv")
-            output_dir = Path("output/fly")
+            output_dir = Path("final_output/fly")
             stress_data_path = Path(
                 "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
             )
         case "B. subtilis":
             ppi_path = Path("data/bsub_ppi.csv")
             reg_path = Path("data/bsub_reg.csv")
-            output_dir = Path("output/bsub")
+            output_dir = Path("final_output/bsub")
             stress_data_path = Path(
                 "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
             )
         case "S. cerevisiae":
             ppi_path = Path("data/ceravisiae_ppi.csv")
             reg_path = Path("data/ceravisiae_reg.csv")
-            output_dir = Path("output/ceravisiae")
+            output_dir = Path("final_output/ceravisiae")
             stress_data_path = Path(
                 "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
             )
         case "D. rerio":
             ppi_path = Path("data/drerio_ppi.csv")
             reg_path = Path("data/drerio_reg.csv")
-            output_dir = Path("output/drerio")
+            output_dir = Path("final_output/drerio")
             stress_data_path = Path(
                 "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
             )
         case "C. elegans":
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
-            output_dir = Path("output/elegans")
+            output_dir = Path("final_output/elegans")
             stress_data_path = Path(
                 "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
             )
         case "Test network":
             ppi_path = Path("data/test_ppi.csv")
             reg_path = Path("data/test_reg.csv")
-            output_dir = Path("output/test")
+            output_dir = Path("final_output/test")
         case "Toy network":
             ppi_path = Path("data/toy_ppi.csv")
             reg_path = Path("data/toy_reg.csv")
-            output_dir = Path("output/toy")
+            output_dir = Path("final_output/toy")
         case "Shuffled toy network":
             ppi_path = Path("data/toy2_ppi.csv")
             reg_path = Path("data/toy2_reg.csv")
-            output_dir = Path("output/toy2")
+            output_dir = Path("final_output/toy2")
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
@@ -829,7 +829,7 @@ def main(stdscr):
         selected_graphlet = dropdown_menu(stdscr, graphlet)
         stdscr.clear()
 
-        processing = ["all process", "post-processing only"]
+        processing = ["post-processing only"]
         selected_processing = dropdown_menu(stdscr, processing)
         stdscr.clear()
 
