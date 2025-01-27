@@ -955,8 +955,6 @@ def main(stdscr):
                     indexed_orbit_dict[hash((graphlet["key"], i))] = orbit_count
                     orbit_count += 1
                 graphlet_count += 1
-            print()
-
             node_orbit_arr = np.zeros(
                 (len(G.nodes), len(indexed_orbit_dict)), dtype=int
             )
