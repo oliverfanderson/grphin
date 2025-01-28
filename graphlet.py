@@ -719,6 +719,253 @@ def plot_stress_orbit_distribution(
     return significance
 
 
+def species_wide_two_node_plots():
+    species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
+    graphlet_ids = ["G_1", "G_2", "G_3", "G_4", "G_5"]
+    species_graphlet_data = {}
+
+    # Process data for each species
+    for species in species_list:
+        print(f"Processing species: {species}")
+        species_graphlet_data[species] = {}
+        with open(f"final_output/{species}/two_node_graphlet_counts.csv", "r") as file:
+            csv_reader = csv.reader(file, delimiter=",")
+            for row in csv_reader:
+                print(row[0], row[1].strip())
+                species_graphlet_data[species][row[0]] = int(row[1].strip())
+
+    # Create empty lists for the counts of each graphlet
+    graphlet1_count = []
+    graphlet2_count = []
+    graphlet3_count = []
+    graphlet4_count = []
+    graphlet5_count = []
+
+    # Extract counts for each species
+    for species_name in species_list:
+        species_counts = species_graphlet_data[species_name]
+        graphlet1_count.append(species_counts["G_1"])
+        graphlet2_count.append(species_counts["G_2"])
+        graphlet3_count.append(species_counts["G_3"])
+        graphlet4_count.append(species_counts["G_4"])
+        graphlet5_count.append(species_counts["G_5"])
+
+    # Convert lists to numpy arrays for easy manipulation
+    graphlet1_count = np.array(graphlet1_count)
+    graphlet2_count = np.array(graphlet2_count)
+    graphlet3_count = np.array(graphlet3_count)
+    graphlet4_count = np.array(graphlet4_count)
+    graphlet5_count = np.array(graphlet5_count)
+
+    # Generate index for the species (5 species, so index is [0, 1, 2, 3, 4])
+    index = np.arange(len(species_list))
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bar_width = 0.5
+    # Plot the stacked bars for each graphlet
+    bar1 = ax.bar(index, graphlet1_count, bar_width, label="G_1", color="blue")
+    bar2 = ax.bar(
+        index,
+        graphlet2_count,
+        bar_width,
+        bottom=graphlet1_count,
+        label="G_2",
+        color="green",
+    )
+    bar3 = ax.bar(
+        index,
+        graphlet3_count,
+        bar_width,
+        bottom=graphlet1_count + graphlet2_count,
+        label="G_3",
+        color="red",
+    )
+    bar4 = ax.bar(
+        index,
+        graphlet4_count,
+        bar_width,
+        bottom=graphlet1_count + graphlet2_count + graphlet3_count,
+        label="G_4",
+        color="yellow",
+    )
+    bar5 = ax.bar(
+        index,
+        graphlet5_count,
+        bar_width,
+        bottom=graphlet1_count + graphlet2_count + graphlet3_count + graphlet4_count,
+        label="G_5",
+        color="pink",
+    )
+
+    # Adding labels and title
+    ax.set_xlabel("Species")
+    ax.set_ylabel("Counts of graphlet ids (log)")
+    ax.set_yscale("log")
+    ax.set_title("Stacked Bar Chart of grpahlet Counts per Species")
+    ax.set_xticks(index)
+    ax.set_xticklabels(species_list)  # Use species_list for x-tick labels
+    ax.legend()
+
+    # Display the plot
+    plt.tight_layout()
+    plt.savefig(f"final_output/species_two_node_graphlet_dist.pdf")
+    plt.show()
+    plt.close()
+
+    orbit_ids = ["1", "2", "3", "4", "5", "6", "7"]
+    species_orbit_data = {}
+
+    # Process data for each species
+    for species in species_list:
+        print(f"Processing species: {species}")
+        species_orbit_data[species] = {}
+        with open(f"final_output/{species}/two_node_orbit_counts.csv", "r") as file:
+            csv_reader = csv.reader(file, delimiter=",")
+            for row in csv_reader:
+                print(row[0], row[1].strip())
+                species_graphlet_data[species][row[0]] = int(row[1].strip())
+
+    # Create empty lists for the counts of each graphlet
+    orbit1_count = []
+    orbit2_count = []
+    orbit3_count = []
+    orbit4_count = []
+    orbit5_count = []
+    orbit6_count = []
+    orbit7_count = []
+
+    # Extract counts for each species
+    for species_name in species_list:
+        species_counts = species_graphlet_data[species_name]
+        orbit1_count.append(species_counts["1"])
+        orbit2_count.append(species_counts["2"])
+        orbit3_count.append(species_counts["3"])
+        orbit4_count.append(species_counts["4"])
+        orbit5_count.append(species_counts["5"])
+        orbit6_count.append(species_counts["6"])
+        orbit7_count.append(species_counts["7"])
+
+    # Convert lists to numpy arrays for easy manipulation
+    orbit1_count = np.array(orbit1_count)
+    orbit2_count = np.array(orbit2_count)
+    orbit3_count = np.array(orbit3_count)
+    orbit4_count = np.array(orbit4_count)
+    orbit5_count = np.array(orbit5_count)
+    orbit6_count = np.array(orbit6_count)
+    orbit7_count = np.array(orbit7_count)
+
+    # Generate index for the species (5 species, so index is [0, 1, 2, 3, 4])
+    index = np.arange(len(species_list))
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bar_width = 0.5
+    # Plot the stacked bars for each graphlet
+    bar1 = ax.bar(index, orbit1_count, bar_width, label="1", color="blue")
+    bar2 = ax.bar(
+        index, orbit2_count, bar_width, bottom=orbit1_count, label="2", color="green"
+    )
+    bar3 = ax.bar(
+        index,
+        orbit3_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count,
+        label="3",
+        color="red",
+    )
+    bar4 = ax.bar(
+        index,
+        orbit4_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count,
+        label="4",
+        color="yellow",
+    )
+    bar5 = ax.bar(
+        index,
+        orbit5_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count,
+        label="5",
+        color="pink",
+    )
+    bar6 = ax.bar(
+        index,
+        orbit6_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count + orbit5_count,
+        label="6",
+        color="orange",
+    )
+    bar7 = ax.bar(
+        index,
+        orbit7_count,
+        bar_width,
+        bottom=orbit1_count
+        + orbit2_count
+        + orbit3_count
+        + orbit4_count
+        + orbit5_count
+        + orbit6_count,
+        label="7",
+        color="purple",
+    )
+
+    # Adding labels and title
+    ax.set_xlabel("Species")
+    ax.set_ylabel("Counts of orbit ids (log)")
+    ax.set_yscale("log")
+    ax.set_title("Stacked Bar Chart of Orbit Counts per Species")
+    ax.set_xticks(index)
+    ax.set_xticklabels(species_list)  # Use species_list for x-tick labels
+    ax.legend()
+
+    # Display the plot
+    plt.tight_layout()
+    plt.savefig(f"final_output/species_two_node_orbit_dist.pdf")
+    plt.show()
+    plt.close()
+    return None
+
+
+def species_wide_3_node_plots():
+    species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
+    graphlet_counts = defaultdict(int)
+    species_graphlet_counts = {}
+    for species in species_list:
+        print(f"Processing species: {species}")
+        with open(f"final_output/{species}/top_graphlet_counts.csv", "r") as file:
+            csv_reader = csv.reader(file, delimiter="\t")
+            next(csv_reader)
+            for row in csv_reader:
+                graphlet_id = row[1]
+                count = int(row[2])
+                graphlet_counts[graphlet_id] += count
+                if species not in species_graphlet_counts:
+                    species_graphlet_counts[species] = {}
+                if graphlet_id not in species_graphlet_counts[species]:
+                    species_graphlet_counts[species][graphlet_id] = count
+
+    top_graphlets = sorted(graphlet_counts.items(), key=lambda x: x[1], reverse=True)[
+        :5
+    ]
+
+    print("Top 5 graphlets with the highest counts across all species:")
+    for graphlet_id, count in top_graphlets:
+        print(f"Graphlet ID: {graphlet_id}, Total Count: {count}")
+        for species in species_list:
+            print(f"{species} Count: {species_graphlet_counts[species][graphlet_id]}")
+
+    with open(f"final_output/species_top_graphlet_counts.csv", "w") as f:
+        f.write(f"graphlet_id\ttotal_count\tbsub\tceravisiae\tdrerio\telegans\tfly\n")
+        for graphlet in top_graphlets:
+            f.write(
+                f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["ceravisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n"
+            )
+    return None
+
+
 def dropdown_menu(stdscr, options):
     curses.start_color()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -797,6 +1044,7 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
             stress_data_path = Path(
                 "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
             )
+            process_type = get_process_type(selected_processing)
         case "B. subtilis":
             ppi_path = Path("data/bsub_ppi.csv")
             reg_path = Path("data/bsub_reg.csv")
@@ -804,6 +1052,7 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
             stress_data_path = Path(
                 "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
             )
+            process_type = get_process_type(selected_processing)
         case "S. cerevisiae":
             ppi_path = Path("data/ceravisiae_ppi.csv")
             reg_path = Path("data/ceravisiae_reg.csv")
@@ -811,6 +1060,7 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
             stress_data_path = Path(
                 "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
             )
+            process_type = get_process_type(selected_processing)
         case "D. rerio":
             ppi_path = Path("data/drerio_ppi.csv")
             reg_path = Path("data/drerio_reg.csv")
@@ -818,6 +1068,7 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
             stress_data_path = Path(
                 "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
             )
+            process_type = get_process_type(selected_processing)
         case "C. elegans":
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
@@ -825,29 +1076,33 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
             stress_data_path = Path(
                 "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
             )
+            process_type = get_process_type(selected_processing)
         case "Test network":
             ppi_path = Path("data/test_ppi.csv")
             reg_path = Path("data/test_reg.csv")
             output_dir = Path("final_output/test")
+            process_type = get_process_type(selected_processing)
         case "Toy network":
             ppi_path = Path("data/toy_ppi.csv")
             reg_path = Path("data/toy_reg.csv")
             output_dir = Path("final_output/toy")
+            process_type = get_process_type(selected_processing)
         case "Shuffled toy network":
             ppi_path = Path("data/toy2_ppi.csv")
             reg_path = Path("data/toy2_reg.csv")
             output_dir = Path("final_output/toy2")
+            process_type = get_process_type(selected_processing)
+        case "2-node species wide":
+            output_dir = Path("final_output")
+            process_type = 2
+        case "3-node species wide":
+            output_dir = Path("final_output")
+            process_type = 3
 
     if selected_graphlet == "2-node":
         graphlet_option = 2
     elif selected_graphlet == "3-node":
         graphlet_option = 3
-    if selected_processing == "all process":
-        process_type = 0
-    elif selected_processing == "post-processing only":
-        process_type = 1
-    elif selected_processing == "species wide":
-        process_type = 2
 
     return (
         ppi_path,
@@ -858,6 +1113,11 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
         process_type,
     )
 
+def get_process_type(selected_processing):
+    if selected_processing == "all process":
+        return 0
+    elif selected_processing == "post-processing only":
+        return 1
 
 def main(stdscr):
     try:
@@ -867,6 +1127,8 @@ def main(stdscr):
             "S. cerevisiae",
             "D. rerio",
             "C. elegans",
+            "2-node species wide",
+            "3-node species wide",
             "Test network",
             "Toy network",
             "Shuffled toy network",
@@ -879,7 +1141,7 @@ def main(stdscr):
         selected_graphlet = dropdown_menu(stdscr, graphlet)
         stdscr.clear()
 
-        processing = ["all process", "post-processing only", "species wide"]
+        processing = ["all process", "post-processing only"]
         selected_processing = dropdown_menu(stdscr, processing)
         stdscr.clear()
 
@@ -893,231 +1155,87 @@ def main(stdscr):
         stdscr.getch()
     finally:
         curses.endwin()
-
     ppi_path, reg_path, graphlet_mode, output_dir, stress_data_path, process_type = (
         get_user_inputs(selected_network, selected_graphlet, selected_processing)
     )
 
-    two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
-    protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
-
-    G = read_csv(
-        ppi_path,
-        reg_path,
-        protein_id_dict,
-        node_size_limit=node_limit,
-        edge_size_limit=edge_limit,
-    )
-    print(selected_network)
-    print(f"Number of nodes: {len(G.nodes())}")
-    print(f"Number of edges: {len(G.edges())}")
-
-    # Simplify the graph G to G_prime
-    G_prime = simplify_graph_to_undirected(G)
-
-    # Print the simplified graph's details
-    print(f"\nSimplified Graph:")
-    print(f"Number of nodes: {len(G_prime.nodes())}")
-    print(f"Number of edges: {len(G_prime.edges())}")
-
     if graphlet_mode == 2:
-        two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
-            G, two_node_graphlet_dict
-        )
-        print("\ntwo node graphlet counts")
-        for key in two_node_graphlet_labels:
-            print(f"G_{two_node_graphlet_labels[key]} = {two_node_graphlet_dict[key]}")
-        print("\ntwo node graphlet orbit counts")
-        for key in two_node_orbit_dict:
-            print(f"{key} = {len(two_node_orbit_dict[key])}")
-
-        with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
-            for key in two_node_graphlet_labels:
-                f.write(f"G_{two_node_graphlet_labels[key]}, {two_node_graphlet_dict[key]}\n")
-        f.close()
-
-        with open(f"{output_dir}/two_node_orbit_counts.csv", "w") as f:
-            for key in two_node_orbit_dict:
-                f.write(f"{key}, {len(two_node_orbit_dict[key])}\n")
-        f.close()
-
         if process_type == 2:
             print("species wide processing")
-            species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
-            graphlet_ids = ["G_1", "G_2", "G_3", "G_4", "G_5"]
-            species_graphlet_data = {}
+            species_wide_two_node_plots()
+        else:
+            two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
+            protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
 
-            # Process data for each species
-            for species in species_list:
-                print(f"Processing species: {species}")
-                species_graphlet_data[species] = {}
-                with open(f"final_output/{species}/two_node_graphlet_counts.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=",")
-                    for row in csv_reader:
-                        print(row[0], row[1].strip())
-                        species_graphlet_data[species][row[0]] = int(row[1].strip())
+            G = read_csv(
+                ppi_path,
+                reg_path,
+                protein_id_dict,
+                node_size_limit=node_limit,
+                edge_size_limit=edge_limit,
+            )
+            print(selected_network)
+            print(f"Number of nodes: {len(G.nodes())}")
+            print(f"Number of edges: {len(G.edges())}")
 
-            # Create empty lists for the counts of each graphlet
-            graphlet1_count = []
-            graphlet2_count = []
-            graphlet3_count = []
-            graphlet4_count = []
-            graphlet5_count = []
+            # Simplify the graph G to G_prime
+            G_prime = simplify_graph_to_undirected(G)
 
-            # Extract counts for each species
-            for species_name in species_list:
-                species_counts = species_graphlet_data[species_name]
-                graphlet1_count.append(species_counts['G_1'])
-                graphlet2_count.append(species_counts['G_2'])
-                graphlet3_count.append(species_counts['G_3'])
-                graphlet4_count.append(species_counts['G_4'])
-                graphlet5_count.append(species_counts['G_5'])
+            # Print the simplified graph's details
+            print(f"\nSimplified Graph:")
+            print(f"Number of nodes: {len(G_prime.nodes())}")
+            print(f"Number of edges: {len(G_prime.edges())}")
+            two_node_graphlet_dict, two_node_orbit_dict = get_two_node_graphlet_stats(
+                G, two_node_graphlet_dict
+            )
+            print("\ntwo node graphlet counts")
+            for key in two_node_graphlet_labels:
+                print(
+                    f"G_{two_node_graphlet_labels[key]} = {two_node_graphlet_dict[key]}"
+                )
+            print("\ntwo node graphlet orbit counts")
+            for key in two_node_orbit_dict:
+                print(f"{key} = {len(two_node_orbit_dict[key])}")
 
-            # Convert lists to numpy arrays for easy manipulation
-            graphlet1_count = np.array(graphlet1_count)
-            graphlet2_count = np.array(graphlet2_count)
-            graphlet3_count = np.array(graphlet3_count)
-            graphlet4_count = np.array(graphlet4_count)
-            graphlet5_count = np.array(graphlet5_count)
+            with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
+                for key in two_node_graphlet_labels:
+                    f.write(
+                        f"G_{two_node_graphlet_labels[key]}, {two_node_graphlet_dict[key]}\n"
+                    )
+            f.close()
 
-            # Generate index for the species (5 species, so index is [0, 1, 2, 3, 4])
-            index = np.arange(len(species_list))
-
-            # Create the plot
-            fig, ax = plt.subplots(figsize=(10, 6))
-            bar_width = 0.5
-            # Plot the stacked bars for each graphlet
-            bar1 = ax.bar(index, graphlet1_count, bar_width, label='G_1', color='blue')
-            bar2 = ax.bar(index, graphlet2_count, bar_width, bottom=graphlet1_count, label='G_2', color='green')
-            bar3 = ax.bar(index, graphlet3_count, bar_width, bottom=graphlet1_count + graphlet2_count, label='G_3', color='red')
-            bar4 = ax.bar(index, graphlet4_count, bar_width, bottom=graphlet1_count + graphlet2_count + graphlet3_count, label='G_4', color='yellow')
-            bar5 = ax.bar(index, graphlet5_count, bar_width, bottom=graphlet1_count + graphlet2_count + graphlet3_count + graphlet4_count, label='G_5', color='pink')
-
-            # Adding labels and title
-            ax.set_xlabel('Species')
-            ax.set_ylabel('Counts of graphlet ids (log)')
-            ax.set_yscale('log')
-            ax.set_title('Stacked Bar Chart of grpahlet Counts per Species')
-            ax.set_xticks(index)
-            ax.set_xticklabels(species_list)  # Use species_list for x-tick labels
-            ax.legend()
-
-            # Display the plot
-            plt.tight_layout()
-            plt.savefig(f"final_output/species_two_node_graphlet_dist.pdf")
-            plt.show() 
-            plt.close()
-
-            orbit_ids = ["1", "2", "3", "4", "5", "6", "7"]
-            species_orbit_data = {}
-
-            # Process data for each species
-            for species in species_list:
-                print(f"Processing species: {species}")
-                species_orbit_data[species] = {}
-                with open(f"final_output/{species}/two_node_orbit_counts.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=",")
-                    for row in csv_reader:
-                        print(row[0], row[1].strip())
-                        species_graphlet_data[species][row[0]] = int(row[1].strip())
-
-            # Create empty lists for the counts of each graphlet
-            orbit1_count = []
-            orbit2_count = []
-            orbit3_count = []
-            orbit4_count = []
-            orbit5_count = []
-            orbit6_count = []
-            orbit7_count = []
-
-            # Extract counts for each species
-            for species_name in species_list:
-                species_counts = species_graphlet_data[species_name]
-                orbit1_count.append(species_counts['1'])
-                orbit2_count.append(species_counts['2'])
-                orbit3_count.append(species_counts['3'])
-                orbit4_count.append(species_counts['4'])
-                orbit5_count.append(species_counts['5'])
-                orbit6_count.append(species_counts['6'])
-                orbit7_count.append(species_counts['7'])
-
-            # Convert lists to numpy arrays for easy manipulation
-            orbit1_count = np.array(orbit1_count)
-            orbit2_count = np.array(orbit2_count)
-            orbit3_count = np.array(orbit3_count)
-            orbit4_count = np.array(orbit4_count)
-            orbit5_count = np.array(orbit5_count)
-            orbit6_count = np.array(orbit6_count)
-            orbit7_count = np.array(orbit7_count)
-
-
-            # Generate index for the species (5 species, so index is [0, 1, 2, 3, 4])
-            index = np.arange(len(species_list))
-
-            # Create the plot
-            fig, ax = plt.subplots(figsize=(10, 6))
-            bar_width = 0.5
-            # Plot the stacked bars for each graphlet
-            bar1 = ax.bar(index, orbit1_count, bar_width, label='1', color='blue')
-            bar2 = ax.bar(index, orbit2_count, bar_width, bottom=orbit1_count, label='2', color='green')
-            bar3 = ax.bar(index, orbit3_count, bar_width, bottom=orbit1_count + orbit2_count, label='3', color='red')
-            bar4 = ax.bar(index, orbit4_count, bar_width, bottom=orbit1_count + orbit2_count + orbit3_count, label='4', color='yellow')
-            bar5 = ax.bar(index, orbit5_count, bar_width, bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count, label='5', color='pink')
-            bar6 = ax.bar(index, orbit6_count, bar_width, bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count + orbit5_count, label='6', color='orange')
-            bar7 = ax.bar(index, orbit7_count, bar_width, bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count + orbit5_count + orbit6_count, label='7', color='purple')
-
-            # Adding labels and title
-            ax.set_xlabel('Species')
-            ax.set_ylabel('Counts of orbit ids (log)')
-            ax.set_yscale('log')
-            ax.set_title('Stacked Bar Chart of Orbit Counts per Species')
-            ax.set_xticks(index)
-            ax.set_xticklabels(species_list)  # Use species_list for x-tick labels
-            ax.legend()
-
-            # Display the plot
-            plt.tight_layout()
-            plt.savefig(f"final_output/species_two_node_orbit_dist.pdf")
-            plt.show() 
-            plt.close()
-
+            with open(f"{output_dir}/two_node_orbit_counts.csv", "w") as f:
+                for key in two_node_orbit_dict:
+                    f.write(f"{key}, {len(two_node_orbit_dict[key])}\n")
+            f.close()
 
     elif graphlet_mode == 3:
-        if process_type == 2:
+        if process_type == 3:
             print("species wide processing")
-            species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
+            species_wide_3_node_plots()
 
-            graphlet_counts = defaultdict(int)
-            species_graphlet_counts = {}
-            for species in species_list:
-                print(f"Processing species: {species}")
-                with open(f"final_output/{species}/top_graphlet_counts.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter="\t")
-                    next(csv_reader)
-                    for row in csv_reader:
-                        graphlet_id = row[1]
-                        count = int(row[2])
-                        graphlet_counts[graphlet_id] += count
-                        if species not in species_graphlet_counts:
-                            species_graphlet_counts[species] = {}
-                        if graphlet_id not in species_graphlet_counts[species]:
-                            species_graphlet_counts[species][graphlet_id] = count
-
-            top_graphlets = sorted(graphlet_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-
-            print("Top 5 graphlets with the highest counts across all species:")
-            for graphlet_id, count in top_graphlets:
-                print(f"Graphlet ID: {graphlet_id}, Total Count: {count}")
-                for species in species_list:
-                    print(f"{species} Count: {species_graphlet_counts[species][graphlet_id]}")
-
-            with open(f"final_output/species_top_graphlet_counts.csv", "w") as f:
-                f.write(f"graphlet_id\ttotal_count\tbsub\tceravisiae\tdrerio\telegans\tfly\n")
-                for graphlet in top_graphlets:
-                    f.write(f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["ceravisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n")
-
-            
         else:
+            two_node_graphlet_dict, two_node_graphlet_labels = get_two_node_dict()
+            protein_id_dict = get_protein_id_dict(ppi_path, reg_path)
+
+            G = read_csv(
+                ppi_path,
+                reg_path,
+                protein_id_dict,
+                node_size_limit=node_limit,
+                edge_size_limit=edge_limit,
+            )
+            print(selected_network)
+            print(f"Number of nodes: {len(G.nodes())}")
+            print(f"Number of edges: {len(G.edges())}")
+
+            # Simplify the graph G to G_prime
+            G_prime = simplify_graph_to_undirected(G)
+
+            # Print the simplified graph's details
+            print(f"\nSimplified Graph:")
+            print(f"Number of nodes: {len(G_prime.nodes())}")
+            print(f"Number of edges: {len(G_prime.edges())}")
             graphlet_config = load_graphlet_config("graphlet_config.csv")
 
             three_node_graphlet_dict = {}
@@ -1128,6 +1246,8 @@ def main(stdscr):
             indexed_graphlet_dict = {}
             indexed_orbit_dict = {}
             orbit_id_dict = {}
+
+            # if we want to compute the whole counts
             if process_type == 0:
                 (
                     three_node_graphlet_dict,
@@ -1164,156 +1284,7 @@ def main(stdscr):
                                     orbit_index = indexed_orbit_dict[hash(result_tuple)]
                                     node_orbit_arr[node][int(orbit_index)] += 1
 
-            else:
-                print("post-processing only")
-                with open(f"{output_dir}/graphlet_hash_mapper.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=":")
-                    for row in csv_reader:
-                        graphlet_hash = int(row[0])
-                        graphlet = ast.literal_eval(row[1])
-                        # print(graphlet_hash, type(graphlet_hash), graphlet, type(graphlet))
-                        graphlet_mapper[graphlet_hash] = graphlet
-                print("post processing step 1/6")
-
-                with open(f"{output_dir}/graphlet_counts.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=":")
-                    for row in csv_reader:
-                        graphlet = ast.literal_eval(row[0])
-                        count = int(row[1].strip())
-                        # print(graphlet, type(graphlet), count, type(count))
-                        three_node_graphlet_dict[hash(graphlet)] = count
-                print("post processing step 2/6")
-
-                with open(f"{output_dir}/orbit_hash_mapper.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=":")
-                    for row in csv_reader:
-                        orbit_hash = int(row[0])
-                        # match = re.search(r"\(\(\(.*?\)\), \d+\)", row[1])
-                        # if match:
-                        # result = ast.literal_eval(match.group())
-                        # print(orbit_hash, type(orbit_hash), result, type(result))
-                        # orbit_mapper[orbit_hash] = result
-                        orbit_mapper[orbit_hash] = row[1]
-                print("post processing step 3/6")
-
-                with open(f"{output_dir}/graphlet_id_mapper.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=":")
-                    for row in csv_reader:
-                        graphlet = ast.literal_eval(row[0])
-                        id = row[1].strip()
-                        indexed_graphlet_dict[hash(graphlet)] = id
-                print("post processing step 4/6")
-
-                with open(f"{output_dir}/orbit_id_mapper.csv", "r") as file:
-                    csv_reader = csv.reader(file, delimiter=":")
-                    for row in csv_reader:
-                        match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
-                        if match:
-                            result = ast.literal_eval(match.group())
-                            id = row[1].strip()
-                            # print(result, type(result), row[1].strip())
-                            indexed_orbit_dict[hash(result)] = id
-                            orbit_id_dict[id] = result
-                print("post processing step 5/6")
-
-                data = np.loadtxt(f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int)
-                rows, cols = data.shape
-                # print(rows, cols)
-                count = 0
-                for orbit in orbit_id_dict:
-                    print(orbit, orbit_id_dict[orbit])
-                    for protein in range(0, rows, 1):
-                        # print(orbit, type(orbit), protein, type(protein))
-                        orbit_hash = hash(orbit_id_dict[orbit])
-                        if orbit_hash not in orbit_dict:
-                            orbit_dict[orbit_hash] = []
-                        protein_count = data[protein][int(orbit)]
-                        orbit_dict[orbit_hash] += [
-                            protein - 1 for _ in range(protein_count)
-                        ]
-                        print(count, "/", rows * cols, end="\r")
-                        count += 1
-                print("post processing step 6/6")
-                print("Completed post processing")
-
-                # for col_index in range(data.shape[1]):  # `data.shape[1]` gives the number of columns
-                #     column = data[:, col_index]  # Access the column using slicing
-                #     for row_index, value in enumerate(column):
-                #         print(col_index, type(col_index))
-                #         print(orbit_id_dict[col_index])
-                #         orbit_hash = hash(orbit_id_dict[col_index])
-                #         if orbit_hash not in orbit_dict:
-                #             orbit_dict[orbit_hash] = []
-                #         orbit_dict[orbit_hash] += [value - 1 for _ in range(data[row_index][col_index])]
-
-                # for orbit in orbit_mapper:
-                #     print(type(orbit), orbit, ":")
-                # print()
-                # for orbit in orbit_dict:
-                #     print(type(orbit), orbit, ":")
-
-                # print()
-                # for orbit in orbit_dict:
-                #     print(orbit, orbit_dict[orbit])
-
-                # with open(f"{output_dir}/orbit_dict.csv", "r") as file:
-                #     csv_reader = csv.reader(file, delimiter=":")
-                #     for row in csv_reader:
-                #         orbit = str(row[0])
-                #         orbit_list = ast.literal_eval(row[1])
-                #         match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
-                #         if match:
-                #             result = ast.literal_eval(match.group())
-                #             print(result, type(result))
-                # print(orbit_hash, type(orbit_hash), orbit, type(orbit))
-                # orbit_mapper[orbit_hash] = orbit
-
-            # in the end, all grpahlet and orbit data will come from the config file
-
-            # check that all the graphlets and orbits we found are in the config file
-
-            # for graphlet in three_node_graphlet_dict:
-            #     if graphlet not in indexed_graphlet_dict:
-            #         print("MISSING GRAPHLET", graphlet_mapper[graphlet])
-            # print()
-
-            # with open(f"{output_dir}/missing_graphlets.csv", "w") as f:
-            #     for graphlet in three_node_graphlet_dict:
-            #         if graphlet not in indexed_graphlet_dict:
-            #             f.write(f"{graphlet_mapper[graphlet]} NOT IN CONFIg\n")
-            # f.close()
-
-            # data = np.genfromtxt(f'{output_dir}/node_orbit.csv', delimiter=',')
-
-            # print(data[0][0])
-
-            # sys.exit()
-            with open(f"{output_dir}/stats.csv", "w") as f:
-                f.write(f"{selected_network}\n")
-                f.write(f"Number of nodes: {len(G.nodes())}\n")
-                f.write(f"Number of edges: {len(G.edges())}\n")
-                f.write(f"Simplified Graph:\n")
-                f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
-                f.write(f"Number of edges: {len(G_prime.edges())}\n")
-                f.write(f"run time : %.3f seconds\n" % run_time)
-                f.write("three node graphlet counts\n")
-                count = 0
-                for key in three_node_graphlet_dict:
-                    f.write(f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}\n")
-                    count += three_node_graphlet_dict[key]
-                f.write(f"Total graphlets found: {count}\n")
-                f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
-                f.write(f"three node orbit counts\n")
-                for orbit in orbit_dict:
-                    f.write(f"{orbit_mapper[orbit]} : {len(orbit_dict[orbit])}\n")
-                count = 0
-                for orbit in orbit_dict:
-                    count += len(orbit_dict[orbit])
-                f.write(f"Total orbits found: {count}\n")
-                f.write(f"unique orbits counts : {len(orbit_dict)}\n")
-            f.close()
-
-            if process_type == 0:
+                # save the output files
 
                 np.savetxt(
                     f"{output_dir}/node_orbit.csv",
@@ -1358,16 +1329,101 @@ def main(stdscr):
                                 f"{graphlet_mapper[graphlet]} : {three_node_graphlet_dict[graphlet]}\n"
                             )
 
-                # with open(f"{output_dir}/orbit_dict.csv", "w") as f:
-                #     for orbit in orbit_dict:
-                #         if orbit in orbit_mapper:
-                #             f.write(f"{orbit_mapper[orbit]} : {orbit_dict[orbit]}\n")
+            # if we already have the output files,
+            else:
+                print("post-processing only")
+                with open(f"{output_dir}/graphlet_hash_mapper.csv", "r") as file:
+                    csv_reader = csv.reader(file, delimiter=":")
+                    for row in csv_reader:
+                        graphlet_hash = int(row[0])
+                        graphlet = ast.literal_eval(row[1])
+                        graphlet_mapper[graphlet_hash] = graphlet
+                print("post processing step 1/6")
 
-                # with open(f"{output_dir}/orbit_id_mapper.csv", "w") as f:
-                #     for orbit in indexed_orbit_dict:
-                #         f.write(f"{orbit_mapper[orbit]}, {indexed_orbit_dict[orbit]}\n")
-                # f.close()
+                with open(f"{output_dir}/graphlet_counts.csv", "r") as file:
+                    csv_reader = csv.reader(file, delimiter=":")
+                    for row in csv_reader:
+                        graphlet = ast.literal_eval(row[0])
+                        count = int(row[1].strip())
+                        three_node_graphlet_dict[hash(graphlet)] = count
+                print("post processing step 2/6")
 
+                with open(f"{output_dir}/orbit_hash_mapper.csv", "r") as file:
+                    csv_reader = csv.reader(file, delimiter=":")
+                    for row in csv_reader:
+                        orbit_hash = int(row[0])
+                        orbit_mapper[orbit_hash] = row[1]
+                print("post processing step 3/6")
+
+                with open(f"{output_dir}/graphlet_id_mapper.csv", "r") as file:
+                    csv_reader = csv.reader(file, delimiter=":")
+                    for row in csv_reader:
+                        graphlet = ast.literal_eval(row[0])
+                        id = row[1].strip()
+                        indexed_graphlet_dict[hash(graphlet)] = id
+                print("post processing step 4/6")
+
+                with open(f"{output_dir}/orbit_id_mapper.csv", "r") as file:
+                    csv_reader = csv.reader(file, delimiter=":")
+                    for row in csv_reader:
+                        match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
+                        if match:
+                            result = ast.literal_eval(match.group())
+                            id = row[1].strip()
+                            # print(result, type(result), row[1].strip())
+                            indexed_orbit_dict[hash(result)] = id
+                            orbit_id_dict[id] = result
+                print("post processing step 5/6")
+
+                data = np.loadtxt(
+                    f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
+                )
+                rows, cols = data.shape
+                # print(rows, cols)
+                count = 0
+                for orbit in orbit_id_dict:
+                    print(orbit, orbit_id_dict[orbit])
+                    for protein in range(0, rows, 1):
+                        # print(orbit, type(orbit), protein, type(protein))
+                        orbit_hash = hash(orbit_id_dict[orbit])
+                        if orbit_hash not in orbit_dict:
+                            orbit_dict[orbit_hash] = []
+                        protein_count = data[protein][int(orbit)]
+                        orbit_dict[orbit_hash] += [
+                            protein - 1 for _ in range(protein_count)
+                        ]
+                        print(count, "/", rows * cols, end="\r")
+                        count += 1
+                print("post processing step 6/6")
+                print("Completed post processing")
+
+            # steps that need to be done regardless if we do all or just post processing steps
+            with open(f"{output_dir}/stats.csv", "w") as f:
+                f.write(f"{selected_network}\n")
+                f.write(f"Number of nodes: {len(G.nodes())}\n")
+                f.write(f"Number of edges: {len(G.edges())}\n")
+                f.write(f"Simplified Graph:\n")
+                f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
+                f.write(f"Number of edges: {len(G_prime.edges())}\n")
+                f.write(f"run time : %.3f seconds\n" % run_time)
+                f.write("three node graphlet counts\n")
+                count = 0
+                for key in three_node_graphlet_dict:
+                    f.write(
+                        f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}\n"
+                    )
+                    count += three_node_graphlet_dict[key]
+                f.write(f"Total graphlets found: {count}\n")
+                f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
+                f.write(f"three node orbit counts\n")
+                for orbit in orbit_dict:
+                    f.write(f"{orbit_mapper[orbit]} : {len(orbit_dict[orbit])}\n")
+                count = 0
+                for orbit in orbit_dict:
+                    count += len(orbit_dict[orbit])
+                f.write(f"Total orbits found: {count}\n")
+                f.write(f"unique orbits counts : {len(orbit_dict)}\n")
+            f.close()
             print()
 
             plot_three_node_graphlet_distribution(
@@ -1382,7 +1438,6 @@ def main(stdscr):
             # print(stress_proteins_list)
 
             # significance = plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict, stress_proteins_list, protein_id_dict, selected_network, output_dir)
-
 
     # draw_labeled_multigraph(G, "label")
     # plt.show()
