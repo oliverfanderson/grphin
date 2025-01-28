@@ -889,6 +889,8 @@ def get_user_inputs(selected_network, selected_graphlet):
     graphlet_option = None
     output_dir = None
 
+    txids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+
     match selected_network:
         case "D. melanogaster":
             ppi_path = Path("data/fly_ppi.csv")
@@ -899,9 +901,9 @@ def get_user_inputs(selected_network, selected_graphlet):
             reg_path = Path("data/bsub_reg.csv")
             output_dir = Path("output/bsub")
         case "S. cerevisiae":
-            ppi_path = Path("data/ceravisiae_ppi.csv")
-            reg_path = Path("data/ceravisiae_reg.csv")
-            output_dir = Path("output/ceravisiae")
+            ppi_path = Path("data/cerevisiae_ppi.csv")
+            reg_path = Path("data/cerevisiae_reg.csv")
+            output_dir = Path("output/cerevisiae")
         case "D. rerio":
             ppi_path = Path("data/drerio_ppi.csv")
             reg_path = Path("data/drerio_reg.csv")
@@ -910,6 +912,11 @@ def get_user_inputs(selected_network, selected_graphlet):
             ppi_path = Path("data/elegans_ppi.csv")
             reg_path = Path("data/elegans_reg.csv")
             output_dir = Path("output/elegans")
+        case "Stress response":
+            for txid in txids:
+                ppi_path = Path(f"data/oxidative_stress/{txid}/stress_ppi.csv")
+                reg_path = Path(f"data/oxidative_stress/{txid}/stress_reg.csv")
+                output_dir = Path(f"output/oxidative_stress/{txid}/")
         case "Test network":
             ppi_path = Path("data/test_ppi.csv")
             reg_path = Path("data/test_reg.csv")
@@ -939,6 +946,7 @@ def main(stdscr):
             "S. cerevisiae",
             "D. rerio",
             "C. elegans",
+            "Stress response",
             "Test network",
             "Toy network",
             "Shuffled toy network",
