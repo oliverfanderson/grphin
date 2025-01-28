@@ -720,7 +720,7 @@ def plot_stress_orbit_distribution(
 
 
 def species_wide_two_node_plots():
-    species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
+    species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
     graphlet_ids = ["G_1", "G_2", "G_3", "G_4", "G_5"]
     species_graphlet_data = {}
 
@@ -930,7 +930,7 @@ def species_wide_two_node_plots():
 
 
 def species_wide_3_node_plots():
-    species_list = ["bsub", "fly", "ceravisiae", "drerio", "elegans"]
+    species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
     graphlet_counts = defaultdict(int)
     species_graphlet_counts = {}
     for species in species_list:
@@ -958,10 +958,10 @@ def species_wide_3_node_plots():
             print(f"{species} Count: {species_graphlet_counts[species][graphlet_id]}")
 
     with open(f"final_output/species_top_graphlet_counts.csv", "w") as f:
-        f.write(f"graphlet_id\ttotal_count\tbsub\tceravisiae\tdrerio\telegans\tfly\n")
+        f.write(f"graphlet_id\ttotal_count\tbsub\tcerevisiae\tdrerio\telegans\tfly\n")
         for graphlet in top_graphlets:
             f.write(
-                f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["ceravisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n"
+                f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["cerevisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n"
             )
     return None
 
@@ -1028,7 +1028,7 @@ def type_answer(stdscr, step):
             return int(typed_number)
 
 
-def get_user_inputs(selected_network, selected_graphlet, selected_processing):
+def get_user_inputs(selected_network, selected_graphlet, selected_processing, selected_network_type):
     ppi_path = None
     reg_path = None
     graphlet_option = None
@@ -1036,43 +1036,70 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing):
     stress_data_path = None
     process_type = None
 
+    txids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+
     match selected_network:
         case "D. melanogaster":
-            ppi_path = Path("data/fly_ppi.csv")
-            reg_path = Path("data/fly_reg.csv")
-            output_dir = Path("final_output/fly")
+            if selected_network_type == "Normal":
+                ppi_path = Path("data/fly_ppi.csv")
+                reg_path = Path("data/fly_reg.csv")
+                output_dir = Path("final_output/fly")
+            else:
+                ppi_path = Path("data/oxidative_stress/txid7227/stress_ppi.csv")
+                reg_path = Path("data/oxidative_stress/txid7227/stress_reg.csv")
+                output_dir = Path("final_output/fly_stress")
             stress_data_path = Path(
                 "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
             )
             process_type = get_process_type(selected_processing)
         case "B. subtilis":
-            ppi_path = Path("data/bsub_ppi.csv")
-            reg_path = Path("data/bsub_reg.csv")
-            output_dir = Path("final_output/bsub")
+            if selected_network_type == "Normal":
+                ppi_path = Path("data/bsub_ppi.csv")
+                reg_path = Path("data/bsub_reg.csv")
+                output_dir = Path("final_output/bsub")
+            else:
+                ppi_path = Path("data/oxidative_stress/txid224308/stress_ppi.csv")
+                reg_path = Path("data/oxidative_stress/txid224308/stress_reg.csv")
+                output_dir = Path("final_output/bsub_stress")
             stress_data_path = Path(
                 "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
             )
             process_type = get_process_type(selected_processing)
         case "S. cerevisiae":
-            ppi_path = Path("data/ceravisiae_ppi.csv")
-            reg_path = Path("data/ceravisiae_reg.csv")
-            output_dir = Path("final_output/ceravisiae")
+            if selected_network_type == "Normal":
+                ppi_path = Path("data/cerevisiae_ppi.csv")
+                reg_path = Path("data/cerevisiae_reg.csv")
+                output_dir = Path("output/cerevisiae")
+            else: 
+                ppi_path = Path("data/oxidative_stress/txid559292/stress_ppi.csv")
+                reg_path = Path("data/oxidative_stress/txid559292/stress_reg.csv")
+                output_dir = Path("final_output/cerevisiae_stress")
             stress_data_path = Path(
                 "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
             )
             process_type = get_process_type(selected_processing)
         case "D. rerio":
-            ppi_path = Path("data/drerio_ppi.csv")
-            reg_path = Path("data/drerio_reg.csv")
-            output_dir = Path("final_output/drerio")
+            if selected_network_type == "Normal":
+                ppi_path = Path("data/drerio_ppi.csv")
+                reg_path = Path("data/drerio_reg.csv")
+                output_dir = Path("final_output/drerio")
+            else:
+                ppi_path = Path("data/oxidative_stress/txid7955/stress_ppi.csv")
+                reg_path = Path("data/oxidative_stress/txid7955/stress_reg.csv")
+                output_dir = Path("final_output/drerio_stress")
             stress_data_path = Path(
                 "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
             )
             process_type = get_process_type(selected_processing)
         case "C. elegans":
-            ppi_path = Path("data/elegans_ppi.csv")
-            reg_path = Path("data/elegans_reg.csv")
-            output_dir = Path("final_output/elegans")
+            if selected_network_type == "Normal":
+                ppi_path = Path("data/elegans_ppi.csv")
+                reg_path = Path("data/elegans_reg.csv")
+                output_dir = Path("final_output/elegans")
+            else:
+                ppi_path = Path("data/oxidative_stress/txid6239/stress_ppi.csv")
+                reg_path = Path("data/oxidative_stress/txid6239/stress_reg.csv")
+                output_dir = Path("final_output/elegans_stress")
             stress_data_path = Path(
                 "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
             )
@@ -1145,6 +1172,10 @@ def main(stdscr):
         selected_processing = dropdown_menu(stdscr, processing)
         stdscr.clear()
 
+        network_type = ["Normal", "Stress"]
+        selected_network_type = dropdown_menu(stdscr, network_type)
+        stdscr.clear()
+
         node_limit = type_answer(stdscr, 0)
         stdscr.clear()
 
@@ -1156,7 +1187,7 @@ def main(stdscr):
     finally:
         curses.endwin()
     ppi_path, reg_path, graphlet_mode, output_dir, stress_data_path, process_type = (
-        get_user_inputs(selected_network, selected_graphlet, selected_processing)
+        get_user_inputs(selected_network, selected_graphlet, selected_processing, selected_network_type)
     )
 
     if graphlet_mode == 2:
@@ -1285,7 +1316,7 @@ def main(stdscr):
                                     node_orbit_arr[node][int(orbit_index)] += 1
 
                 # save the output files
-
+                print(node_orbit_arr)
                 np.savetxt(
                     f"{output_dir}/node_orbit.csv",
                     node_orbit_arr,
