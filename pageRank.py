@@ -81,51 +81,6 @@ def simplify_graph_to_undirected(G):
 
     return G_prime
 
-# def threshold_stress_recovery(pagerank, stress_proteins, threshold):
-#     """
-#     Thresholds PageRank results by percent of stress proteins recovered.
-
-#     Parameters:
-#     page_rank (str): The path to the CSV file containing protein IDs and PageRank scores.
-#     stress_proteins (str): The path to the CSV file containing protein IDs for stress response.
-#     threshold (float): The threshold value for percent of stress proteins.
-#     out_file (str): The path to the CSV file to store the thresholded PageRank scores for stress recovery.
-
-#     Returns:
-#     page_rank_out (): A list of protein IDs with stress recovery.
-#     """
-#     # Filter PageRank scores for stress proteins only
-#     stress_scores = {node: pagerank[node] for node in stress_proteins if node in pagerank}
-
-#     # Sort stress proteins by PageRank score in descending order
-#     sorted_stress_scores = sorted(stress_scores.items(), key=lambda x: -x[1])
-
-#     # Select proteins until the threshold percentage is reached
-#     thresholded_scores = {}
-#     pagerank_out = {}
-#     total_stress_proteins = len(stress_proteins)
-#     print(total_stress_proteins, "stress proteins. Recovery threshold: {}%".format(threshold * 100))
-#     recovered_count = 0
-#     threshold_score = 0
-
-#     for node, score in sorted_stress_scores:
-#         thresholded_scores[node] = score
-#         recovered_count += 1
-#         recovery_percentage = recovered_count / total_stress_proteins
-#         # print(f"Recovered {recovered_count}/{total_stress_proteins} stress proteins ({recovery_percentage:.2%})")
-#         if recovery_percentage >= threshold:
-#             threshold_score = thresholded_scores[-1][1]
-#             print(f"Recovery threshold reached at {threshold_score:.4f} PageRank score")
-#             break
-
-#     for node, score in sorted(pagerank.items(), key=lambda x: -x[1]):
-#                 if node not in pagerank_out:
-#                     pagerank_out[node] = score
-#                     if score < threshold_score:
-#                         break
-
-#     return pagerank_out
-
 def threshold_stress_recovery(pagerank, stress_proteins, threshold):
     """
     Thresholds PageRank results by percent of stress proteins recovered.
@@ -176,11 +131,47 @@ def get_induced_subnetwork(G, pagerank_out):
     G_induced.add_nodes_from(pagerank_out.keys())
 
     # Add edges between nodes with PageRank scores above the threshold to the induced subnetwork
-    for u, v in G.edges():
+    for u, v, key, data in G.edges(data=True, keys=True):
         if u in pagerank_out and v in pagerank_out:
-            G_induced.add_edge(u, v)
+            G_induced.add_edge(u, v, key=key, **data)
 
     return G_induced
+
+def split_to_csv(G_induced, output_dir):
+    """
+    Writes the graph to CSV files based on edge labels.
+
+    Parameters:
+    G_induced (networkx.Graph): The induced graph.
+    ppi_input (set): A set of edges for PPI (tuples of (u, v)).
+    reg_input (set): A set of edges for REG (tuples of (u, v)).
+    output_dir (str): Directory where output CSV files will be saved.
+    """
+
+    # File paths for output
+    ppi_file = f"{output_dir}stress_ppi.csv"
+    reg_file = f"{output_dir}stress_reg.csv"
+
+    # Write edges to CSV files
+    with open(ppi_file, "w", newline="") as ppi_out, open(reg_file, "w", newline="") as reg_out:
+        ppi_writer = csv.writer(ppi_out, quotechar='"', quoting=csv.QUOTE_ALL)
+        reg_writer = csv.writer(reg_out, quotechar='"', quoting=csv.QUOTE_ALL)
+        
+        # Write CSV headers
+        ppi_writer.writerow(["id1", "id2"])
+        reg_writer.writerow(["id1", "id2"])
+        
+        # Iterate over edges
+        for u, v, key, data in G_induced.edges(data=True, keys=True):
+            # print(f"Edge ({u}, {v}, {key}): {data}")
+            label = data.get("label", None)
+            if label == "ppi":
+                ppi_writer.writerow([u, v])
+            elif label == "reg":
+                reg_writer.writerow([u, v])
+
+    print(f"PPI edges written to: {ppi_file}")
+    print(f"Reg edges written to: {reg_file}")
 
 def main():
    # List of taxon IDs to process
@@ -254,6 +245,8 @@ def main():
         G_induced = get_induced_subnetwork(G, pagerank_out)
         
         print(f"Length of PR: {len(pagerank_out)}\nInduced subnetwork: {G_induced}")
+
+        split_to_csv(G_induced, output_dir)
 
 
 if __name__ == "__main__":
