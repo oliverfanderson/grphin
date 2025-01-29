@@ -1,5 +1,6 @@
 import networkx as nx
 import csv
+from matplotlib import pyplot as plt
 
 species_dict = {
     "txid6239" : "elegans",
@@ -173,6 +174,7 @@ def split_to_csv(G_induced, output_dir):
     print(f"PPI edges written to: {ppi_file}")
     print(f"Reg edges written to: {reg_file}")
 
+
 def main():
    # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
@@ -210,7 +212,7 @@ def main():
         # Convert the set back to a list if needed
         restart_nodes = list(restart_nodes)
 
-        # print(f"Restart nodes: {restart_nodes}")
+        print(f"Total Stress Proteins: {len(restart_nodes)}")
 
         # Create the personalization vector
         personalization = {node: (1 if node in restart_nodes else 0) for node in G_prime.nodes()}
@@ -244,10 +246,15 @@ def main():
 
         G_induced = get_induced_subnetwork(G, pagerank_out)
         
-        print(f"Length of PR: {len(pagerank_out)}\nInduced subnetwork: {G_induced}")
+        print(f"Induced subnetwork: {G_induced}")
+
+        # print(f"Total degree of stress subnetwork: {sum(dict(G_induced.degree()).values())}")
+        # Have to subtract the above number - len("stress_ppi.csv") to get mixed degree
+
+        # nx.draw_networkx(G_induced, with_labels=True, font_size=10)
+        # plt.show()
 
         split_to_csv(G_induced, output_dir)
-
 
 if __name__ == "__main__":
     main()
