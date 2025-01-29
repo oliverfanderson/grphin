@@ -620,12 +620,12 @@ def plot_stress_orbit_distribution(
     # print("Stress proteins : ", stress_proteins_list)
     stress_protein_orbit_dict = {}
     print("Counting stress proteins\n")
-    for orbit, proteins in orbit_dict.items():
+    for orbit in orbit_dict:
         # print(f"orbit {orbit}", end="\r")
-        protein_counts = Counter(proteins)
-        stress_protein_orbit_dict[orbit] = [
-            protein_counts[protein_id] for protein_id in stress_proteins_list
-        ]
+        stress_protein_orbit_dict[orbit] = []
+        for protein in stress_proteins_list:
+            protein_orbit_count = node_orbit_arr[protein][int(indexed_orbit_dict[orbit])]
+            stress_protein_orbit_dict[orbit] += [protein_orbit_count]
 
     print("Counting stress medians\n")
     for orbit in stress_protein_orbit_dict:
@@ -651,7 +651,7 @@ def plot_stress_orbit_distribution(
     sample_results = {}
 
     for i in range(0,sample):
-        print("sample :", i)
+        print("sample :", i, end="\r")
         non_stress_sample = random.sample(non_stress_proteins, sample_size)
         array_stack = []
         for protein in non_stress_sample:
@@ -664,9 +664,6 @@ def plot_stress_orbit_distribution(
             if orbit not in sample_results:
                 sample_results[orbit] = []
             sample_results[orbit] += [orbit_medians_list[int(orbit_index)]]
-
-
-
 
 
 
@@ -717,9 +714,6 @@ def plot_stress_orbit_distribution(
                     count += 1
             significance[orbit] = count
 
-    # for orbit in orbit_dict:
-        # print(indexed_orbit_dict[orbit], significance[orbit])
-
     hist_data = []
     x_label = [*range(0, len(indexed_orbit_dict), 1)]
     for orbit in indexed_orbit_dict:
@@ -737,8 +731,12 @@ def plot_stress_orbit_distribution(
     plt.xticks(x_label[::2], fontsize=8)
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/stres_orbit_significance_dist.pdf")
+    plt.savefig(f"{output_dir}/stres_orbit_significance_dist_v2.pdf")
     plt.show()
+
+    with open(f"{output_dir}/stress_orbit_significance.csv", "w") as f:
+            for orbit in significance:
+                f.write(f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\n")
 
     return None
 
@@ -1436,22 +1434,41 @@ def main(stdscr):
                 node_orbit_arr = np.loadtxt(f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int)
                 rows, cols = node_orbit_arr.shape
 
-                # Precompute orbit hashes for efficiency
-                orbit_hashes = {orbit: hash(orbit_id_dict[orbit]) for orbit in orbit_id_dict}
-                orbit_dict = {orbit_hash: [] for orbit_hash in orbit_hashes.values()}
-                count  = 0
-                # Efficiently populate orbit_dict
-                for orbit, orbit_hash in orbit_hashes.items():
-                    print(count, "/", rows * cols, end="\r")
-                    protein_counts = node_orbit_arr[:, int(orbit)]
+                node_orbit_arr = np.loadtxt(
+                    f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
+                )
+                rows, cols = node_orbit_arr.shape
+                # print(rows, cols)
+                count = 0
+                for orbit in orbit_id_dict:
+                    print(orbit, orbit_id_dict[orbit])
+                    for protein in range(0, rows, 1):
+                        # print(orbit, type(orbit), protein, type(protein))
+                        orbit_hash = hash(orbit_id_dict[orbit])
+                        if orbit_hash not in orbit_dict:
+                            orbit_dict[orbit_hash] = []
+                        protein_count = node_orbit_arr[protein][int(orbit)]
+                        # print(orbit, protein, protein_count)
+                        orbit_dict[orbit_hash] += [(protein, protein_count)]
+                        print(count, "/", rows * cols, end="\r")
+                        count += 1
+
+                # # Precompute orbit hashes for efficiency
+                # orbit_hashes = {orbit: hash(orbit_id_dict[orbit]) for orbit in orbit_id_dict}
+                # orbit_dict = {orbit_hash: [] for orbit_hash in orbit_hashes.values()}
+                # count  = 0
+                # # Efficiently populate orbit_dict
+                # for orbit, orbit_hash in orbit_hashes.items():
+                #     print(count, "/", rows * cols, end="\r")
+                #     protein_counts = node_orbit_arr[:, int(orbit)]
                     
-                    # Avoid repeated appending, use list comprehension
-                    expanded_proteins = [
-                        protein - 1 for protein in range(rows) for _ in range(protein_counts[protein])
-                    ]
+                #     # Avoid repeated appending, use list comprehension
+                #     expanded_proteins = [
+                #         protein - 1 for protein in range(rows) for _ in range(protein_counts[protein])
+                #     ]
                     
-                    orbit_dict[orbit_hash].extend(expanded_proteins)
-                    count +=1
+                #     orbit_dict[orbit_hash].extend(expanded_proteins)
+                #     count +=1
 
 
                 # node_orbit_arr = np.loadtxt(
@@ -1476,35 +1493,35 @@ def main(stdscr):
                 print("post processing step 6/6")
                 print("Completed post processing")
 
-            print("getting stats")
+            # print("getting stats")
             # steps that need to be done regardless if we do all or just post processing steps
-            with open(f"{output_dir}/stats.csv", "w") as f:
-                f.write(f"{selected_network}\n")
-                f.write(f"Number of nodes: {len(G.nodes())}\n")
-                f.write(f"Number of edges: {len(G.edges())}\n")
-                f.write(f"Simplified Graph:\n")
-                f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
-                f.write(f"Number of edges: {len(G_prime.edges())}\n")
-                f.write(f"run time : %.3f seconds\n" % run_time)
-                f.write("three node graphlet counts\n")
-                count = 0
-                for key in three_node_graphlet_dict:
-                    f.write(
-                        f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}\n"
-                    )
-                    count += three_node_graphlet_dict[key]
-                f.write(f"Total graphlets found: {count}\n")
-                f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
-                f.write(f"three node orbit counts\n")
-                for orbit in orbit_dict:
-                    f.write(f"{orbit_mapper[orbit]} : {len(orbit_dict[orbit])}\n")
-                count = 0
-                for orbit in orbit_dict:
-                    count += len(orbit_dict[orbit])
-                f.write(f"Total orbits found: {count}\n")
-                f.write(f"unique orbits counts : {len(orbit_dict)}\n")
-            f.close()
-            print()
+            # with open(f"{output_dir}/stats.csv", "w") as f:
+            #     f.write(f"{selected_network}\n")
+            #     f.write(f"Number of nodes: {len(G.nodes())}\n")
+            #     f.write(f"Number of edges: {len(G.edges())}\n")
+            #     f.write(f"Simplified Graph:\n")
+            #     f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
+            #     f.write(f"Number of edges: {len(G_prime.edges())}\n")
+            #     f.write(f"run time : %.3f seconds\n" % run_time)
+            #     f.write("three node graphlet counts\n")
+            #     count = 0
+            #     for key in three_node_graphlet_dict:
+            #         f.write(
+            #             f"{graphlet_mapper[key]} = {three_node_graphlet_dict[key]}\n"
+            #         )
+            #         count += three_node_graphlet_dict[key]
+            #     f.write(f"Total graphlets found: {count}\n")
+            #     f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
+            #     f.write(f"three node orbit counts\n")
+            #     for orbit in orbit_dict:
+            #         f.write(f"{orbit_mapper[orbit]} : {len(orbit_dict[orbit])}\n")
+            #     count = 0
+            #     for orbit in orbit_dict:
+            #         count += len(orbit_dict[orbit])
+            #     f.write(f"Total orbits found: {count}\n")
+            #     f.write(f"unique orbits counts : {len(orbit_dict)}\n")
+            # f.close()
+            # print()
 
             # plot_three_node_graphlet_distribution(
             #     three_node_graphlet_dict,
