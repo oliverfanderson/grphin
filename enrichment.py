@@ -98,9 +98,21 @@ for species in species_list:
     results_df = results_df.sort_values(by='Enrichment', ascending=False)
     results_df['p_value'] = 2 * norm.sf(abs(results_df['Z']))
 
+    sig_results_df = results_df[(results_df['p_value'] < 0.05) & (results_df['Enrichment'] > 1)]
+
     # Save the results to a CSV file
     output_file = f'{stress_dir}enrichment_results.csv'
     results_df.to_csv(output_file, index=False)
+
+    # Print the number of results
+    print(f"Number of results for {species}: {len(results_df)}")
+
+    # Save the significant results to a CSV file
+    sig_output_file = f'{stress_dir}enrichment_results_sig.csv'
+    sig_results_df.to_csv(sig_output_file, index=False)
+
+    # Print the number of significant results
+    print(f"Number of significant results for {species}: {len(sig_results_df)}")
 
     # Print the first few rows of the results
     print(f"Results for {species}:")
