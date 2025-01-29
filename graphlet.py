@@ -699,44 +699,83 @@ def plot_stress_orbit_distribution(
 
     significance = {}
 
-    # Calculate significance for each orbit
+    # Calculate if an orbit is significant
     for orbit in orbit_dict:
-        # count the number of times the observed median count is more than to the random median 99% of the random samples
+        count = 0
+        # from the vector of all the random medians at a given orbit
+        for random_median in sample_results[orbit]:
+            if observed_median_count[orbit] > random_median:
+                count += 1
 
-        # count the number of times the random median is greater than or equal to the observed median count
-        # if its very low, then its significant (0.01 as the cut off)
-        # run samples 100 times, significant if its 0 or 1
-
-        for orbit in sample_results:
-            count = 0
-            for random_median in sample_results[orbit]:
-                if random_median > observed_median_count[orbit]:
-                    count += 1
-            significance[orbit] = count
-
-    hist_data = []
-    x_label = [*range(0, len(indexed_orbit_dict), 1)]
-    for orbit in indexed_orbit_dict:
-        hist_data.append(significance[orbit])
-
-    fig = plt.figure(figsize=(14, 6))
-    plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
-    plt.yscale("log")
-    plt.title(
-        f"{selected_network} Stress Protein Significance per Orbit Distribution",
-        fontsize=16,
-    )
-    plt.xlabel("Orbit Index", fontsize=14)
-    plt.ylabel("Count (log scale)", fontsize=14)
-    plt.xticks(x_label[::2], fontsize=8)
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.tight_layout()
-    plt.savefig(f"{output_dir}/stres_orbit_significance_dist_v2.pdf")
-    plt.show()
+        if count >= float(sample_size) * 0.99:
+            significance[orbit] = 1 
+            print(indexed_orbit_dict[orbit], ": significant")
+        else:
+            significance[orbit] = 0
+            print(indexed_orbit_dict[orbit], ": NOT significant")
 
     with open(f"{output_dir}/stress_orbit_significance.csv", "w") as f:
+            f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
             for orbit in significance:
-                f.write(f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\n")
+                f.write(f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\t{observed_median_count[orbit]}\t{sample_results[orbit]}\n")
+
+
+    i = 0
+    for orbit in orbit_dict:
+        if significance[orbit] == 1:
+            hist_data = sample_results[orbit]
+
+            fig = plt.figure(figsize=(14, 6))
+            plt.hist(hist_data)
+            plt.axvline(x=int(observed_median_count[orbit]), color='r', linestyle='--')
+            plt.title(
+                f"{selected_network} Random Median Samples at Orbit {int(indexed_orbit_dict[orbit])} Distribution",
+                fontsize=16,
+            )
+            plt.savefig(f"{output_dir}/sig_orbit/orbit{i}.pdf")
+
+            # x_label = [*range(0, sample_size, 1)]
+            # fig = plt.figure(figsize=(14, 6))
+            # plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
+            # # plt.yscale("log")
+            # plt.title(
+            #     f"{selected_network} Stress Protein Significance per Orbit Distribution",
+            #     fontsize=16,
+            # )
+            # plt.xlabel("Orbit Index", fontsize=14)
+            # plt.ylabel("Count (log scale)", fontsize=14)
+            # plt.xticks(x_label[::2], fontsize=8)
+            # plt.grid(axis="y", linestyle="--", alpha=0.7)
+            # plt.tight_layout()
+            # plt.savefig(f"{output_dir}/stres_orbit_significance_dist_v2.pdf")
+            # plt.show()
+            plt.close()
+        i+=1
+
+
+    # hist_data = []
+    # x_label = [*range(0, len(indexed_orbit_dict), 1)]
+    # for orbit in indexed_orbit_dict:
+    #     hist_data.append(significance[orbit])
+
+    # fig = plt.figure(figsize=(14, 6))
+    # plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
+    # plt.yscale("log")
+    # plt.title(
+    #     f"{selected_network} Stress Protein Significance per Orbit Distribution",
+    #     fontsize=16,
+    # )
+    # plt.xlabel("Orbit Index", fontsize=14)
+    # plt.ylabel("Count (log scale)", fontsize=14)
+    # plt.xticks(x_label[::2], fontsize=8)
+    # plt.grid(axis="y", linestyle="--", alpha=0.7)
+    # plt.tight_layout()
+    # plt.savefig(f"{output_dir}/stres_orbit_significance_dist_v2.pdf")
+    # plt.show()
+
+    # with open(f"{output_dir}/stress_orbit_significance.csv", "w") as f:
+    #         for orbit in significance:
+    #             f.write(f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\n")
 
     return None
 
