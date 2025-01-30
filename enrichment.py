@@ -20,7 +20,7 @@ d_sub_dict = {
     "fly": 1870,
 }
 
-def create_graphlet_presence_matrix():
+def create_graphlet_presence_matrix(suffix):
     """
     Creates a binary presence/absence matrix of graphlets across species.
 
@@ -35,7 +35,7 @@ def create_graphlet_presence_matrix():
 
     # Load data and collect graphlets for each species
     for species in species_list:
-        file_path = f"final_output/{species}_stress/enrichment_results.csv"
+        file_path = f'final_output/{species}_stress/{suffix}'  # Construct file path for the species' graphlets
         
         try:
             df = pd.read_csv(file_path)
@@ -156,13 +156,28 @@ def main():
         print(results_df.head())
 
     # Find graphlets across species
-    graphlet_matrix = create_graphlet_presence_matrix()
+    all_suffix = "enrichment_results.csv"
+    graphlet_matrix = create_graphlet_presence_matrix(all_suffix)
     print(f'Graphlet presence matrix:\n{graphlet_matrix}')
     graphlet_matrix.to_csv("data/oxidative_stress/graphlet_presence_matrix.csv")
+
+    enriched_suffix = "enrichment_results_sig.csv"
+    enriched_matrix = create_graphlet_presence_matrix(enriched_suffix)
+    print(f'Enriched presence matrix:\n{enriched_matrix}')
+    enriched_matrix.to_csv("data/oxidative_stress/enriched_presence_matrix.csv")
 
     # Get graphlets that are present in all species (all values in the row are True)
     common_graphlets = graphlet_matrix[graphlet_matrix.all(axis=1)]
     common_graphlets.to_csv("data/oxidative_stress/common_graphlets.csv")
+
+    # Count the number of True values (i.e., species presence) for each graphlet
+    num_present = enriched_matrix.sum(axis=1)
+
+    # Filter for graphlets that are present in exactly 3 or 4 species
+    common_3_4_graphlets = enriched_matrix[(num_present == 3) | (num_present == 4)]
+
+    # Display the result
+    print(f'Enriched common graphlets:\n{common_3_4_graphlets}')
 
     # Display the result
     print(f'Graphlets in all species:\n{common_graphlets}')
