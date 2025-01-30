@@ -177,8 +177,8 @@ def split_to_csv(G_induced, output_dir):
 
 def main():
    # List of taxon IDs to process
-    # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
-    taxon_ids = ["txid224308"]
+    taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    # taxon_ids = ["txid224308"]
     threshold = 0.8
 
     for txid in taxon_ids:
@@ -254,37 +254,37 @@ def main():
         # print(f"Total degree of stress subnetwork: {sum(dict(G_induced.degree()).values())}")
         # Have to subtract the above number - len("stress_ppi.csv") to get mixed degree
 
-        # Compute positions using spring layout to spread out the nodes
-        pos = nx.spring_layout(G_induced, k=0.5)  # Adjust 'k' for more spacing
+        # # Compute positions using spring layout to spread out the nodes
+        # pos = nx.spring_layout(G_induced, k=0.5)  # Adjust 'k' for more spacing
 
-        # Extract edge labels
-        G_induced.remove_edges_from(nx.selfloop_edges(G_induced))
-        edge_labels = nx.get_edge_attributes(G_induced, "label")
-        print(f"Edge labels: {edge_labels}")
+        # # Extract edge labels
+        # G_induced.remove_edges_from(nx.selfloop_edges(G_induced))
+        # edge_labels = nx.get_edge_attributes(G_induced, "label")
+        # print(f"Edge labels: {edge_labels}")
 
-        # Define a color mapping based on edge labels
-        edge_color_map = {
-            "reg": "red",
-            "ppi": "black",
-        }
+        # # Define a color mapping based on edge labels
+        # edge_color_map = {
+        #     "reg": "red",
+        #     "ppi": "black",
+        # }
 
-        # Assign colors based on edge labels
-        edge_colors = [edge_color_map.get(edge_labels.get(edge, "default"), "gray") for edge in G_induced.edges()]
+        # # Assign colors based on edge labels
+        # edge_colors = [edge_color_map.get(edge_labels.get(edge, "default"), "gray") for edge in G_induced.edges()]
 
-        # Draw the graph
-        plt.figure(figsize=(8, 6))
-        nx.draw_networkx(
-            G_induced,
-            pos,
-            with_labels=True,
-            node_size=300,  # Adjust node size if needed
-            edge_color=edge_colors,
-            font_size=10
-        )
+        # # Draw the graph
+        # plt.figure(figsize=(8, 6))
+        # nx.draw_networkx(
+        #     G_induced,
+        #     pos,
+        #     with_labels=True,
+        #     node_size=300,  # Adjust node size if needed
+        #     edge_color=edge_colors,
+        #     font_size=10
+        # )
 
-        # Show edge labels (optional)
-        nx.draw_networkx_edge_labels(G_induced, pos, edge_labels=edge_labels, font_size=8)
-        plt.show()
+        # # Show edge labels (optional)
+        # nx.draw_networkx_edge_labels(G_induced, pos, edge_labels=edge_labels, font_size=8)
+        # plt.show()
 
 if __name__ == "__main__":
     main()
