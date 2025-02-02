@@ -730,7 +730,7 @@ def plot_stress_orbit_distribution(
             if observed_median_count[orbit] > random_median:
                 count += 1
 
-        if count >= float(sample_size) * 0.99:
+        if count >= float(sample) * 0.99:
             significance[orbit] = 1 
             print(indexed_orbit_dict[orbit], ": significant")
         else:
@@ -1534,13 +1534,13 @@ def main(stdscr):
             f.close()
             print()
 
-            plot_three_node_graphlet_distribution(
-                three_node_graphlet_dict,
-                graphlet_mapper,
-                indexed_graphlet_dict,
-                selected_network,
-                output_dir,
-            )
+            # plot_three_node_graphlet_distribution(
+            #     three_node_graphlet_dict,
+            #     graphlet_mapper,
+            #     indexed_graphlet_dict,
+            #     selected_network,
+            #     output_dir,
+            # )
 
             # plot_three_node_orbit_dist(
             #     orbit_dict,
@@ -1551,10 +1551,10 @@ def main(stdscr):
 
             # print("stress protein stats")
 
-            # stress_proteins_list = get_stress_proteins(protein_id_dict, stress_data_path, '\t')
-            # print(stress_proteins_list)
+            stress_proteins_list = get_stress_proteins(protein_id_dict, stress_data_path, '\t')
+            print(stress_proteins_list)
 
-            # significance = plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict, stress_proteins_list, protein_id_dict, selected_network, output_dir, node_orbit_arr)
+            significance = plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict, stress_proteins_list, protein_id_dict, selected_network, output_dir, node_orbit_arr)
 
     # draw_labeled_multigraph(G, "label")
     # plt.show()
