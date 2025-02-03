@@ -1,9 +1,0 @@
-three node graphlet counts
-((0, 1), (0, 1), (1, 1)) = 7
-Total graphlets found: 7
-unique graphlet counts : 1
-three node orbit counts
-(((0, 1), (0, 1), (1, 1)), 0), Orbit 0 : 14
-(((0, 1), (0, 1), (1, 1)), 1), Orbit 1 : 7
-Total orbits found: 21
-unique orbits counts : 2

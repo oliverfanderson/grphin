@@ -1,5 +1,7 @@
 import networkx as nx
 import csv
+from matplotlib import pyplot as plt
+from pyvis.network import Network
 
 species_dict = {
     "txid6239" : "elegans",
@@ -173,9 +175,11 @@ def split_to_csv(G_induced, output_dir):
     print(f"PPI edges written to: {ppi_file}")
     print(f"Reg edges written to: {reg_file}")
 
+
 def main():
    # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    # taxon_ids = ["txid224308"]
     threshold = 0.8
 
     for txid in taxon_ids:
@@ -210,7 +214,7 @@ def main():
         # Convert the set back to a list if needed
         restart_nodes = list(restart_nodes)
 
-        # print(f"Restart nodes: {restart_nodes}")
+        print(f"Total Stress Proteins: {len(restart_nodes)}")
 
         # Create the personalization vector
         personalization = {node: (1 if node in restart_nodes else 0) for node in G_prime.nodes()}
@@ -244,10 +248,40 @@ def main():
 
         G_induced = get_induced_subnetwork(G, pagerank_out)
         
-        print(f"Length of PR: {len(pagerank_out)}\nInduced subnetwork: {G_induced}")
+        print(f"Induced subnetwork: {G_induced}")
 
         split_to_csv(G_induced, output_dir)
 
+
+        # print(f"Total degree of stress subnetwork: {sum(dict(G_induced.degree()).values())}")
+        # Have to subtract the above number - len("stress_ppi.csv") to get mixed degree
+
+        # nt = Network('500px', '600px', directed=True)
+        # G_induced.remove_edges_from(nx.selfloop_edges(G_induced))
+
+        # nt.barnes_hut()  # Improve layout
+
+        # for node in G_induced.nodes():
+        #     nt.add_node(node)
+        #     nt.get_node(node)['color'] = '#cfe2f3'
+        #     nt.get_node(node)['size'] = 100  # Adjust size if needed
+
+        # # Track added edges to prevent duplication
+        # seen_ppi_edges = set()
+
+        # # Iterate over edges
+        # for u, v, data in G_induced.edges(data=True):
+        #     label = data.get("label", None)  # Get label from edge data
+        #     if label == "reg":
+        #         nt.add_edge(u, v, color="red", width=20, arrows="to", arrowStrikethrough=True)  # Directed red edge
+        #     elif label == "ppi":
+        #         if (u, v) not in seen_ppi_edges and (v, u) not in seen_ppi_edges:
+        #             nt.add_edge(u, v, color="black", width=20, arrows="")  # Undirected black edge
+        #             seen_ppi_edges.add((u, v))  # Mark the pair as seen
+        #             seen_ppi_edges.add((v, u))  # Ensure (v, u) isn't added separately
+
+        # nt.set_edge_smooth('dynamic')
+        # nt.write_html(f'{output_dir}nx.html')
 
 if __name__ == "__main__":
     main()
