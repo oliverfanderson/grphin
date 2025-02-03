@@ -1,0 +1,9 @@
+1	transporter activity (GO:0005215)	9	8.8%	10.7%
+2	translation regulator activity (GO:0045182)	1	1.0%	1.2%
+3	transcription regulator activity (GO:0140110)	3	2.9%	3.6%
+4	catalytic activity (GO:0003824)	37	36.3%	44.0%
+5	molecular function regulator activity (GO:0098772)	3	2.9%	3.6%
+6	ATP-dependent activity (GO:0140657)	5	4.9%	6.0%
+7	molecular adaptor activity (GO:0060090)	2	2.0%	2.4%
+8	structural molecule activity (GO:0005198)	4	3.9%	4.8%
+9	binding (GO:0005488)	20	19.6%	23.8%

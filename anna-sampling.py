@@ -7,7 +7,7 @@ NAMES = ['bsub','elegans','fly','drerio','cerevisiae']
 FILES = {name:'final_output/%s/stress_orbit_significance.csv' % name for name in NAMES}
 NONZEROS = {name:[] for name in NAMES}
 SIG = {name:[] for name in NAMES}
-p = 0.05  ## p-value is set to 0.01.
+p = 0.01  ## p-value is set to 0.01.
 def main():
     sig_orbits = set()
     for name in NAMES:
