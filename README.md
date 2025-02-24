@@ -8,3 +8,15 @@ GRPhIN takes as input (1) an undirected PPI network and (2) a directed regulator
 1. Activate the GRPhIN conda environment in the root directory with `conda activate grphin`.
 2. To run the GRPhIN orbit and graphlet counting algorithm on the example networks, run the `grphin.py` script with `python3 grphin.py`.
 3. Follow the menu options for your organism of interest.
+
+## File Descriptions
+
+- **`README.md`** – This file, providing documentation for the repository.
+- **`LICENSE`** – License information for the project.
+- **`environment.yml`** – Set up the conda environment with all dependencies required to run the project.
+- **`grphin.py`** – Script for running the GRPhIN algorithm.
+- **`enrichment.py`** – Script for calculating graphlet enrichment statistics.
+- **`orbit_proteins.py`** – Script for finding protein identities and overrepresented orbits in GRPhIN results.
+- **`pageRank.py`** – Script for running simple Random Walk with Restart algorithm to capture a subnetwork based on oxidative stress pathways.
+- **`data/`** – Contains raw data files for case studies.
+- **`final_output/`** – Contains output data files for case studies.
