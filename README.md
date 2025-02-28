@@ -5,7 +5,7 @@ GRPhIN (Graphlet Characterization of Regulatory and Physical Interaction Network
 GRPhIN takes as input (1) an undirected PPI network and (2) a directed regulatory network and counts all mixed graphlets and their respective orbits ([Figure 6](https://github.com/Reed-CompBio/motifs/blob/main/Complete%20Graphlet%20%26%20Orbit%20Definitions.pdf)). GRPhIN provides additional functional context to the roles a protein may play beyond traditional isolated network types.
 
 ## Usage
-1. Activate the GRPhIN conda environment in the root directory with `conda activate grphin`.
+1. Install and activate the GRPhIN conda environment in the root directory with `conda env create -f environment.yml` and `conda activate grphin`.
 2. To run the GRPhIN orbit and graphlet counting algorithm on the example networks, run the `grphin.py` script with `python3 grphin.py`.
 3. Follow the menu options for your organism of interest.
 
