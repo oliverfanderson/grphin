@@ -361,11 +361,7 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
 
 
-def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Graph):
-    three_node_graphlet_dict = {}
-    graphlet_mapper = {}
-    orbit_dict = {}
-    orbit_mapper = {}
+def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict):
     graphlet_config = load_graphlet_config("graphlet_config.csv")
     start_time = time.time()
 
@@ -454,15 +450,13 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
                             sorted(tuples_list, key=lambda x: (x[0], x[1]))
                         )
 
-                        # Add the graphlet if it has not been seen yet and update the count for the graphlet
+                        # catch missing graphlets in config
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
-                            three_node_graphlet_dict[hash(sorted_tuples)] = 0
-                            graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
+                            print("MISSING GRAPHLET IN CONFIG")
+                            
                         three_node_graphlet_dict[hash(sorted_tuples)] += 1
-                        # print(f'Graphlet: {sorted_tuples}')
                         orbit_dict = get_orbit_per_graphlet(
                             orbit_dict,
-                            orbit_mapper,
                             sorted_tuples,
                             a_edges,
                             b_edges,
@@ -475,16 +469,14 @@ def get_three_node_graphlet_dist_adj_list_v3(G: nx.MultiDiGraph, G_prime: nx.Gra
 
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
-        # print(f"Completed node: {i}")
 
     run_time = time.time() - start_time
     print("run time : %.3f seconds" % run_time)
-    return three_node_graphlet_dict, graphlet_mapper, orbit_dict, orbit_mapper, run_time
+    return three_node_graphlet_dict, orbit_dict, run_time
 
 
 def get_orbit_per_graphlet(
     orbit_dict,
-    orbit_mapper,
     sorted_tuples,
     a_edges,
     b_edges,
@@ -512,9 +504,11 @@ def get_orbit_per_graphlet(
                 if orbit == -1:  # Skip missing orbits
                     continue
                 graphlet_key = (sorted_tuples, orbit)
+
+                # catch missing orbits in config
                 if hash(graphlet_key) not in orbit_dict:
-                    orbit_dict[hash(graphlet_key)] = []
-                    orbit_mapper[hash(graphlet_key)] = f"{graphlet_key}, Orbit {orbit}"
+                    print("MISSING ORBIT IN CONFIG")
+
                 orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
 
     return orbit_dict
@@ -554,11 +548,6 @@ def plot_three_node_graphlet_distribution(
     x_label = [*range(0, len(indexed_graphlet_dict), 1)]
     for graphlet in indexed_graphlet_dict:
         if graphlet in graphlet_dict:
-            print(
-                indexed_graphlet_dict[graphlet],
-                graphlet_mapper[graphlet],
-                graphlet_dict[graphlet],
-            )
             hist_data.append(graphlet_dict[graphlet])
         else:
             hist_data.append(0)
@@ -592,7 +581,10 @@ def plot_three_node_graphlet_distribution(
 
     return None
 
-def plot_three_node_orbit_dist(orbit_dict, orbit_mapper, indexed_orbit_dict, selected_network, output_dir):
+
+def plot_three_node_orbit_dist(
+    orbit_dict, orbit_mapper, indexed_orbit_dict, selected_network, output_dir
+):
     orbit_counts = {}
     for orbit in orbit_dict:
         count = 0
@@ -636,7 +628,7 @@ def plot_stress_orbit_distribution(
     protein_id_dict,
     selected_network,
     output_dir,
-    node_orbit_arr
+    node_orbit_arr,
 ):
 
     observed_median_count = {}
@@ -647,7 +639,9 @@ def plot_stress_orbit_distribution(
         # print(f"orbit {orbit}", end="\r")
         stress_protein_orbit_dict[orbit] = []
         for protein in stress_proteins_list:
-            protein_orbit_count = node_orbit_arr[protein][int(indexed_orbit_dict[orbit])]
+            protein_orbit_count = node_orbit_arr[protein][
+                int(indexed_orbit_dict[orbit])
+            ]
             stress_protein_orbit_dict[orbit] += [protein_orbit_count]
 
     print("Counting stress medians\n")
@@ -673,23 +667,20 @@ def plot_stress_orbit_distribution(
 
     sample_results = {}
 
-    for i in range(0,sample):
+    for i in range(0, sample):
         print("sample :", i, end="\r")
         non_stress_sample = random.sample(non_stress_proteins, sample_size)
         array_stack = []
         for protein in non_stress_sample:
             array_stack.append(node_orbit_arr[protein])
         stacked = np.vstack(array_stack)
-        orbit_medians_list = np.median(stacked, axis = 0)
+        orbit_medians_list = np.median(stacked, axis=0)
 
         for orbit in orbit_dict:
             orbit_index = indexed_orbit_dict[orbit]
             if orbit not in sample_results:
                 sample_results[orbit] = []
             sample_results[orbit] += [orbit_medians_list[int(orbit_index)]]
-
-
-
 
     # sample_results = {}
     # for i in range(0, sample):
@@ -731,17 +722,18 @@ def plot_stress_orbit_distribution(
                 count += 1
 
         if count >= float(sample) * 0.99:
-            significance[orbit] = 1 
+            significance[orbit] = 1
             print(indexed_orbit_dict[orbit], ": significant")
         else:
             significance[orbit] = 0
             print(indexed_orbit_dict[orbit], ": NOT significant")
 
     with open(f"{output_dir}/stress_orbit_significance.csv", "w") as f:
-            f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
-            for orbit in significance:
-                f.write(f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\t{observed_median_count[orbit]}\t{sample_results[orbit]}\n")
-
+        f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
+        for orbit in significance:
+            f.write(
+                f"{indexed_orbit_dict[orbit]}\t{significance[orbit]}\t{observed_median_count[orbit]}\t{sample_results[orbit]}\n"
+            )
 
     i = 0
     for orbit in orbit_dict:
@@ -750,7 +742,7 @@ def plot_stress_orbit_distribution(
 
             fig = plt.figure(figsize=(14, 6))
             plt.hist(hist_data)
-            plt.axvline(x=int(observed_median_count[orbit]), color='r', linestyle='--')
+            plt.axvline(x=int(observed_median_count[orbit]), color="r", linestyle="--")
             plt.title(
                 f"{selected_network} Random Median Samples at Orbit {int(indexed_orbit_dict[orbit])} Distribution",
                 fontsize=16,
@@ -773,8 +765,7 @@ def plot_stress_orbit_distribution(
             # plt.savefig(f"{output_dir}/stres_orbit_significance_dist_v2.pdf")
             # plt.show()
             plt.close()
-        i+=1
-
+        i += 1
 
     # hist_data = []
     # x_label = [*range(0, len(indexed_orbit_dict), 1)]
@@ -822,7 +813,9 @@ def species_wide_two_node_plots():
         species_counts = species_graphlet_data[species_name]
         total_count = sum(species_counts[graphlet] for graphlet in graphlet_ids)
         for graphlet in graphlet_ids:
-            percentage = (species_counts[graphlet] / total_count) * 100 if total_count > 0 else 0
+            percentage = (
+                (species_counts[graphlet] / total_count) * 100 if total_count > 0 else 0
+            )
             graphlet_counts[graphlet].append(percentage)
 
     index = np.arange(len(species_list))
@@ -838,7 +831,7 @@ def species_wide_two_node_plots():
             bar_width,
             bottom=bottom_values,
             label=graphlet,
-            color=colors[i]
+            color=colors[i],
         )
         bottom_values += np.array(graphlet_counts[graphlet])
 
@@ -853,7 +846,6 @@ def species_wide_two_node_plots():
     plt.savefig("final_output/species_two_node_graphlet_dist_percentage.pdf")
     plt.show()
     plt.close()
-
 
     orbit_ids = ["1", "2", "3", "4", "5", "6", "7"]
     species_orbit_data = {}
@@ -990,12 +982,12 @@ def species_wide_3_node_plots():
         for species in species_list:
             print(f"{species} Count: {species_graphlet_counts[species][graphlet_id]}")
 
-    with open(f"final_output/species_top_three_node_graphlet_counts.csv", "w") as f:
-        f.write(f"graphlet_id\ttotal_count\tbsub\tcerevisiae\tdrerio\telegans\tfly\n")
-        for graphlet in top_graphlets:
-            f.write(
-                f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["cerevisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n"
-            )
+    # with open(f"final_output/species_top_three_node_graphlet_counts.csv", "w") as f:
+    #     f.write(f"graphlet_id\ttotal_count\tbsub\tcerevisiae\tdrerio\telegans\tfly\n")
+    #     for graphlet in top_graphlets:
+    #         f.write(
+    #             f"{graphlet[0]}\t{species_graphlet_counts["bsub"][graphlet_id]}\t{species_graphlet_counts["cerevisiae"][graphlet_id]}\t{species_graphlet_counts["drerio"][graphlet_id]}\t{species_graphlet_counts["elegans"][graphlet_id]}\t{species_graphlet_counts["bsub"][graphlet_id]}\n"
+    #         )
     return None
 
 
@@ -1061,7 +1053,9 @@ def type_answer(stdscr, step):
             return int(typed_number)
 
 
-def get_user_inputs(selected_network, selected_graphlet, selected_processing, selected_network_type):
+def get_user_inputs(
+    selected_network, selected_graphlet, selected_processing, selected_network_type
+):
     ppi_path = None
     reg_path = None
     graphlet_option = None
@@ -1103,7 +1097,7 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing, se
                 ppi_path = Path("data/cerevisiae_ppi.csv")
                 reg_path = Path("data/cerevisiae_reg.csv")
                 output_dir = Path("final_output/cerevisiae")
-            else: 
+            else:
                 ppi_path = Path("data/oxidative_stress/txid559292/stress_ppi.csv")
                 reg_path = Path("data/oxidative_stress/txid559292/stress_reg.csv")
                 output_dir = Path("final_output/cerevisiae_stress")
@@ -1173,11 +1167,13 @@ def get_user_inputs(selected_network, selected_graphlet, selected_processing, se
         process_type,
     )
 
+
 def get_process_type(selected_processing):
     if selected_processing == "all process":
         return 0
     elif selected_processing == "post-processing only":
         return 1
+
 
 def main(stdscr):
     try:
@@ -1220,7 +1216,12 @@ def main(stdscr):
     finally:
         curses.endwin()
     ppi_path, reg_path, graphlet_mode, output_dir, stress_data_path, process_type = (
-        get_user_inputs(selected_network, selected_graphlet, selected_processing, selected_network_type)
+        get_user_inputs(
+            selected_network,
+            selected_graphlet,
+            selected_processing,
+            selected_network_type,
+        )
     )
 
     if graphlet_mode == 2:
@@ -1317,22 +1318,38 @@ def main(stdscr):
             graphlet_count = 0
             for graphlet in graphlet_config:
                 indexed_graphlet_dict[hash(graphlet["key"])] = graphlet_count
+                three_node_graphlet_dict[hash(graphlet["key"])] = 0
+                graphlet_mapper[hash(graphlet["key"])] = graphlet["key"]
                 for i in set(graphlet["orbits"]):
                     indexed_orbit_dict[hash((graphlet["key"], i))] = orbit_count
+                    orbit_mapper[hash((graphlet["key"], i))] = f"{(graphlet['key'], i)}, Orbit {i}"
+                    orbit_dict[hash((graphlet["key"], i))] = []
                     orbit_count += 1
                 graphlet_count += 1
             # if we want to compute the whole counts
             if process_type == 0:
                 (
                     three_node_graphlet_dict,
-                    graphlet_mapper,
                     orbit_dict,
-                    orbit_mapper,
                     run_time,
-                ) = get_three_node_graphlet_dist_adj_list_v3(G, G_prime)
+                ) = get_three_node_graphlet_dist_adj_list_v3(G, G_prime, three_node_graphlet_dict, orbit_dict)
                 node_orbit_arr = np.zeros(
                     (len(G.nodes), len(indexed_orbit_dict)), dtype=int
                 )
+
+                # reassign orbit_dict where each orbit contains a list of (protein, protein_counts)
+                for orbit in orbit_dict:
+                    protein_list = orbit_dict[orbit]
+                    protein_count_dict = defaultdict(int)
+                    for protein in protein_list:
+                        protein_count_dict[protein] += 1
+
+                    protein_count_list = []
+                    for protein in set(protein_list):
+                        protein_count_list += [(protein, protein_count_dict[protein])]
+
+                    orbit_dict[orbit] = protein_count_list
+
                 for orbit in orbit_dict:
                     match = re.match(
                         r"(\(\(\(.*?\)\), \d+\)), Orbit \d+", orbit_mapper[orbit]
@@ -1345,20 +1362,18 @@ def main(stdscr):
                             print(f"Error converting result to tuple: {e}")
                             result_tuple = None
                         if result_tuple is not None:
-                            for node in orbit_dict[orbit]:
+                            for node_count_set in orbit_dict[orbit]:
                                 if hash(result_tuple) in indexed_orbit_dict:
                                     orbit_index = indexed_orbit_dict[hash(result_tuple)]
-                                    node_orbit_arr[node][int(orbit_index)] += 1
+                                    node_orbit_arr[node_count_set[0]][int(orbit_index)] = node_count_set[1]
 
                 # save the output files
-                print(node_orbit_arr)
                 np.savetxt(
                     f"{output_dir}/node_orbit.csv",
                     node_orbit_arr,
                     delimiter=",",
                     fmt="%d",
                 )
-                print("INSIDEEE")
                 with open(f"{output_dir}/protein_id_mapper.csv", "w") as f:
                     for protein in protein_id_dict:
                         f.write(f"{protein}, {protein_id_dict[protein]}\n")
@@ -1441,24 +1456,22 @@ def main(stdscr):
                             orbit_id_dict[id] = result
                 print("post processing step 5/6")
 
-                node_orbit_arr = np.loadtxt(f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int)
+                node_orbit_arr = np.loadtxt(
+                    f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
+                )
                 rows, cols = node_orbit_arr.shape
 
                 node_orbit_arr = np.loadtxt(
                     f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
                 )
                 rows, cols = node_orbit_arr.shape
-                # print(rows, cols)
                 count = 0
                 for orbit in orbit_id_dict:
-                    print(orbit, orbit_id_dict[orbit])
                     for protein in range(0, rows, 1):
-                        # print(orbit, type(orbit), protein, type(protein))
                         orbit_hash = hash(orbit_id_dict[orbit])
                         if orbit_hash not in orbit_dict:
                             orbit_dict[orbit_hash] = []
                         protein_count = node_orbit_arr[protein][int(orbit)]
-                        # print(orbit, protein, protein_count)
                         orbit_dict[orbit_hash] += [(protein, protein_count)]
                         print(count, "/", rows * cols, end="\r")
                         count += 1
@@ -1471,15 +1484,14 @@ def main(stdscr):
                 # for orbit, orbit_hash in orbit_hashes.items():
                 #     print(count, "/", rows * cols, end="\r")
                 #     protein_counts = node_orbit_arr[:, int(orbit)]
-                    
+
                 #     # Avoid repeated appending, use list comprehension
                 #     expanded_proteins = [
                 #         protein - 1 for protein in range(rows) for _ in range(protein_counts[protein])
                 #     ]
-                    
+
                 #     orbit_dict[orbit_hash].extend(expanded_proteins)
                 #     count +=1
-
 
                 # node_orbit_arr = np.loadtxt(
                 #     f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
@@ -1523,38 +1535,49 @@ def main(stdscr):
                 f.write(f"unique graphlet counts : {len(three_node_graphlet_dict)}\n")
                 f.write(f"three node orbit counts\n")
                 total_orbit_count = 0
+
                 for orbit in orbit_dict:
                     orbit_count = 0
                     for protein_set in orbit_dict[orbit]:
-                        orbit_count+=protein_set[1]
+                        orbit_count += protein_set[1]
                     total_orbit_count += orbit_count
                     f.write(f"{orbit_mapper[orbit]} : {orbit_count}\n")
                 f.write(f"Total orbits found: {total_orbit_count}\n")
                 f.write(f"unique orbits counts : {len(orbit_dict)}\n")
             f.close()
-            print()
 
-            # plot_three_node_graphlet_distribution(
-            #     three_node_graphlet_dict,
-            #     graphlet_mapper,
-            #     indexed_graphlet_dict,
-            #     selected_network,
-            #     output_dir,
-            # )
+            plot_three_node_graphlet_distribution(
+                three_node_graphlet_dict,
+                graphlet_mapper,
+                indexed_graphlet_dict,
+                selected_network,
+                output_dir,
+            )
 
-            # plot_three_node_orbit_dist(
-            #     orbit_dict,
-            #     orbit_mapper,
-            #     indexed_orbit_dict,
-            #     selected_network,
-            #     output_dir,)
+            plot_three_node_orbit_dist(
+                orbit_dict,
+                orbit_mapper,
+                indexed_orbit_dict,
+                selected_network,
+                output_dir,)
 
-            # print("stress protein stats")
+            print("stress protein stats")
 
-            stress_proteins_list = get_stress_proteins(protein_id_dict, stress_data_path, '\t')
+            stress_proteins_list = get_stress_proteins(
+                protein_id_dict, stress_data_path, "\t"
+            )
             print(stress_proteins_list)
 
-            significance = plot_stress_orbit_distribution(orbit_dict, orbit_mapper, indexed_orbit_dict, stress_proteins_list, protein_id_dict, selected_network, output_dir, node_orbit_arr)
+            significance = plot_stress_orbit_distribution(
+                orbit_dict,
+                orbit_mapper,
+                indexed_orbit_dict,
+                stress_proteins_list,
+                protein_id_dict,
+                selected_network,
+                output_dir,
+                node_orbit_arr,
+            )
 
     # draw_labeled_multigraph(G, "label")
     # plt.show()
