@@ -122,143 +122,53 @@ def label_edges(G):
 
     return G_prime
 
-def swap_edges(G_prime, num_swaps=100):
-    """
-    Swap edge labels between randomly chosen compatible edges in the graph.
-
+def swap_edges(G_prime, num_swaps):
+    """Performs constrained edge swaps in a MultiDiGraph while preserving connectivity.
+    
     Parameters:
-    G_prime (networkx.MultiDiGraph): The labeled graph.
-    num_swaps (int): The number of swap attempts.
-
+        G (nx.MultiDiGraph): The input graph to shuffle.
+        num_swaps (int): The number of swaps to attempt.
+        
     Returns:
-    G_shuffled (networkx.MultiDiGraph): A new graph with shuffled edges.
+        nx.MultiDiGraph: A shuffled version of G.
     """
-    if G_prime is None or len(G_prime.nodes) == 0:
-        print("Error: G_prime is empty or None!")
-        return None
-
     G_random = nx.MultiDiGraph()
     G_random.update(G_prime)
-
-    if len(G_random.nodes) == 0 or len(G_random.edges) == 0:
-        print("Error: G_random is empty after copying G_prime!")
-        return G_random
-
-    print(f"Initial Graph - Nodes: {len(G_random.nodes)}, Edges: {len(G_random.edges)}")
-
-    edges = list(G_random.edges(keys=True, data=True))  # List of all edges with keys
-    if len(edges) < 2:
-        print("Not enough edges to perform swaps.")
-        return G_random
-
-    edge_dict = {(u, v, k): d["label"] for u, v, k, d in edges}  # Store labels
-
-    swap_count = 0
-
+    edges = list(G_random.edges(keys=True, data=True))  # (u, v, key, data)
+    
     for _ in range(num_swaps):
-        if len(edges) < 2:
-            print("Not enough edges remaining for swaps.")
-            break
+        # Select two random edges (ensuring distinct nodes)
+        (u, v, key1, data1), (x, y, key2, data2) = random.sample(edges, 2)
 
-        try:
-            (u, v, k1, data1), (x, y, k2, data2) = random.sample(edges, 2)
-        except ValueError:
-            print("Error: Not enough unique edges available for sampling.")
-            break
+        if len({u, v, x, y}) < 4:
+            continue  # Skip if nodes are not unique
+        
+        # Ensure the edges have the same label
+        uv_type = data1.get("label")
+        xy_type = data2.get("label")
+        if uv_type != xy_type:
+            continue
 
-        # Ensure (u, v) and (x, y) are the same edge type
-        label_uv = data1["label"]
-        label_xy = data2["label"]
+        # Ensure the edges have the same label
+        uy_type = G_random[u][y][key1]["label"] if G_random.has_edge(u, y, key1) else None
+        xv_type = G_random[x][v][key2]["label"] if G_random.has_edge(x, v, key2) else None
+        if uy_type != xv_type:
+            continue
+        print(f"UV: {uv_type}, XY: {xy_type}, UY: {uy_type}, XV: {xv_type}")
 
-        if label_uv != label_xy:
-            continue  # Skip if edge labels don't match
-
-        # Check (u, y) and (x, v)
-        uy_exists = (u, y) in G_random.edges
-        xv_exists = (x, v) in G_random.edges
-
-        if uy_exists and xv_exists:
-            # Both edges exist, check if they have the same label
-            k_uy = list(G_random[u][y].keys())[0]  # Get an arbitrary key
-            k_xv = list(G_random[x][v].keys())[0]
-            label_uy = G_random[u][y][k_uy]["label"]
-            label_xv = G_random[x][v][k_xv]["label"]
-
-            if label_uy != label_xv:
-                continue  # Skip swap if labels don't match
-
-        elif not uy_exists and not xv_exists:
-            # If neither (u, y) nor (x, v) exist, treat them as the same "non-edge"
-            label_uy = "none"
-            label_xv = "none"
-
-        else:
-            continue  # Skip if only one of them exists
-
-        # Perform the swap
-        if uy_exists:
-            G_random[u][y][k_uy]["label"], G_random[u][v][k1]["label"] = label_uv, label_uy
-        else:
-            G_random.add_edge(u, y, key=k1, label=label_uv)
-            G_random.remove_edge(u, v, key=k1)
-
-        if xv_exists:
-            G_random[x][v][k_xv]["label"], G_random[x][y][k2]["label"] = label_xy, label_xv
-        else:
-            G_random.add_edge(x, v, key=k2, label=label_xy)
-            G_random.remove_edge(x, y, key=k2)
-
-        swap_count += 1
-        print(f"Swapped edges: ({u}, {v}) <-> ({u}, {y}) and ({x}, {y}) <-> ({x}, {v})")
-
-    print(f"Total swaps performed: {swap_count}")
-    print(f"Final Graph - Nodes: {len(G_random.nodes)}, Edges: {len(G_random.edges)}")
-
+        
+        # Perform the swap: (u, v) ↔ (u, y) and (x, y) ↔ (x, v)
+        G_random.remove_edge(u, v, key1)
+        G_random.remove_edge(x, y, key2)
+        G_random.add_edge(u, y, key=key1, **data1)
+        G_random.add_edge(x, v, key=key2, **data2)
+        
+        # Update the edges list
+        edges = list(G_random.edges(keys=True, data=True))
+    
     return G_random
 
-# def swap_edges(G_prime, num_swaps=100):
-#     """
-#     Swap edge labels between randomly chosen compatible edges in the graph.
-
-#     Parameters:
-#     G_prime (networkx.MultiDiGraph): The labeled graph.
-#     num_swaps (int): The number of swap attempts.
-
-#     Returns:
-#     G_random (networkx.MultiDiGraph): A new graph with shuffled edges.
-#     """
-#     G_random = nx.MultiDiGraph()
-#     G_random.update(G_prime)
-
-#     edges = list(G_random.edges(keys=True, data=True))  # List of all edges with keys
-#     edge_dict = {(u, v, k): d["label"] for u, v, k, d in edges}  # Store labels
-
-#     for _ in range(num_swaps):
-#         # Randomly pick two different edges
-#         (u, v, k1, data1), (x, y, k2, data2) = random.sample(edges, 2)
-
-#         label_uv = data1["label"]
-#         label_xy = data2["label"]
-
-#         # Ensure we can swap
-#         if (u, y, k1) in edge_dict and (x, v, k2) in edge_dict:
-#             label_uy = edge_dict[(u, y, k1)]
-#             label_xv = edge_dict[(x, v, k2)]
-
-#             if label_uv == label_xy and label_uy == label_xv:
-#                 # Perform label swap in the actual graph
-#                 G_random[u][v][k1]["label"], G_random[u][y][k1]["label"] = label_uy, label_uv
-#                 G_random[x][y][k2]["label"], G_random[x][v][k2]["label"] = label_xv, label_xy
-
-#                 # Update the edge dictionary
-#                 edge_dict[(u, v, k1)], edge_dict[(u, y, k1)] = label_uy, label_uv
-#                 edge_dict[(x, y, k2)], edge_dict[(x, v, k2)] = label_xv, label_xy
-
-#                 print(f"Swapped edges: ({u}, {v}) <-> ({u}, {y}) and ({x}, {y}) <-> ({x}, {v})")
-
-#     return G_random
-
-def split_to_csv(G_prime, out_ppi_path, out_reg_path):
+def split_to_csv(G_random, out_ppi_path, out_reg_path):
     """
     Writes the graph to CSV files based on edge labels.
 
@@ -279,7 +189,7 @@ def split_to_csv(G_prime, out_ppi_path, out_reg_path):
         reg_writer.writerow(["id1", "id2"])
         
         # Iterate over edges
-        for u, v, key, data in G_prime.edges(data=True, keys=True):
+        for u, v, key, data in G_random.edges(data=True, keys=True):
             # print(f"Edge ({u}, {v}, {key}): {data}")
             label = data.get("label", None)
             if label == "ppi":
@@ -296,7 +206,7 @@ def main():
     # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     taxon_ids = ["txid224308"]
 
-    num_swaps = 5
+    num_swaps = 100
 
     for txid in taxon_ids:
         ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
@@ -312,28 +222,37 @@ def main():
 
         print(f"Original graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
-        # Example: Relabel edges
+        # Relabel edges with 5 two-node graphlet types
         G_prime = label_edges(G)
 
-        # Compare expected number of edges vs actual
+        # Compare expected number of edges vs actual in G_prime
         unique_node_pairs = set()
         for u, v in G.edges():
             unique_node_pairs.add(tuple(sorted([u, v])))  # Sorting ensures (A, B) == (B, A)
 
+        # Break loop if expected number of labeled edges does not match actual in G_prime
         expected_labeled_edges = len(unique_node_pairs)
         actual_labeled_edges = len(G_prime.edges())
-        if actual_labeled_edges == expected_labeled_edges:
-            print("Edge count matches expectation!")
-        else:
-            print("Edge count mismatch! Check relabeling logic.")
+        if actual_labeled_edges != expected_labeled_edges:
+            print(f"Expected {expected_labeled_edges} labeled edges, but found {actual_labeled_edges}!")
+            break
 
+        # Randomize the graph
         G_random = swap_edges(G_prime, num_swaps)
         
-        # # Example: Print basic graph stats
-        # print(f"Original graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-        
-        print(f"Labeled subnetwork: {G_prime.number_of_nodes()} nodes, {G_prime.number_of_edges()} edges")
-        print(f"Shuffled subnetwork: {G_random.number_of_nodes()} nodes, {G_random.number_of_edges()} edges")
+        # Validate the random graph
+        original_nodes = G_prime.number_of_nodes()
+        randomized_nodes = G_random.number_of_nodes()
+        if original_nodes != randomized_nodes:
+            print("Number of nodes does not match after shuffling!")
+            break
+
+        original_edges = G_prime.number_of_edges()
+        randomized_edges = G_random.number_of_edges()
+        if original_edges != randomized_edges:
+            print("Number of edges does not match after shuffling!")
+            print(f"Original edges: {original_edges}, Randomized edges: {randomized_edges}!")
+            break
 
         # Compare edge label distributions
         original_label_counts = {label: 0 for label in set(nx.get_edge_attributes(G_prime, "label").values())}
@@ -345,40 +264,46 @@ def main():
         for _, _, d in G_random.edges(data=True):
             shuffled_label_counts[d["label"]] += 1
 
-        print("Original label counts:", original_label_counts)
-        print("Shuffled label counts:", shuffled_label_counts)
+        # print("Original label counts:", original_label_counts)
+        # print("Shuffled label counts:", shuffled_label_counts)
 
-        # # Check output graphs
-        # print("First 5 edges in G_prime:")
-        # for edge in list(G_prime.edges(data=True))[:5]:
-        #     print(edge)
-
-        # print("\nFirst 5 edges in G_random:")
-        # for edge in list(G_random.edges(data=True))[:5]:
-        #     print(edge)
+        if not all(original_label_counts[label] == shuffled_label_counts[label] for label in original_label_counts):
+            print("Edge label distributions do not match after shuffling!")
+            break
+        
+        # Check degree sequence
+        original_degree = dict(G_prime.degree())
+        random_degree = dict(G_random.degree())
+        if original_degree != random_degree:
+            print("Degree sequence does not match after shuffling!")
+            break
 
         # Check if edges have changed after shuffling
         edges_prime = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_prime.edges(data=True))
         edges_random = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_random.edges(data=True))
 
-        if edges_prime == edges_random:
-            print("No changes in edges! Shuffling may not be working.")
-        else:
-            print("Edges have changed after shuffling.")
-
+        # Get unique edges in G_prime and G_random
         only_in_prime = edges_prime - edges_random
         only_in_random = edges_random - edges_prime
 
-        print(f"Edges unique to G_prime: {len(only_in_prime)}")
-        print(f"Edges unique to G_random: {len(only_in_random)}")
+        if edges_prime == edges_random:
+            print("No changes in edges! Shuffling may not be working.")
+        else:
+            print(f"{len(only_in_prime)} edges have changed after shuffling.")
+
+        if len(only_in_prime) != len(only_in_random):
+            print("Mismatch between swapped edges in graphs.")
+            print(f"Edges unique to G_prime: {len(only_in_prime)}")
+            print(f"Edges unique to G_random: {len(only_in_random)}")
+            break
+        
 
         # Print a few examples of swapped edges
         if only_in_prime and only_in_random:
-            print("Example of changed edges:")
             print("Before shuffle:", list(only_in_prime)[:5])
             print("After shuffle:", list(only_in_random)[:5])
 
-        # Example: Draw the graphs
+        # Troubleshooting: Draw the graphs
         # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
         # plt.show()
 
