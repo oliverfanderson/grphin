@@ -1461,10 +1461,6 @@ def main(stdscr):
                 )
                 rows, cols = node_orbit_arr.shape
 
-                node_orbit_arr = np.loadtxt(
-                    f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
-                )
-                rows, cols = node_orbit_arr.shape
                 count = 0
                 for orbit in orbit_id_dict:
                     for protein in range(0, rows, 1):
