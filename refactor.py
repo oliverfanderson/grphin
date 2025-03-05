@@ -371,6 +371,27 @@ def plot_run_time_data(run_time_data):
     plt.show()
 
 
+def compare_csv_files(file_path1, file_path2):
+    """
+    Compares two CSV files and returns a list of differences.
+    """
+    differences = []
+    with open(file_path1, "r") as file1, open(file_path2, "r") as file2:
+        reader1 = csv.reader(file1)
+        reader2 = csv.reader(file2)
+
+        for row_num, (row1, row2) in enumerate(zip(reader1, reader2), start=1):
+            if row1 != row2:
+                differences.append(f"Row {row_num}: File1 - {row1}, File2 - {row2}")
+
+    if len(differences) == 0:
+        print("\033[42;37mPASSED TEST\033[0m")
+    else:
+        print("\033[41;37mFAILED TEST\033[0m")
+
+    return None
+
+
 def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
@@ -606,6 +627,11 @@ def get_node_orbit_matrix(
         node_orbit_count_matrix,
         delimiter=",",
         fmt="%d",
+    )
+
+    compare_csv_files(
+        Path("final_output/bsub/node_orbit.csv"),
+        Path("output_refactor/bsub/node_orbit.csv"),
     )
 
     return node_orbit_count_matrix
