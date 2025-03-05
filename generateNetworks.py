@@ -135,8 +135,9 @@ def swap_edges(G_prime, num_swaps):
     G_random = nx.MultiDiGraph()
     G_random.update(G_prime)
     edges = list(G_random.edges(keys=True, data=True))  # (u, v, key, data)
+    swaps = 0
     
-    for _ in range(num_swaps):
+    while swaps < num_swaps:
         # Select two random edges (ensuring distinct nodes)
         (u, v, key1, data1), (x, y, key2, data2) = random.sample(edges, 2)
 
@@ -146,7 +147,7 @@ def swap_edges(G_prime, num_swaps):
         # Ensure the edges have the same label
         uv_type = data1.get("label")
         xy_type = data2.get("label")
-        if uv_type != xy_type:
+        if uv_type != xy_type or uv_type is None:
             continue
 
         # Ensure the edges have the same label
@@ -154,17 +155,44 @@ def swap_edges(G_prime, num_swaps):
         xv_type = G_random[x][v][key2]["label"] if G_random.has_edge(x, v, key2) else None
         if uy_type != xv_type:
             continue
-        print(f"UV: {uv_type}, XY: {xy_type}, UY: {uy_type}, XV: {xv_type}")
+        # print(f"DEBUG: Attempting swap {swaps + 1}:")
+        # print(f"DEBUG: U: {u}, V: {v}, Key1: {key1}, Data1: {data1}")
+        # print(f"DEBUG: X: {x}, Y: {y}, Key2: {key2}, Data2: {data2}")
+        # print(f"UV: {uv_type}, XY: {xy_type}, UY: {uy_type}, XV: {xv_type}")
 
+        uv_edge = G_random[u][v][key1]
+        xy_edge = G_random[x][y][key2]
+        if G_random.has_edge(u, y, key1):
+            uy_edge = G_random[u][y][key1]
+        else:
+            uy_edge = None
+        if G_random.has_edge(x, v, key2):
+            xv_edge = G_random[x][v][key2]
+        else:
+            xv_edge = None
+        # print(f"DEBUG: Swapping edges: {uv_edge}, {xy_edge}, {uy_edge}, {xv_edge}")
         
         # Perform the swap: (u, v) ↔ (u, y) and (x, y) ↔ (x, v)
-        G_random.remove_edge(u, v, key1)
-        G_random.remove_edge(x, y, key2)
-        G_random.add_edge(u, y, key=key1, **data1)
-        G_random.add_edge(x, v, key=key2, **data2)
+        if uy_edge is None:
+            G_random.remove_edge(u, v, key1)
+            G_random.remove_edge(x, y, key2)
+            G_random.add_edge(u, y, key=key1, **uv_edge)
+            G_random.add_edge(x, v, key=key2, **xy_edge)
+        else:
+            # Look if we can just update labels
+            G_random.remove_edge(u, v, key1)
+            G_random.remove_edge(x, y, key2)
+            G_random.remove_edge(u, y, key1)
+            G_random.remove_edge(x, v, key2)
+            G_random.add_edge(u, y, key=key1, **uv_edge)
+            G_random.add_edge(x, v, key=key2, **xy_edge)
+            G_random.add_edge(u, v, key=key1, **uy_edge)
+            G_random.add_edge(x, y, key=key2, **xv_edge)
+            # print(f"DEBUG: Swapped edges: {uv_edge}, {xy_edge}, {uy_edge}, {xv_edge}")
         
         # Update the edges list
         edges = list(G_random.edges(keys=True, data=True))
+        swaps += 1
     
     return G_random
 
@@ -204,9 +232,9 @@ def split_to_csv(G_random, out_ppi_path, out_reg_path):
 def main():
    # List of taxon IDs to process
     # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
-    taxon_ids = ["txid224308"]
+    taxon_ids = ["txid559292"]
 
-    num_swaps = 100
+    num_swaps = 6000
 
     for txid in taxon_ids:
         ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
@@ -264,8 +292,8 @@ def main():
         for _, _, d in G_random.edges(data=True):
             shuffled_label_counts[d["label"]] += 1
 
-        # print("Original label counts:", original_label_counts)
-        # print("Shuffled label counts:", shuffled_label_counts)
+        print("Original label counts:", original_label_counts)
+        print("Shuffled label counts:", shuffled_label_counts)
 
         if not all(original_label_counts[label] == shuffled_label_counts[label] for label in original_label_counts):
             print("Edge label distributions do not match after shuffling!")
