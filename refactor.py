@@ -1,5 +1,8 @@
 import ast
+from collections import defaultdict
+import re
 import time
+from matplotlib import pyplot as plt
 import networkx as nx
 import csv
 from pathlib import Path
@@ -352,6 +355,22 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
 
 
+def plot_run_time_data(run_time_data):
+    x_list = [i for i in range(len(run_time_data))]
+
+    norm_run_time = [
+        (x - min(run_time_data)) / (max(run_time_data) - min(run_time_data))
+        for x in run_time_data
+    ]
+
+    plt.figure(figsize=(14, 8))  # Correcting figure size
+    plt.plot(x_list, norm_run_time, "o", markersize=2)
+    plt.xlabel("Index")  # Adding labels for clarity
+    plt.ylabel("Run Time")
+    plt.title("Run Time Data Plot")
+    plt.show()
+
+
 def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
@@ -385,8 +404,10 @@ def grphin_algorithm(
     # Preprocess neighbors for each node once
     neighbors_dict = {i: set(G_prime.neighbors(i)) for i in G_prime.nodes()}
     completed_i = set()
+    run_time_data = []
 
     for i in G_prime.nodes():
+        node_start_time = time.time()
         print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
@@ -459,13 +480,15 @@ def grphin_algorithm(
                             k,
                             graphlet_config,
                         )
-
+        run_time_data.append(time.time() - node_start_time)
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
 
-    run_time = time.time() - start_time
-    print("run time : %.3f seconds" % run_time)
-    return three_node_graphlet_dict, orbit_dict, run_time
+    algorithm_run_time = time.time() - start_time
+    print("run time : %.3f seconds" % algorithm_run_time)
+    plot_run_time_data(run_time_data)
+
+    return three_node_graphlet_dict, orbit_dict, algorithm_run_time
 
 
 def get_orbit_per_graphlet(
@@ -533,6 +556,61 @@ def get_orbit_position_change(
     )
 
 
+def get_node_orbit_matrix(
+    G,
+    three_node_orbit_id,
+    three_node_orbit_protein_data,
+    three_node_orbit_namespace,
+    output_dir,
+    species,
+):
+
+    node_orbit_count_matrix = np.zeros(
+        (len(G.nodes), len(three_node_orbit_id)), dtype=int
+    )
+
+    # reassign orbit_dict where each orbit contains a list of (protein, protein_counts)
+    for orbit in three_node_orbit_protein_data:
+        protein_list = three_node_orbit_protein_data[orbit]
+        protein_count_dict = defaultdict(int)
+        for protein in protein_list:
+            protein_count_dict[protein] += 1
+
+        protein_count_list = []
+        for protein in set(protein_list):
+            protein_count_list += [(protein, protein_count_dict[protein])]
+
+        three_node_orbit_protein_data[orbit] = protein_count_list
+
+    for orbit in three_node_orbit_protein_data:
+        match = re.match(
+            r"(\(\(\(.*?\)\), \d+\)), Orbit \d+", three_node_orbit_namespace[orbit]
+        )
+        if match:
+            result = match.group(1)
+            try:
+                result_tuple = ast.literal_eval(result)
+            except (SyntaxError, ValueError) as e:
+                print(f"Error converting result to tuple: {e}")
+                result_tuple = None
+            if result_tuple is not None:
+                for node_count_set in three_node_orbit_protein_data[orbit]:
+                    if hash(result_tuple) in three_node_orbit_id:
+                        orbit_index = three_node_orbit_id[hash(result_tuple)]
+                        node_orbit_count_matrix[node_count_set[0]][int(orbit_index)] = (
+                            node_count_set[1]
+                        )
+
+    np.savetxt(
+        f"{output_dir}/{species}/node_orbit.csv",
+        node_orbit_count_matrix,
+        delimiter=",",
+        fmt="%d",
+    )
+
+    return node_orbit_count_matrix
+
+
 def initialize_three_node_graphlet_data(
     graphlet_config,
     three_node_graphlet_id,
@@ -550,7 +628,9 @@ def initialize_three_node_graphlet_data(
         three_node_graphlet_namespace[hash(graphlet["key"])] = graphlet["key"]
         for i in set(graphlet["orbits"]):
             three_node_orbit_id[hash((graphlet["key"], i))] = orbit_count
-            three_node_orbit_namespace[hash((graphlet["key"], i))] = str(f"{(graphlet['key'], i)}, Orbit {i}")
+            three_node_orbit_namespace[hash((graphlet["key"], i))] = str(
+                f"{(graphlet['key'], i)}, Orbit {i}"
+            )
             three_node_orbit_protein_data[hash((graphlet["key"], i))] = []
             orbit_count += 1
         graphlet_count += 1
@@ -565,7 +645,7 @@ def initialize_three_node_graphlet_data(
     )
 
 
-def count_three_node_graphlets(graphlet_config, G, G_prime):
+def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species):
 
     three_node_graphlet_count = {}
     three_node_graphlet_namespace = {}
@@ -577,12 +657,12 @@ def count_three_node_graphlets(graphlet_config, G, G_prime):
     node_orbit_arr = np.zeros((len(G.nodes), len(three_node_orbit_id)), dtype=int)
 
     (
-    three_node_graphlet_id,
-    three_node_orbit_id,
-    three_node_graphlet_count,
-    three_node_orbit_protein_data,
-    three_node_graphlet_namespace,
-    three_node_orbit_namespace
+        three_node_graphlet_id,
+        three_node_orbit_id,
+        three_node_graphlet_count,
+        three_node_orbit_protein_data,
+        three_node_graphlet_namespace,
+        three_node_orbit_namespace,
     ) = initialize_three_node_graphlet_data(
         graphlet_config,
         three_node_graphlet_id,
@@ -601,13 +681,22 @@ def count_three_node_graphlets(graphlet_config, G, G_prime):
         G, G_prime, three_node_graphlet_count, three_node_orbit_protein_data
     )
 
-    print("GRAPHLET COUNTS")
-    for graphlet in three_node_graphlet_count:
-        print(three_node_graphlet_namespace[graphlet], three_node_graphlet_count[graphlet])
+    node_orbit_count_matrix = get_node_orbit_matrix(
+        G,
+        three_node_orbit_id,
+        three_node_orbit_protein_data,
+        three_node_orbit_namespace,
+        output_dir,
+        species,
+    )
 
-    print("\nORBIT COUNTS")
-    for orbit in three_node_orbit_protein_data:
-        print(three_node_orbit_namespace[orbit], len(three_node_orbit_protein_data[orbit]))
+    # print("GRAPHLET COUNTS")
+    # for graphlet in three_node_graphlet_count:
+    #     print(three_node_graphlet_namespace[graphlet], three_node_graphlet_count[graphlet])
+
+    # print("\nORBIT COUNTS")
+    # for orbit in three_node_orbit_protein_data:
+    #     print(three_node_orbit_namespace[orbit], len(three_node_orbit_protein_data[orbit]))
 
 
 def main():
@@ -633,11 +722,11 @@ def main():
     print(f"Number of nodes: {len(G_prime.nodes())}")
     print(f"Number of edges: {len(G_prime.edges())}")
 
-    two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
-        count_two_node_graphlet(G, output_dir, species)
-    )
+    # two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
+    #     count_two_node_graphlet(G, output_dir, species)
+    # )
 
-    count_three_node_graphlets(graphlet_config, G, G_prime)
+    count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
 
 
 if __name__ == "__main__":
