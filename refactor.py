@@ -401,18 +401,23 @@ def grphin_algorithm(
     start_time = time.time()
 
     # create all the binary edge vectors
-    adj_list_vector = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))
-
+    adj_list_vector = [{} for _ in range(len(G.nodes()))]
     for i, j, data in G.edges(data=True):
         label = data.get("label")
-
         if label == "ppi":
-            adj_list_vector[i][j] = [1, 0, 0]
-            adj_list_vector[j][i] = [1, 0, 0]
-
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [1, 0, 0]
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [1, 0, 0]
         elif label == "reg":
-            adj_list_vector[i][j][1] += 1
-            adj_list_vector[j][i][2] += 1
+            if j not in adj_list_vector[i]:
+                adj_list_vector[i][j] = [0, 1, 0]
+            else:
+                adj_list_vector[i][j][1] += 1
+            if i not in adj_list_vector[j]:
+                adj_list_vector[j][i] = [0, 0, 1]
+            else:
+                adj_list_vector[j][i][2] += 1
 
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
@@ -424,33 +429,57 @@ def grphin_algorithm(
     completed_i = set()
     run_time_data = []
 
-    node_list = [node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1])]
+    node_list = [node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1], reverse=False)]
 
-    for i in node_list:
-    # for i in G_prime.nodes():
+    print("len of g prime deg", len(node_list))
+    print("len of g prime nodes", len(G_prime.nodes()))
+
+    triple_counter = 0
+    count = 0
+    # for i in node_list:
+    for i in G_prime.nodes():
         node_start_time = time.time()
-        # print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
-        # print(i, G_prime.degree(i))
+        print(f"Node: {count}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
-            for k in neighbors_dict[j].difference(completed_i):
+            for k in neighbors_dict[j]:
                 if (
-                    (i < k) and (i != j) and (j != k)
-                ):  # Ensure no duplicates by enforcing i < k and i != j
+                    (i != k) and (i != j) and (j != k)
+                ):
+                    
                     triplet = tuple(sorted([i, j, k]))
                     if triplet not in three_node_combination:
+                        triple_counter+=1
                         three_node_combination.add(triplet)
 
                         a = i
                         b = j
                         c = k
 
-                        ab = adj_list_vector[a][b]
-                        ac = adj_list_vector[a][c]
-                        ba = adj_list_vector[b][a]
-                        bc = adj_list_vector[b][c]
-                        ca = adj_list_vector[c][a]
-                        cb = adj_list_vector[c][b]
-                        
+                        ab = ac = ba = bc = ca = cb = 0
+                        if b in adj_list_vector[a]:
+                            ab = adj_list_vector[a][b]
+                        else:
+                            ab = [0, 0, 0]
+                        if c in adj_list_vector[a]:
+                            ac = adj_list_vector[a][c]
+                        else:
+                            ac = [0, 0, 0]
+                        if a in adj_list_vector[b]:
+                            ba = adj_list_vector[b][a]
+                        else:
+                            ba = [0, 0, 0]
+                        if c in adj_list_vector[b]:
+                            bc = adj_list_vector[b][c]
+                        else:
+                            bc = [0, 0, 0]
+                        if a in adj_list_vector[c]:
+                            ca = adj_list_vector[c][a]
+                        else:
+                            ca = [0, 0, 0]
+                        if b in adj_list_vector[c]:
+                            cb = adj_list_vector[c][b]
+                        else:
+                            cb = [0, 0, 0]
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
                             ab, ac, ba, bc, ca, cb
                         )
@@ -471,6 +500,7 @@ def grphin_algorithm(
                         # catch missing graphlets in config
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             print("MISSING GRAPHLET IN CONFIG")
+                            print(sorted_tuples)
 
                         three_node_graphlet_dict[hash(sorted_tuples)] += 1
                         orbit_dict = get_orbit_per_graphlet(
@@ -488,10 +518,13 @@ def grphin_algorithm(
         run_time_data.append(time.time() - node_start_time)
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
+        count+=1
+
+    print("triple counter", triple_counter)
 
     algorithm_run_time = time.time() - start_time
     print("run time : %.3f seconds" % algorithm_run_time)
-    plot_run_time_data(run_time_data)
+    # plot_run_time_data(run_time_data)
 
     return three_node_graphlet_dict, orbit_dict, algorithm_run_time
 
@@ -655,6 +688,47 @@ def initialize_three_node_graphlet_data(
     )
 
 
+def write_stats(
+    G,
+    G_prime,
+    run_time,
+    three_node_graphlet_count,
+    three_node_graphlet_namespace,
+    three_node_orbit_protein_data,
+    three_node_orbit_namespace,
+    output_dir,
+):
+    print("getting stats")
+    with open(f"{output_dir}/bsub/stats.csv", "w") as f:
+        f.write(f"Number of nodes: {len(G.nodes())}\n")
+        f.write(f"Number of edges: {len(G.edges())}\n")
+        f.write(f"Simplified Graph:\n")
+        f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
+        f.write(f"Number of edges: {len(G_prime.edges())}\n")
+        f.write(f"run time : %.3f seconds\n" % run_time)
+        f.write("three node graphlet counts\n")
+        count = 0
+        for key in three_node_graphlet_count:
+            f.write(
+                f"{three_node_graphlet_namespace[key]} = {three_node_graphlet_count[key]}\n"
+            )
+            count += three_node_graphlet_count[key]
+        f.write(f"Total graphlets found: {count}\n")
+        f.write(f"unique graphlet counts : {len(three_node_graphlet_count)}\n")
+        f.write(f"three node orbit counts\n")
+        total_orbit_count = 0
+
+        for orbit in three_node_orbit_protein_data:
+            orbit_count = 0
+            for protein_set in three_node_orbit_protein_data[orbit]:
+                orbit_count += protein_set[1]
+            total_orbit_count += orbit_count
+            f.write(f"{three_node_orbit_namespace[orbit]} : {orbit_count}\n")
+        f.write(f"Total orbits found: {total_orbit_count}\n")
+        f.write(f"unique orbits counts : {len(three_node_orbit_protein_data)}\n")
+    f.close()
+
+
 def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species):
 
     three_node_graphlet_count = {}
@@ -707,6 +781,17 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
     # print("\nORBIT COUNTS")
     # for orbit in three_node_orbit_protein_data:
     #     print(three_node_orbit_namespace[orbit], len(three_node_orbit_protein_data[orbit]))
+
+    write_stats(
+        G,
+        G_prime,
+        run_time,
+        three_node_graphlet_count,
+        three_node_graphlet_namespace,
+        three_node_orbit_protein_data,
+        three_node_orbit_namespace,
+        output_dir,
+    )
 
 
 def main():
