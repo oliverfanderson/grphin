@@ -1,6 +1,7 @@
 import networkx as nx
 import random
 import csv
+import os
 from matplotlib import pyplot as plt
 
 species_dict = {
@@ -60,6 +61,8 @@ def read_csv(
     # Remove self-loops
     self_loops = list(nx.selfloop_edges(G))
     G.remove_edges_from(self_loops)
+    # print(f"Removed self-loops: {len(self_loops)} edges")
+    # print(self_loops)
 
     return G
 
@@ -77,42 +80,47 @@ def label_edges(G):
     G_prime = nx.MultiDiGraph()
     G_prime.add_nodes_from(G.nodes(data=True))  # Preserve node attributes
 
-    # Step 1: Count edge types between each node pair
-    edge_counts = {}
+    # Step 1: Track PPI and directed Reg edges separately
+    edge_info = {}
     for u, v, d in G.edges(data=True):
         edge_label = d["label"]
+        key = tuple(sorted((u, v)))  # Ensure undirected edges are processed consistently
 
-        # Ensure (u, v) key is in dictionary (sorted to avoid duplicates)
-        key = tuple(sorted((u, v)))  # This ensures undirected edges are counted only once
-        if key not in edge_counts:
-            edge_counts[key] = {"ppi": 0, "reg": 0}
+        if key not in edge_info:
+            edge_info[key] = {"ppi": 0, "reg_uv": False, "reg_vu": False}
 
-        # Count edges correctly
         if edge_label == "ppi":
-            edge_counts[key]["ppi"] += 1  # PPI is undirected, count once
+            edge_info[key]["ppi"] += 1  # Count PPI edges
         elif edge_label == "reg":
-            edge_counts[key]["reg"] += 1  # Reg is directed, count normally
+            if (u, v) == key:  # Check if the edge follows the key's order
+                edge_info[key]["reg_uv"] = True  # Mark directed reg edge u → v
+            else:
+                edge_info[key]["reg_vu"] = True  # Mark directed reg edge v → u
 
-    # Step 2: Assign new labels based on rules, avoiding duplicate edges
+    # Step 2: Assign new labels based on rules
     processed_pairs = set()
-    for (u, v), counts in edge_counts.items():
+    for (u, v), counts in edge_info.items():
         if (u, v) in processed_pairs:
             continue  # Skip if already processed
 
         num_ppi = counts["ppi"]
-        num_reg = counts["reg"]
+        has_reg_uv = counts["reg_uv"]
+        has_reg_vu = counts["reg_vu"]
+        has_coreg = has_reg_uv and has_reg_vu  # Check reciprocal regulation
 
         # Determine new edge label
-        if num_ppi > 0 and num_reg == 0:
+        if num_ppi > 0 and not has_reg_uv and not has_reg_vu:
             new_label = "ppi"  # Only PPI
-        elif num_ppi == 0 and num_reg > 0:
-            new_label = "reg"  # Only Reg
-        elif num_ppi > 0 and num_reg == 1:
+        elif num_ppi == 0 and has_reg_uv and not has_reg_vu:
+            new_label = "reg"  # Only one Reg (u → v)
+        elif num_ppi == 0 and has_reg_vu and not has_reg_uv:
+            new_label = "reg"  # Only one Reg (v → u)
+        elif num_ppi > 0 and (has_reg_uv or has_reg_vu) and not has_coreg:
             new_label = "mix"  # One Reg + One PPI
-        elif num_ppi == 0 and num_reg > 1:
-            new_label = "coreg"  # Two directed Reg edges
-        elif num_ppi > 0 and num_reg > 1:
-            new_label = "coreg_ppi"  # Two directed Reg + One PPI
+        elif has_coreg and num_ppi == 0:
+            new_label = "coreg"  # Reciprocal regulation (u → v and v → u)
+        elif has_coreg and num_ppi > 0:
+            new_label = "coreg_ppi"  # Reciprocal regulation + PPI
         else:
             continue  # Shouldn't happen
 
@@ -201,7 +209,7 @@ def split_to_csv(G_random, out_ppi_path, out_reg_path):
     Writes the graph to CSV files based on edge labels.
 
     Parameters:
-    G_induced (networkx.Graph): The induced graph.
+    G_random (networkx.Graph): The randomized graph.
     ppi_input (set): A set of edges for PPI (tuples of (u, v)).
     reg_input (set): A set of edges for REG (tuples of (u, v)).
     output_dir (str): Directory where output CSV files will be saved.
@@ -222,8 +230,22 @@ def split_to_csv(G_random, out_ppi_path, out_reg_path):
             label = data.get("label", None)
             if label == "ppi":
                 ppi_writer.writerow([u, v])
+                ppi_writer.writerow([v, u])
             elif label == "reg":
                 reg_writer.writerow([u, v])
+            elif label == "mix":
+                ppi_writer.writerow([u, v])
+                ppi_writer.writerow([v, u])
+                reg_writer.writerow([u, v])
+            elif label == "coreg":
+                reg_writer.writerow([u, v])
+                reg_writer.writerow([v, u])
+            elif label == "coreg_ppi":
+                ppi_writer.writerow([u, v])
+                ppi_writer.writerow([v, u])
+                reg_writer.writerow([u, v])
+                reg_writer.writerow([v, u])
+ 
 
     print(f"PPI edges written to: {out_ppi_path}")
     print(f"Reg edges written to: {out_reg_path}")
@@ -234,14 +256,17 @@ def main():
     # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     taxon_ids = ["txid559292"]
 
-    num_swaps = 6000
+    num_swaps = 500
 
     for txid in taxon_ids:
         ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
         reg_path = f"data/oxidative_stress/{txid}/stress_reg.csv"
-        # output_dir = f"data/oxidative_stress/{txid}/randomized_networks/"
-        # out_ppi_path = f"{output_dir}stress_ppi{num_swaps}.csv"
-        # out_reg_path = f"{output_dir}stress_reg{num_swaps}.csv"
+        output_dir = f"data/oxidative_stress/{txid}/randomized_networks"
+        out_ppi_path = f"{output_dir}/stress_ppi{num_swaps}.csv"
+        out_reg_path = f"{output_dir}/stress_reg{num_swaps}.csv"
+
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         G = read_csv(
             ppi_path,
@@ -327,9 +352,9 @@ def main():
         
 
         # Print a few examples of swapped edges
-        if only_in_prime and only_in_random:
-            print("Before shuffle:", list(only_in_prime)[:5])
-            print("After shuffle:", list(only_in_random)[:5])
+        # if only_in_prime and only_in_random:
+        #     print("Before shuffle:", list(only_in_prime)[:5])
+        #     print("After shuffle:", list(only_in_random)[:5])
 
         # Troubleshooting: Draw the graphs
         # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
@@ -338,7 +363,7 @@ def main():
         # nx.draw_networkx(G_random, with_labels=True, font_size=10)
         # plt.show()
 
-        # split_to_csv(G_random, out_ppi_path, out_reg_path)
+        split_to_csv(G_random, out_ppi_path, out_reg_path)
 
 if __name__ == "__main__":
     main()
