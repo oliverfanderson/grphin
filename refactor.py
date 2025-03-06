@@ -333,29 +333,30 @@ def hash_tuple(xy):
     return hash(tuple(xy))
 
 
+# Precompute the direct mapping from tuple to index
+tuple_to_index = {
+    (0, 0, 0): 0,
+    (1, 0, 0): 1,
+    (0, 1, 0): 2,
+    (0, 0, 1): 3,
+    (1, 1, 0): 4,
+    (1, 0, 1): 5,
+    (0, 1, 1): 6,
+    (1, 1, 1): 7
+}
+
+default_edge = [0, 0, 0]  # Predefined default for edges
+
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
-    # Process into a hashed tuple
-    ab = hash_tuple(ab)
-    ac = hash_tuple(ac)
-    ba = hash_tuple(ba)
-    bc = hash_tuple(bc)
-    ca = hash_tuple(ca)
-    cb = hash_tuple(cb)
-
-    # Define the dictionary
-    my_dict = {
-        hash((0, 0, 0)): 0,
-        hash((1, 0, 0)): 1,
-        hash((0, 1, 0)): 2,
-        hash((0, 0, 1)): 3,
-        hash((1, 1, 0)): 4,
-        hash((1, 0, 1)): 5,
-        hash((0, 1, 1)): 6,
-        hash((1, 1, 1)): 7,
-    }
-
-    return my_dict[ab], my_dict[ac], my_dict[ba], my_dict[bc], my_dict[ca], my_dict[cb]
-
+    # Direct lookup with precomputed tuple-to-index mapping
+    return (
+        tuple_to_index[tuple(ab)],
+        tuple_to_index[tuple(ac)],
+        tuple_to_index[tuple(ba)],
+        tuple_to_index[tuple(bc)],
+        tuple_to_index[tuple(ca)],
+        tuple_to_index[tuple(cb)]
+    )
 
 def plot_run_time_data(run_time_data):
     x_list = [i for i in range(len(run_time_data))]
@@ -401,23 +402,18 @@ def grphin_algorithm(
     start_time = time.time()
 
     # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+    adj_list_vector = {node: {} for node in G.nodes()}
     for i, j, data in G.edges(data=True):
         label = data.get("label")
+        adj_list_vector[i].setdefault(j, [0, 0, 0])
+        adj_list_vector[j].setdefault(i, [0, 0, 0])
+
         if label == "ppi":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [1, 0, 0]
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [1, 0, 0]
+            adj_list_vector[i][j][0] = 1
+            adj_list_vector[j][i][0] = 1
         elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
+            adj_list_vector[i][j][1] += 1
+            adj_list_vector[j][i][2] += 1
 
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
@@ -451,52 +447,25 @@ def grphin_algorithm(
                         triple_counter+=1
                         three_node_combination.add(triplet)
 
-                        a = i
-                        b = j
-                        c = k
+                        ab = adj_list_vector[i].get(j, default_edge)
+                        ac = adj_list_vector[i].get(k, default_edge)
+                        ba = adj_list_vector[j].get(i, default_edge)
+                        bc = adj_list_vector[j].get(k, default_edge)
+                        ca = adj_list_vector[k].get(i, default_edge)
+                        cb = adj_list_vector[k].get(j, default_edge)
 
-                        ab = ac = ba = bc = ca = cb = 0
-                        if b in adj_list_vector[a]:
-                            ab = adj_list_vector[a][b]
-                        else:
-                            ab = [0, 0, 0]
-                        if c in adj_list_vector[a]:
-                            ac = adj_list_vector[a][c]
-                        else:
-                            ac = [0, 0, 0]
-                        if a in adj_list_vector[b]:
-                            ba = adj_list_vector[b][a]
-                        else:
-                            ba = [0, 0, 0]
-                        if c in adj_list_vector[b]:
-                            bc = adj_list_vector[b][c]
-                        else:
-                            bc = [0, 0, 0]
-                        if a in adj_list_vector[c]:
-                            ca = adj_list_vector[c][a]
-                        else:
-                            ca = [0, 0, 0]
-                        if b in adj_list_vector[c]:
-                            cb = adj_list_vector[c][b]
-                        else:
-                            cb = [0, 0, 0]
+                        
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
                             ab, ac, ba, bc, ca, cb
                         )
 
-                        # order A, B, C edge values internally
-                        a_edges = tuple(sorted([a_b, a_c]))
-                        b_edges = tuple(sorted([b_a, b_c]))
-                        c_edges = tuple(sorted([c_a, c_b]))
+                        # Order A, B, C edge values internally using min() and max() instead of sorted()
+                        a_edges = (min(a_b, a_c), max(a_b, a_c))
+                        b_edges = (min(b_a, b_c), max(b_a, b_c))
+                        c_edges = (min(c_a, c_b), max(c_a, c_b))
 
-                        # Create a list of tuples in order [A, B, C]
-                        tuples_list = [a_edges, b_edges, c_edges]
-
-                        # Sort the tuples first by the first index, then by the second index
-                        sorted_tuples = tuple(
-                            sorted(tuples_list, key=lambda x: (x[0], x[1]))
-                        )
-
+                        # Sort the tuples efficiently
+                        sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
                         # catch missing graphlets in config
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
                             print("MISSING GRAPHLET IN CONFIG")
