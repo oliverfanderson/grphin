@@ -236,6 +236,37 @@ def load_graphlet_config(file_path):
     return graphlet_config
 
 
+def load_graphlet_config_2(file_path):
+    """Load graphlet lookup table from a CSV file."""
+    graphlet_config = {}
+    with open(file_path, mode="r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            graphlet_config[ast.literal_eval(row["key"])] = {
+                "a_expected": ast.literal_eval(row["a_expected"]),
+                "b_expected": ast.literal_eval(row["b_expected"]),
+                "c_expected": ast.literal_eval(row["c_expected"]),
+                "orbits": (
+                    int(row["orbit1"]),
+                    int(row["orbit2"]),
+                    int(row.get("orbit3", -1)),
+                ),  # Handle missing orbit3}
+            }
+            # graphlet_config.append(
+            #     {
+            #         "key": ast.literal_eval(row["key"]),
+            #         "a_expected": ast.literal_eval(row["a_expected"]),
+            #         "b_expected": ast.literal_eval(row["b_expected"]),
+            #         "c_expected": ast.literal_eval(row["c_expected"]),
+            #         "orbits": (
+            #             int(row["orbit1"]),
+            #             int(row["orbit2"]),
+            #             int(row.get("orbit3", -1)),
+            #         ),  # Handle missing orbit3
+            #     }
+    return graphlet_config
+
+
 def get_two_node_graphlet_stats(G, two_node_graphlet_dict):
     G_adj_list = get_two_node_adjacency_list(G)
     orbits_dict = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []}
@@ -342,10 +373,11 @@ tuple_to_index = {
     (1, 1, 0): 4,
     (1, 0, 1): 5,
     (0, 1, 1): 6,
-    (1, 1, 1): 7
+    (1, 1, 1): 7,
 }
 
 default_edge = [0, 0, 0]  # Predefined default for edges
+
 
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     # Direct lookup with precomputed tuple-to-index mapping
@@ -355,20 +387,21 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
         tuple_to_index[tuple(ba)],
         tuple_to_index[tuple(bc)],
         tuple_to_index[tuple(ca)],
-        tuple_to_index[tuple(cb)]
+        tuple_to_index[tuple(cb)],
     )
 
-def plot_run_time_data(run_time_data):
-    x_list = [i for i in range(len(run_time_data))]
 
-    norm_run_time = [
-        (x - min(run_time_data)) / (max(run_time_data) - min(run_time_data))
-        for x in run_time_data
-    ]
+def plot_run_time_data(run_time_data, degree):
+    # x_list = [i for i in range(len(run_time_data))]
+
+    # norm_run_time = [
+    #     (x - min(run_time_data)) / (max(run_time_data) - min(run_time_data))
+    #     for x in run_time_data
+    # ]
 
     plt.figure(figsize=(14, 8))  # Correcting figure size
-    plt.plot(x_list, norm_run_time, "o", markersize=2)
-    plt.xlabel("Index")  # Adding labels for clarity
+    plt.scatter(degree, run_time_data, s=2)
+    plt.xlabel("node degree")  # Adding labels for clarity
     plt.ylabel("Run Time")
     plt.title("Run Time Data Plot")
     plt.show()
@@ -399,6 +432,7 @@ def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
     graphlet_config = load_graphlet_config("graphlet_config.csv")
+    graphlet_dict_orbits = load_graphlet_config_2("graphlet_config.csv")
     start_time = time.time()
 
     # create all the binary edge vectors
@@ -425,26 +459,27 @@ def grphin_algorithm(
     completed_i = set()
     run_time_data = []
 
-    node_list = [node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1], reverse=False)]
+    node_list = [
+        node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1], reverse=False)
+    ]
 
     print("len of g prime deg", len(node_list))
     print("len of g prime nodes", len(G_prime.nodes()))
 
     triple_counter = 0
     count = 0
+    degree = []
     # for i in node_list:
     for i in G_prime.nodes():
         node_start_time = time.time()
         print(f"Node: {count}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
-            for k in neighbors_dict[j]:
-                if (
-                    (i != k) and (i != j) and (j != k)
-                ):
-                    
+            for k in neighbors_dict[j].difference(completed_i):
+                if (i != k) and (i != j) and (j != k):
+
                     triplet = tuple(sorted([i, j, k]))
                     if triplet not in three_node_combination:
-                        triple_counter+=1
+                        triple_counter += 1
                         three_node_combination.add(triplet)
 
                         ab = adj_list_vector[i].get(j, default_edge)
@@ -454,7 +489,6 @@ def grphin_algorithm(
                         ca = adj_list_vector[k].get(i, default_edge)
                         cb = adj_list_vector[k].get(j, default_edge)
 
-                        
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
                             ab, ac, ba, bc, ca, cb
                         )
@@ -472,30 +506,57 @@ def grphin_algorithm(
                             print(sorted_tuples)
 
                         three_node_graphlet_dict[hash(sorted_tuples)] += 1
-                        orbit_dict = get_orbit_per_graphlet(
-                            orbit_dict,
-                            sorted_tuples,
+
+                        # update orbit_dict
+                        orbit_change = get_orbit_position_change(
                             a_edges,
                             b_edges,
                             c_edges,
+                            graphlet_dict_orbits[sorted_tuples]["a_expected"],
+                            graphlet_dict_orbits[sorted_tuples]["b_expected"],
+                            graphlet_dict_orbits[sorted_tuples]["c_expected"],
                             i,
                             j,
                             k,
-                            graphlet_config,
                         )
+                        for idx, orbit in enumerate(
+                            graphlet_dict_orbits[sorted_tuples]["orbits"]
+                        ):
+                            if orbit == -1:  # Skip missing orbits
+                                continue
+                            graphlet_key = (sorted_tuples, orbit)
+
+                            # catch missing orbits in config
+                            if hash(graphlet_key) not in orbit_dict:
+                                print("MISSING ORBIT IN CONFIG")
+
+                            orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
+
+                        # orbit_dict = get_orbit_per_graphlet(
+                        #     orbit_dict,
+                        #     sorted_tuples,
+                        #     a_edges,
+                        #     b_edges,
+                        #     c_edges,
+                        #     i,
+                        #     j,
+                        #     k,
+                        #     graphlet_config,
+                        # )
                     var = 0
         run_time_data.append(time.time() - node_start_time)
+        degree.append(int(G_prime.degree(i)))
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
-        count+=1
+        count += 1
 
     print("triple counter", triple_counter)
 
     algorithm_run_time = time.time() - start_time
     print("run time : %.3f seconds" % algorithm_run_time)
-    # plot_run_time_data(run_time_data)
+    plot_run_time_data(run_time_data, degree)
 
-    return three_node_graphlet_dict, orbit_dict, algorithm_run_time
+    return three_node_graphlet_dict, orbit_dict, algorithm_run_time, degree
 
 
 def get_orbit_per_graphlet(
@@ -730,6 +791,7 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
         three_node_graphlet_count,
         three_node_orbit_protein_data,
         run_time,
+        degree
     ) = grphin_algorithm(
         G, G_prime, three_node_graphlet_count, three_node_orbit_protein_data
     )
@@ -764,10 +826,10 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
 
 
 def main():
-    network_ppi_path = Path("data/bsub_ppi.csv")
-    network_reg_path = Path("data/bsub_reg.csv")
-    # network_ppi_path = Path("data/cerevisiae_ppi.csv")
-    # network_reg_path = Path("data/cerevisiae_reg.csv")
+    # network_ppi_path = Path("data/bsub_ppi.csv")
+    # network_reg_path = Path("data/bsub_reg.csv")
+    network_ppi_path = Path("data/cerevisiae_ppi.csv")
+    network_reg_path = Path("data/cerevisiae_reg.csv")
     # network_ppi_path = Path("data/fly_ppi.csv")
     # network_reg_path = Path("data/fly_reg.csv")
     # network_ppi_path = Path("data/elegans_ppi.csv")
