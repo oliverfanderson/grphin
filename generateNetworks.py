@@ -253,117 +253,117 @@ def split_to_csv(G_random, out_ppi_path, out_reg_path):
 
 def main():
    # List of taxon IDs to process
-    # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
-    taxon_ids = ["txid559292"]
+    taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    # taxon_ids = ["txid224308"]
 
-    num_swaps = 500
+    # num_swaps = 500
+    for num_swaps in range(1, 1001):
+        for txid in taxon_ids:
+            ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
+            reg_path = f"data/oxidative_stress/{txid}/stress_reg.csv"
+            output_dir = f"data/oxidative_stress/{txid}/randomized_networks"
+            out_ppi_path = f"{output_dir}/stress_ppi{num_swaps}.csv"
+            out_reg_path = f"{output_dir}/stress_reg{num_swaps}.csv"
 
-    for txid in taxon_ids:
-        ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
-        reg_path = f"data/oxidative_stress/{txid}/stress_reg.csv"
-        output_dir = f"data/oxidative_stress/{txid}/randomized_networks"
-        out_ppi_path = f"{output_dir}/stress_ppi{num_swaps}.csv"
-        out_reg_path = f"{output_dir}/stress_reg{num_swaps}.csv"
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
 
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+            G = read_csv(
+                ppi_path,
+                reg_path
+            )
 
-        G = read_csv(
-            ppi_path,
-            reg_path
-        )
+            print(f"Original graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
-        print(f"Original graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+            # Relabel edges with 5 two-node graphlet types
+            G_prime = label_edges(G)
 
-        # Relabel edges with 5 two-node graphlet types
-        G_prime = label_edges(G)
+            # Compare expected number of edges vs actual in G_prime
+            unique_node_pairs = set()
+            for u, v in G.edges():
+                unique_node_pairs.add(tuple(sorted([u, v])))  # Sorting ensures (A, B) == (B, A)
 
-        # Compare expected number of edges vs actual in G_prime
-        unique_node_pairs = set()
-        for u, v in G.edges():
-            unique_node_pairs.add(tuple(sorted([u, v])))  # Sorting ensures (A, B) == (B, A)
+            # Break loop if expected number of labeled edges does not match actual in G_prime
+            expected_labeled_edges = len(unique_node_pairs)
+            actual_labeled_edges = len(G_prime.edges())
+            if actual_labeled_edges != expected_labeled_edges:
+                print(f"Expected {expected_labeled_edges} labeled edges, but found {actual_labeled_edges}!")
+                break
 
-        # Break loop if expected number of labeled edges does not match actual in G_prime
-        expected_labeled_edges = len(unique_node_pairs)
-        actual_labeled_edges = len(G_prime.edges())
-        if actual_labeled_edges != expected_labeled_edges:
-            print(f"Expected {expected_labeled_edges} labeled edges, but found {actual_labeled_edges}!")
-            break
+            # Randomize the graph
+            G_random = swap_edges(G_prime, num_swaps)
+            
+            # Validate the random graph
+            original_nodes = G_prime.number_of_nodes()
+            randomized_nodes = G_random.number_of_nodes()
+            if original_nodes != randomized_nodes:
+                print("Number of nodes does not match after shuffling!")
+                break
 
-        # Randomize the graph
-        G_random = swap_edges(G_prime, num_swaps)
-        
-        # Validate the random graph
-        original_nodes = G_prime.number_of_nodes()
-        randomized_nodes = G_random.number_of_nodes()
-        if original_nodes != randomized_nodes:
-            print("Number of nodes does not match after shuffling!")
-            break
+            original_edges = G_prime.number_of_edges()
+            randomized_edges = G_random.number_of_edges()
+            if original_edges != randomized_edges:
+                print("Number of edges does not match after shuffling!")
+                print(f"Original edges: {original_edges}, Randomized edges: {randomized_edges}!")
+                break
 
-        original_edges = G_prime.number_of_edges()
-        randomized_edges = G_random.number_of_edges()
-        if original_edges != randomized_edges:
-            print("Number of edges does not match after shuffling!")
-            print(f"Original edges: {original_edges}, Randomized edges: {randomized_edges}!")
-            break
+            # Compare edge label distributions
+            original_label_counts = {label: 0 for label in set(nx.get_edge_attributes(G_prime, "label").values())}
+            shuffled_label_counts = {label: 0 for label in set(nx.get_edge_attributes(G_prime, "label").values())}
 
-        # Compare edge label distributions
-        original_label_counts = {label: 0 for label in set(nx.get_edge_attributes(G_prime, "label").values())}
-        shuffled_label_counts = {label: 0 for label in set(nx.get_edge_attributes(G_prime, "label").values())}
+            for _, _, d in G_prime.edges(data=True):
+                original_label_counts[d["label"]] += 1
 
-        for _, _, d in G_prime.edges(data=True):
-            original_label_counts[d["label"]] += 1
+            for _, _, d in G_random.edges(data=True):
+                shuffled_label_counts[d["label"]] += 1
 
-        for _, _, d in G_random.edges(data=True):
-            shuffled_label_counts[d["label"]] += 1
+            print("Original label counts:", original_label_counts)
+            print("Shuffled label counts:", shuffled_label_counts)
 
-        print("Original label counts:", original_label_counts)
-        print("Shuffled label counts:", shuffled_label_counts)
+            if not all(original_label_counts[label] == shuffled_label_counts[label] for label in original_label_counts):
+                print("Edge label distributions do not match after shuffling!")
+                break
+            
+            # Check degree sequence
+            original_degree = dict(G_prime.degree())
+            random_degree = dict(G_random.degree())
+            if original_degree != random_degree:
+                print("Degree sequence does not match after shuffling!")
+                break
 
-        if not all(original_label_counts[label] == shuffled_label_counts[label] for label in original_label_counts):
-            print("Edge label distributions do not match after shuffling!")
-            break
-        
-        # Check degree sequence
-        original_degree = dict(G_prime.degree())
-        random_degree = dict(G_random.degree())
-        if original_degree != random_degree:
-            print("Degree sequence does not match after shuffling!")
-            break
+            # Check if edges have changed after shuffling
+            edges_prime = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_prime.edges(data=True))
+            edges_random = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_random.edges(data=True))
 
-        # Check if edges have changed after shuffling
-        edges_prime = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_prime.edges(data=True))
-        edges_random = set((u, v, tuple(sorted(d.items()))) for u, v, d in G_random.edges(data=True))
+            # Get unique edges in G_prime and G_random
+            only_in_prime = edges_prime - edges_random
+            only_in_random = edges_random - edges_prime
 
-        # Get unique edges in G_prime and G_random
-        only_in_prime = edges_prime - edges_random
-        only_in_random = edges_random - edges_prime
+            if edges_prime == edges_random:
+                print("No changes in edges! Shuffling may not be working.")
+            else:
+                print(f"{len(only_in_prime)} edges have changed after shuffling.")
 
-        if edges_prime == edges_random:
-            print("No changes in edges! Shuffling may not be working.")
-        else:
-            print(f"{len(only_in_prime)} edges have changed after shuffling.")
+            if len(only_in_prime) != len(only_in_random):
+                print("Mismatch between swapped edges in graphs.")
+                print(f"Edges unique to G_prime: {len(only_in_prime)}")
+                print(f"Edges unique to G_random: {len(only_in_random)}")
+                break
+            
 
-        if len(only_in_prime) != len(only_in_random):
-            print("Mismatch between swapped edges in graphs.")
-            print(f"Edges unique to G_prime: {len(only_in_prime)}")
-            print(f"Edges unique to G_random: {len(only_in_random)}")
-            break
-        
+            # Print a few examples of swapped edges
+            # if only_in_prime and only_in_random:
+            #     print("Before shuffle:", list(only_in_prime)[:5])
+            #     print("After shuffle:", list(only_in_random)[:5])
 
-        # Print a few examples of swapped edges
-        # if only_in_prime and only_in_random:
-        #     print("Before shuffle:", list(only_in_prime)[:5])
-        #     print("After shuffle:", list(only_in_random)[:5])
+            # Troubleshooting: Draw the graphs
+            # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
+            # plt.show()
 
-        # Troubleshooting: Draw the graphs
-        # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
-        # plt.show()
+            # nx.draw_networkx(G_random, with_labels=True, font_size=10)
+            # plt.show()
 
-        # nx.draw_networkx(G_random, with_labels=True, font_size=10)
-        # plt.show()
-
-        split_to_csv(G_random, out_ppi_path, out_reg_path)
+            split_to_csv(G_random, out_ppi_path, out_reg_path)
 
 if __name__ == "__main__":
     main()
