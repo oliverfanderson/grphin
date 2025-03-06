@@ -8,6 +8,7 @@ import networkx as nx
 import csv
 from pathlib import Path
 import numpy as np
+from collections import defaultdict
 
 
 def count_two_node_graphlet(G, output_dir, species):
@@ -400,23 +401,18 @@ def grphin_algorithm(
     start_time = time.time()
 
     # create all the binary edge vectors
-    adj_list_vector = [{} for _ in range(len(G.nodes()))]
+    adj_list_vector = defaultdict(lambda: defaultdict(lambda: [0, 0, 0]))
+
     for i, j, data in G.edges(data=True):
         label = data.get("label")
+
         if label == "ppi":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [1, 0, 0]
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [1, 0, 0]
+            adj_list_vector[i][j] = [1, 0, 0]
+            adj_list_vector[j][i] = [1, 0, 0]
+
         elif label == "reg":
-            if j not in adj_list_vector[i]:
-                adj_list_vector[i][j] = [0, 1, 0]
-            else:
-                adj_list_vector[i][j][1] += 1
-            if i not in adj_list_vector[j]:
-                adj_list_vector[j][i] = [0, 0, 1]
-            else:
-                adj_list_vector[j][i][2] += 1
+            adj_list_vector[i][j][1] += 1
+            adj_list_vector[j][i][2] += 1
 
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
@@ -448,64 +444,46 @@ def grphin_algorithm(
                         b = j
                         c = k
 
-                #         ab = ac = ba = bc = ca = cb = 0
-                #         if b in adj_list_vector[a]:
-                #             ab = adj_list_vector[a][b]
-                #         else:
-                #             ab = [0, 0, 0]
-                #         if c in adj_list_vector[a]:
-                #             ac = adj_list_vector[a][c]
-                #         else:
-                #             ac = [0, 0, 0]
-                #         if a in adj_list_vector[b]:
-                #             ba = adj_list_vector[b][a]
-                #         else:
-                #             ba = [0, 0, 0]
-                #         if c in adj_list_vector[b]:
-                #             bc = adj_list_vector[b][c]
-                #         else:
-                #             bc = [0, 0, 0]
-                #         if a in adj_list_vector[c]:
-                #             ca = adj_list_vector[c][a]
-                #         else:
-                #             ca = [0, 0, 0]
-                #         if b in adj_list_vector[c]:
-                #             cb = adj_list_vector[c][b]
-                #         else:
-                #             cb = [0, 0, 0]
-                #         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
-                #             ab, ac, ba, bc, ca, cb
-                #         )
+                        ab = adj_list_vector[a][b]
+                        ac = adj_list_vector[a][c]
+                        ba = adj_list_vector[b][a]
+                        bc = adj_list_vector[b][c]
+                        ca = adj_list_vector[c][a]
+                        cb = adj_list_vector[c][b]
+                        
+                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
+                            ab, ac, ba, bc, ca, cb
+                        )
 
-                #         # order A, B, C edge values internally
-                #         a_edges = tuple(sorted([a_b, a_c]))
-                #         b_edges = tuple(sorted([b_a, b_c]))
-                #         c_edges = tuple(sorted([c_a, c_b]))
+                        # order A, B, C edge values internally
+                        a_edges = tuple(sorted([a_b, a_c]))
+                        b_edges = tuple(sorted([b_a, b_c]))
+                        c_edges = tuple(sorted([c_a, c_b]))
 
-                #         # Create a list of tuples in order [A, B, C]
-                #         tuples_list = [a_edges, b_edges, c_edges]
+                        # Create a list of tuples in order [A, B, C]
+                        tuples_list = [a_edges, b_edges, c_edges]
 
-                #         # Sort the tuples first by the first index, then by the second index
-                #         sorted_tuples = tuple(
-                #             sorted(tuples_list, key=lambda x: (x[0], x[1]))
-                #         )
+                        # Sort the tuples first by the first index, then by the second index
+                        sorted_tuples = tuple(
+                            sorted(tuples_list, key=lambda x: (x[0], x[1]))
+                        )
 
-                #         # catch missing graphlets in config
-                #         if hash(sorted_tuples) not in three_node_graphlet_dict:
-                #             print("MISSING GRAPHLET IN CONFIG")
+                        # catch missing graphlets in config
+                        if hash(sorted_tuples) not in three_node_graphlet_dict:
+                            print("MISSING GRAPHLET IN CONFIG")
 
-                #         three_node_graphlet_dict[hash(sorted_tuples)] += 1
-                #         orbit_dict = get_orbit_per_graphlet(
-                #             orbit_dict,
-                #             sorted_tuples,
-                #             a_edges,
-                #             b_edges,
-                #             c_edges,
-                #             i,
-                #             j,
-                #             k,
-                #             graphlet_config,
-                #         )
+                        three_node_graphlet_dict[hash(sorted_tuples)] += 1
+                        orbit_dict = get_orbit_per_graphlet(
+                            orbit_dict,
+                            sorted_tuples,
+                            a_edges,
+                            b_edges,
+                            c_edges,
+                            i,
+                            j,
+                            k,
+                            graphlet_config,
+                        )
                     var = 0
         run_time_data.append(time.time() - node_start_time)
         # Once we're done processing i, mark it as completed
