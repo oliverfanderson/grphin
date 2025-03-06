@@ -1,6 +1,7 @@
 import ast
 from collections import defaultdict
 import re
+import sys
 import time
 from matplotlib import pyplot as plt
 import networkx as nx
@@ -427,9 +428,13 @@ def grphin_algorithm(
     completed_i = set()
     run_time_data = []
 
-    for i in G_prime.nodes():
+    node_list = [node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1])]
+
+    for i in node_list:
+    # for i in G_prime.nodes():
         node_start_time = time.time()
-        print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
+        # print(f"Node: {i}/{len(G_prime.nodes)}", end="\r")
+        # print(i, G_prime.degree(i))
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
                 if (
@@ -443,64 +448,65 @@ def grphin_algorithm(
                         b = j
                         c = k
 
-                        ab = ac = ba = bc = ca = cb = 0
-                        if b in adj_list_vector[a]:
-                            ab = adj_list_vector[a][b]
-                        else:
-                            ab = [0, 0, 0]
-                        if c in adj_list_vector[a]:
-                            ac = adj_list_vector[a][c]
-                        else:
-                            ac = [0, 0, 0]
-                        if a in adj_list_vector[b]:
-                            ba = adj_list_vector[b][a]
-                        else:
-                            ba = [0, 0, 0]
-                        if c in adj_list_vector[b]:
-                            bc = adj_list_vector[b][c]
-                        else:
-                            bc = [0, 0, 0]
-                        if a in adj_list_vector[c]:
-                            ca = adj_list_vector[c][a]
-                        else:
-                            ca = [0, 0, 0]
-                        if b in adj_list_vector[c]:
-                            cb = adj_list_vector[c][b]
-                        else:
-                            cb = [0, 0, 0]
-                        a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
-                            ab, ac, ba, bc, ca, cb
-                        )
+                #         ab = ac = ba = bc = ca = cb = 0
+                #         if b in adj_list_vector[a]:
+                #             ab = adj_list_vector[a][b]
+                #         else:
+                #             ab = [0, 0, 0]
+                #         if c in adj_list_vector[a]:
+                #             ac = adj_list_vector[a][c]
+                #         else:
+                #             ac = [0, 0, 0]
+                #         if a in adj_list_vector[b]:
+                #             ba = adj_list_vector[b][a]
+                #         else:
+                #             ba = [0, 0, 0]
+                #         if c in adj_list_vector[b]:
+                #             bc = adj_list_vector[b][c]
+                #         else:
+                #             bc = [0, 0, 0]
+                #         if a in adj_list_vector[c]:
+                #             ca = adj_list_vector[c][a]
+                #         else:
+                #             ca = [0, 0, 0]
+                #         if b in adj_list_vector[c]:
+                #             cb = adj_list_vector[c][b]
+                #         else:
+                #             cb = [0, 0, 0]
+                #         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
+                #             ab, ac, ba, bc, ca, cb
+                #         )
 
-                        # order A, B, C edge values internally
-                        a_edges = tuple(sorted([a_b, a_c]))
-                        b_edges = tuple(sorted([b_a, b_c]))
-                        c_edges = tuple(sorted([c_a, c_b]))
+                #         # order A, B, C edge values internally
+                #         a_edges = tuple(sorted([a_b, a_c]))
+                #         b_edges = tuple(sorted([b_a, b_c]))
+                #         c_edges = tuple(sorted([c_a, c_b]))
 
-                        # Create a list of tuples in order [A, B, C]
-                        tuples_list = [a_edges, b_edges, c_edges]
+                #         # Create a list of tuples in order [A, B, C]
+                #         tuples_list = [a_edges, b_edges, c_edges]
 
-                        # Sort the tuples first by the first index, then by the second index
-                        sorted_tuples = tuple(
-                            sorted(tuples_list, key=lambda x: (x[0], x[1]))
-                        )
+                #         # Sort the tuples first by the first index, then by the second index
+                #         sorted_tuples = tuple(
+                #             sorted(tuples_list, key=lambda x: (x[0], x[1]))
+                #         )
 
-                        # catch missing graphlets in config
-                        if hash(sorted_tuples) not in three_node_graphlet_dict:
-                            print("MISSING GRAPHLET IN CONFIG")
+                #         # catch missing graphlets in config
+                #         if hash(sorted_tuples) not in three_node_graphlet_dict:
+                #             print("MISSING GRAPHLET IN CONFIG")
 
-                        three_node_graphlet_dict[hash(sorted_tuples)] += 1
-                        orbit_dict = get_orbit_per_graphlet(
-                            orbit_dict,
-                            sorted_tuples,
-                            a_edges,
-                            b_edges,
-                            c_edges,
-                            i,
-                            j,
-                            k,
-                            graphlet_config,
-                        )
+                #         three_node_graphlet_dict[hash(sorted_tuples)] += 1
+                #         orbit_dict = get_orbit_per_graphlet(
+                #             orbit_dict,
+                #             sorted_tuples,
+                #             a_edges,
+                #             b_edges,
+                #             c_edges,
+                #             i,
+                #             j,
+                #             k,
+                #             graphlet_config,
+                #         )
+                    var = 0
         run_time_data.append(time.time() - node_start_time)
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
@@ -728,6 +734,14 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
 def main():
     network_ppi_path = Path("data/bsub_ppi.csv")
     network_reg_path = Path("data/bsub_reg.csv")
+    # network_ppi_path = Path("data/cerevisiae_ppi.csv")
+    # network_reg_path = Path("data/cerevisiae_reg.csv")
+    # network_ppi_path = Path("data/fly_ppi.csv")
+    # network_reg_path = Path("data/fly_reg.csv")
+    # network_ppi_path = Path("data/elegans_ppi.csv")
+    # network_reg_path = Path("data/elegans_reg.csv")
+    # network_ppi_path = Path("data/drerio_ppi.csv")
+    # network_reg_path = Path("data/drerio_reg.csv")
     stress_proteins_path = Path(
         "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
     )
