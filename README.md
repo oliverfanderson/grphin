@@ -10,12 +10,12 @@ GRPhIN takes as input (1) an undirected PPI network and (2) a directed regulator
 3. Follow the menu options for your organism of interest.
 
 ## File Descriptions
-
-- **`README.md`** – This file, providing documentation for the repository.
+- **`data/`** – Contains raw data files for case studies.
+- **`final_output/`** – Contains output data files for case studies.- **`enrichment.py`** – Script for calculating graphlet enrichment statistics.
 - **`environment.yml`** – Set up the conda environment with all dependencies required to run the project.
 - **`grphin.py`** – Script for running the GRPhIN algorithm.
-- **`enrichment.py`** – Script for calculating graphlet enrichment statistics.
+- **`generateNetworks.py`** – Script to generate randomized networks for significance testing.
 - **`orbit_proteins.py`** – Script for finding protein identities and overrepresented orbits in GRPhIN results.
 - **`pageRank.py`** – Script for running simple Random Walk with Restart algorithm to capture a subnetwork based on oxidative stress pathways.
-- **`data/`** – Contains raw data files for case studies.
-- **`final_output/`** – Contains output data files for case studies.
+- **`README.md`** – This file, providing documentation for the repository.
+- **`significance.py`** – Script to calculate the significance of the appearance of mixed graphlets in oxidative stress pathways compared to random networks.

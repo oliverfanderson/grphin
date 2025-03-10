@@ -25,7 +25,10 @@ species_dict = {
 def process_edges(
     file_path, G, visited_nodes, label
 ):
-    """Helper function to process edges and add them to the graph."""
+    """
+    Helper function to process edges and add them to the graph.
+    """
+
     # print(f"currently processing {label} edges")
     with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
@@ -53,6 +56,7 @@ def read_csv(
     reg_path,
 ):
     """Reads CSV files and constructs a graph with edges labeled as 'ppi' or 'reg'."""
+
     G = nx.MultiDiGraph()
     visited_nodes = set()
 
@@ -82,11 +86,12 @@ def label_edges(G):
     Ensures that each node pair is processed only once.
 
     Parameters:
-    G (networkx.MultiDiGraph): Input graph with edges labeled as 'ppi' or 'reg'.
+        G (networkx.MultiDiGraph): Input graph with edges labeled as 'ppi' or 'reg'.
 
     Returns:
-    G_prime (networkx.MultiDiGraph): A new graph with relabeled edges.
+        G_prime (networkx.MultiDiGraph): A new graph with relabeled edges based on 2-node graphlets: 'ppi', 'reg', 'mix', 'coreg', 'coreg_ppi'.
     """
+
     G_prime = nx.MultiDiGraph()
     G_prime.add_nodes_from(G.nodes(data=True))  # Preserve node attributes
 
@@ -141,15 +146,17 @@ def label_edges(G):
     return G_prime
 
 def swap_edges(G_prime, num_swaps):
-    """Performs constrained edge swaps in a MultiDiGraph while preserving connectivity.
+    """
+    Performs constrained edge swaps in a MultiDiGraph while preserving connectivity by ensuring that swapped edges maintain the same label.
     
     Parameters:
-        G (nx.MultiDiGraph): The input graph to shuffle.
+        G_prime (nx.MultiDiGraph): The input graph to randomize with 2-node graphlet edge types labeled.
         num_swaps (int): The number of swaps to attempt.
         
     Returns:
-        nx.MultiDiGraph: A shuffled version of G.
+        G_random (nx.MultiDiGraph): A randomized version of G_prime.
     """
+
     G_random = nx.MultiDiGraph()
     G_random.update(G_prime)
     edges = list(G_random.edges(keys=True, data=True))  # (u, v, key, data)
@@ -173,9 +180,9 @@ def swap_edges(G_prime, num_swaps):
         xv_type = G_random[x][v][key2]["label"] if G_random.has_edge(x, v, key2) else None
         if uy_type != xv_type:
             continue
-        # print(f"DEBUG: Attempting swap {swaps + 1}:")
-        # print(f"DEBUG: U: {u}, V: {v}, Key1: {key1}, Data1: {data1}")
-        # print(f"DEBUG: X: {x}, Y: {y}, Key2: {key2}, Data2: {data2}")
+        # print(f"Attempting swap {swaps + 1}:")
+        # print(f"U: {u}, V: {v}, Key1: {key1}, Data1: {data1}")
+        # print(f"X: {x}, Y: {y}, Key2: {key2}, Data2: {data2}")
         # print(f"UV: {uv_type}, XY: {xy_type}, UY: {uy_type}, XV: {xv_type}")
 
         uv_edge = G_random[u][v][key1]
@@ -197,7 +204,7 @@ def swap_edges(G_prime, num_swaps):
             G_random.add_edge(u, y, key=key1, **uv_edge)
             G_random.add_edge(x, v, key=key2, **xy_edge)
         else:
-            # Look if we can just update labels
+            # IDEA: Maybe we can just swap label instead of removing and adding new edges
             G_random.remove_edge(u, v, key1)
             G_random.remove_edge(x, y, key2)
             G_random.remove_edge(u, y, key1)
@@ -216,13 +223,16 @@ def swap_edges(G_prime, num_swaps):
 
 def split_to_csv(G_random, out_ppi_path, out_reg_path):
     """
-    Writes the graph to CSV files based on edge labels.
+    Writes the randomized graph to CSV files based on 2-node graphlet edge labels.
 
     Parameters:
-    G_random (networkx.Graph): The randomized graph.
-    ppi_input (set): A set of edges for PPI (tuples of (u, v)).
-    reg_input (set): A set of edges for REG (tuples of (u, v)).
-    output_dir (str): Directory where output CSV files will be saved.
+        G_random (networkx.MultiDiGraph): The randomized graph.
+        out_ppi_path (string): A filepath to write the set of PPI edges (tuples of (u, v)).
+        out_reg_path (string): A filepath to write the set of Reg edges (tuples of (u, v)).
+
+    Returns:
+        out_ppi_path (CSV): The randomized PPI edges CSV file.
+        out_reg_path (CSV): The randomized Reg edges CSV file.
     """
 
     # Write edges to CSV files
@@ -262,6 +272,22 @@ def split_to_csv(G_random, out_ppi_path, out_reg_path):
 
 
 def main():
+    """
+    A function to generate randomized networks based on 2-node graphlet edge labels.
+    
+    Parameters:
+        -s / --swaps: Command-line argument for number of swaps.
+        -i / --iterations: Command-line argument for number of iterations.
+
+    Returns:
+        Randomized PPI and Reg interaction CSV files for each taxon ID with (-s) swaps performed on each (-i) iteration.
+
+    Example:
+        python enrichment.py --swaps 1000 --iterations 10
+
+        This will generate 10 randomzed networks with 1000 edge swaps for each taxon ID (txid6239, txid7227, txid7955, txid224308, txid559292).
+    """
+
    # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     # taxon_ids = ["txid224308"]
