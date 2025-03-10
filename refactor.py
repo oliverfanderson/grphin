@@ -826,10 +826,10 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
 
 
 def main():
-    # network_ppi_path = Path("data/bsub_ppi.csv")
-    # network_reg_path = Path("data/bsub_reg.csv")
-    network_ppi_path = Path("data/cerevisiae_ppi.csv")
-    network_reg_path = Path("data/cerevisiae_reg.csv")
+    network_ppi_path = Path("data/bsub_ppi.csv")
+    network_reg_path = Path("data/bsub_reg.csv")
+    # network_ppi_path = Path("data/cerevisiae_ppi.csv")
+    # network_reg_path = Path("data/cerevisiae_reg.csv")
     # network_ppi_path = Path("data/fly_ppi.csv")
     # network_reg_path = Path("data/fly_reg.csv")
     # network_ppi_path = Path("data/elegans_ppi.csv")
