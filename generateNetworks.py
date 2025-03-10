@@ -3,6 +3,16 @@ import random
 import csv
 import os
 from matplotlib import pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-i", "--iterations", required=True, help="Number of iterations to run"
+)
+parser.add_argument(
+    "-s", "--swaps", required=True, help="Number of edges to swap per iteration"
+)
+args = parser.parse_args()
 
 species_dict = {
     "txid6239" : "elegans",
@@ -256,14 +266,15 @@ def main():
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     # taxon_ids = ["txid224308"]
 
-    # num_swaps = 500
-    for num_swaps in range(1, 1001):
+    num_swaps = int(args.swaps)
+    num_iterations = int(args.iterations)
+    for iteration in range(num_iterations):
         for txid in taxon_ids:
             ppi_path = f"data/oxidative_stress/{txid}/stress_ppi.csv"
             reg_path = f"data/oxidative_stress/{txid}/stress_reg.csv"
             output_dir = f"data/oxidative_stress/{txid}/randomized_networks"
-            out_ppi_path = f"{output_dir}/stress_ppi{num_swaps}.csv"
-            out_reg_path = f"{output_dir}/stress_reg{num_swaps}.csv"
+            out_ppi_path = f"{output_dir}/stress_ppi{iteration}.csv"
+            out_reg_path = f"{output_dir}/stress_reg{iteration}.csv"
 
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
