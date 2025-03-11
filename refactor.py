@@ -143,7 +143,7 @@ def initialize_two_node_graphlet_data():
     see diagram for reference
     """
     # 2-node graphlet binary edge vectors
-    # see diagram for reference
+    # See 2-node graphlet figure in GRPhIN paper
     a_1 = (1, 0, 0)
     a_2 = (1, 0, 0)
     a_hash = hash(a_1 + a_2)
@@ -216,7 +216,7 @@ def simplify_graph_to_undirected(G):
 
 
 def load_graphlet_config(file_path):
-    """Load graphlet lookup table from a CSV file."""
+    """Load graphlet lookup table from a CSV file. Creates a list."""
     graphlet_config = []
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -238,7 +238,7 @@ def load_graphlet_config(file_path):
 
 
 def load_graphlet_config_2(file_path):
-    """Load graphlet lookup table from a CSV file."""
+    """Load graphlet lookup table from a CSV file. Creates a dictionary."""
     graphlet_config = {}
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -350,6 +350,8 @@ def get_two_node_orbit_position(a, b, a_vec, b_vec, orbit_dict):
 
 
 def hash_tuple(xy):
+    """Hash a tuple helper function."""
+
     return hash(tuple(xy))
 
 
@@ -390,7 +392,7 @@ def plot_run_time_data(run_time_data, degree):
 
     plt.figure(figsize=(14, 8))  # Correcting figure size
     plt.scatter(degree, run_time_data, s=2)
-    plt.xlabel("node degree")  # Adding labels for clarity
+    plt.xlabel("Node degree")  # Adding labels for clarity
     plt.ylabel("Run Time")
     plt.title("Run Time Data Plot")
     plt.show()
@@ -853,6 +855,23 @@ def plot_runtime_stats():
 
 
 def main(input_ppi, input_reg, output_dir):
+    """
+    A function to generate randomized networks based on 2-node graphlet edge labels.
+    
+    Parameters:
+        -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
+        -d / --directed: Command-line argument for directed edges input file (Example: Regulatory edges).
+        -o / --output_dir: Command-line argument for output directory.
+
+    Returns:
+        Counts of graphlets and node orbit positions within a mixed graph.
+
+    Example:
+        python3 grphin.py -u data/bsub_ppi.csv -d data/bsub_reg.csv -o output/bsub
+
+        This will count the occurences of all 2 and 3-node mixed graphlets in the mixed network generated from the two input files. It will also output node orbit positions and various statistics to the specified output directory.
+    """
+
     stress_proteins_path = Path(
         "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
     )
@@ -881,24 +900,30 @@ def main(input_ppi, input_reg, output_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="GRphin Algorithm"
+        description="GRPhIN Algorithm"
     )
     parser.add_argument(
-        "input_ppi", 
+        "-u",
+        "--undirected", 
         type=str, 
-        help="Path to the input file."
+        help="Path to the undirected/PPI edges input file.",
+        required=True
     )
     parser.add_argument(
-        "input_reg", 
+        "-d",
+        "--directed",
         type=str, 
-        help="Path to the input file."
+        help="Path to the directed/Reg edges input file.",
+        required=True
     )
     parser.add_argument(
-        "output_dir", 
+        "-o",
+        "--output_dir", 
         type=str, 
-        help="Path to the output file."
+        help="Path to the output directory.",
+        required=True
     )
 
     args = parser.parse_args()
 
-    main(args.input_ppi, args.input_reg, args.output_dir)
+    main(args.undirected, args.directed, args.output_dir)
