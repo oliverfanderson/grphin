@@ -283,9 +283,9 @@ def main():
         Randomized PPI and Reg interaction CSV files for each taxon ID with (-s) swaps performed on each (-i) iteration.
 
     Example:
-        python enrichment.py --swaps 1000 --iterations 10
+        python3 enrichment.py --swaps 1000 --iterations 10
 
-        This will generate 10 randomzed networks with 1000 edge swaps for each taxon ID (txid6239, txid7227, txid7955, txid224308, txid559292).
+        This will generate 10 randomized networks with 1000 edge swaps for each taxon ID (txid6239, txid7227, txid7955, txid224308, txid559292).
     """
 
    # List of taxon IDs to process
