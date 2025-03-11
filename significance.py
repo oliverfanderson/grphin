@@ -1,5 +1,6 @@
 import math
 import pandas as pd
+import numpy as np
 
 species_dict = {
     "txid6239" : "elegans",
@@ -12,6 +13,7 @@ species_dict = {
 def main():
     # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    iterations = 50  # Number of randomized networks to compare
 
     for txid in taxon_ids:
         stress_graphlet_counts = f"final_output/{species_dict[txid]}_stress/graphlet_counts.csv"
@@ -28,6 +30,23 @@ def main():
         # Convert the stress dictionary to a DataFrame
         stress = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
         print(stress.head())
+
+        for i in range(iterations):
+
+            random_graphlet_counts = f"data/oxidative_stress/{txid}/randomized_networks/graphlet_counts{i}.csv"
+
+            # Open the stress file and parse the data into a dictionary
+            data_dict = {}
+            with open(random_graphlet_counts, 'r') as file:
+                for line in file:
+                    key, value = line.split(':')
+                    key = eval(key.strip())  # Convert the key into a Python tuple
+                    value = int(value.strip())  # Convert the value into an integer
+                    data_dict[key] = value
+
+            # Convert the stress dictionary to a DataFrame
+            random = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
+            print(random.head())
 
 if __name__ == "__main__":
     main()
