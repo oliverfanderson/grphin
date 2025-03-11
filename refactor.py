@@ -956,9 +956,7 @@ def main(input_ppi, input_reg, output_dir):
     print(f"Number of edges: {len(G_prime.edges())}")
 
     # Count two-node graphlets
-    # two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
-    #     count_two_node_graphlet(G, output_dir)
-    # )
+    count_two_node_graphlet(G, output_dir)
 
     # Count three-node graphlets
     count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
