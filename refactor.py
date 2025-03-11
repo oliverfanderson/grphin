@@ -1,3 +1,4 @@
+import argparse
 import ast
 from collections import defaultdict
 from functools import lru_cache
@@ -12,7 +13,7 @@ import numpy as np
 from collections import defaultdict
 
 
-def count_two_node_graphlet(G, output_dir, species):
+def count_two_node_graphlet(G, output_dir):
 
     two_node_graphlet_count, two_node_graphlet_id = initialize_two_node_graphlet_data()
 
@@ -25,7 +26,6 @@ def count_two_node_graphlet(G, output_dir, species):
         two_node_graphlet_count,
         two_node_orbit_dict,
         output_dir,
-        species,
     )
 
     return two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict
@@ -36,7 +36,6 @@ def generate_two_node_output_files(
     two_node_graphlet_count,
     two_node_orbit_dict,
     output_dir,
-    species,
 ):
     print("\ntwo node graphlet counts")
     for key in two_node_graphlet_id:
@@ -46,12 +45,12 @@ def generate_two_node_output_files(
     for key in two_node_orbit_dict:
         print(f"{key} = {len(two_node_orbit_dict[key])}")
 
-    with open(f"{output_dir}/{species}/two_node_graphlet_counts.csv", "w") as f:
+    with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
         for key in two_node_graphlet_id:
             f.write(f"G_{two_node_graphlet_id[key]}, {two_node_graphlet_count[key]}\n")
     f.close()
 
-    with open(f"{output_dir}/{species}/two_node_orbit_counts.csv", "w") as f:
+    with open(f"{output_dir}/two_node_orbit_counts.csv", "w") as f:
         for key in two_node_orbit_dict:
             f.write(f"{key}, {len(two_node_orbit_dict[key])}\n")
         f.close()
@@ -587,7 +586,6 @@ def get_node_orbit_matrix(
     three_node_orbit_protein_data,
     three_node_orbit_namespace,
     output_dir,
-    species,
 ):
 
     node_orbit_count_matrix = np.zeros(
@@ -625,9 +623,10 @@ def get_node_orbit_matrix(
                         node_orbit_count_matrix[node_count_set[0]][int(orbit_index)] = (
                             node_count_set[1]
                         )
+    print(f"{output_dir}/node_orbit.csv")
 
     np.savetxt(
-        f"{output_dir}/{species}/node_orbit.csv",
+        f"{output_dir}/node_orbit.csv",
         node_orbit_count_matrix,
         delimiter=",",
         fmt="%d",
@@ -675,7 +674,7 @@ def initialize_three_node_graphlet_data(
     )
 
 
-def write_stats(
+def write_files(
     G,
     G_prime,
     run_time,
@@ -683,11 +682,13 @@ def write_stats(
     three_node_graphlet_namespace,
     three_node_orbit_protein_data,
     three_node_orbit_namespace,
+    three_node_orbit_id,
+    three_node_graphlet_id,
+    protein_id,
     output_dir,
-    species
 ):
     print("getting stats")
-    with open(f"{output_dir}/{species}/stats.csv", "w") as f:
+    with open(f"{output_dir}/stats.csv", "w+") as f:
         f.write(f"Number of nodes: {len(G.nodes())}\n")
         f.write(f"Number of edges: {len(G.edges())}\n")
         f.write(f"Simplified Graph:\n")
@@ -716,8 +717,44 @@ def write_stats(
         f.write(f"unique orbits counts : {len(three_node_orbit_protein_data)}\n")
     f.close()
 
+    with open(f"{output_dir}/protein_id_mapper.csv", "w+") as f:
+        for protein in protein_id:
+            f.write(f"{protein}, {protein_id[protein]}\n")
+    f.close()
 
-def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species):
+    with open(f"{output_dir}/orbit_id_mapper.csv", "w+") as f:
+        for orbit in three_node_orbit_id:
+            if orbit in three_node_orbit_namespace:
+                f.write(
+                    f"{three_node_orbit_namespace[orbit]} : {three_node_orbit_id[orbit]}\n"
+                )
+
+    with open(f"{output_dir}/orbit_hash_mapper.csv", "w+") as f:
+        for orbit in three_node_orbit_id:
+            if orbit in three_node_orbit_namespace:
+                f.write(f"{orbit} : {three_node_orbit_id[orbit]}\n")
+
+    with open(f"{output_dir}/graphlet_id_mapper.csv", "w+") as f:
+        for graphlet in three_node_graphlet_id:
+            if graphlet in three_node_graphlet_namespace:
+                f.write(
+                    f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_id[graphlet]}\n"
+                )
+
+    with open(f"{output_dir}/graphlet_hash_mapper.csv", "w+") as f:
+        for graphlet in three_node_graphlet_count:
+            if graphlet in three_node_graphlet_namespace:
+                f.write(f"{graphlet} : {three_node_graphlet_namespace[graphlet]}\n")
+
+    with open(f"{output_dir}/graphlet_counts.csv", "w+") as f:
+        for graphlet in three_node_graphlet_id:
+            if graphlet in three_node_graphlet_namespace:
+                f.write(
+                    f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
+                )
+
+
+def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir):
 
     three_node_graphlet_count = {}
     three_node_graphlet_namespace = {}
@@ -760,18 +797,8 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
         three_node_orbit_protein_data,
         three_node_orbit_namespace,
         output_dir,
-        species,
     )
-
-    # print("GRAPHLET COUNTS")
-    # for graphlet in three_node_graphlet_count:
-    #     print(three_node_graphlet_namespace[graphlet], three_node_graphlet_count[graphlet])
-
-    # print("\nORBIT COUNTS")
-    # for orbit in three_node_orbit_protein_data:
-    #     print(three_node_orbit_namespace[orbit], len(three_node_orbit_protein_data[orbit]))
-
-    write_stats(
+    write_files(
         G,
         G_prime,
         run_time,
@@ -779,8 +806,10 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
         three_node_graphlet_namespace,
         three_node_orbit_protein_data,
         three_node_orbit_namespace,
+        three_node_orbit_id,
+        three_node_graphlet_id,
+        protein_id,
         output_dir,
-        species
     )
 
 def plot_runtime_stats():
@@ -801,37 +830,15 @@ def plot_runtime_stats():
     plt.show()
 
 
-def main():
-    network_ppi_path = Path("data/bsub_ppi.csv")
-    network_reg_path = Path("data/bsub_reg.csv")
-    species = "bsub"
-
-    # network_ppi_path = Path("data/cerevisiae_ppi.csv")
-    # network_reg_path = Path("data/cerevisiae_reg.csv")
-    # species = "cerevisiae"
-
-    # network_ppi_path = Path("data/fly_ppi.csv")
-    # network_reg_path = Path("data/fly_reg.csv")
-    # species = "fly"
-
-    # network_ppi_path = Path("data/elegans_ppi.csv")
-    # network_reg_path = Path("data/elegans_reg.csv")
-    # species = "elegans"
-
-    # network_ppi_path = Path("data/drerio_ppi.csv")
-    # network_reg_path = Path("data/drerio_reg.csv")
-    # species = "drerio"
-
-
+def main(input_ppi, input_reg, output_dir):
     stress_proteins_path = Path(
         "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
     )
     counting_algorithm = True
-    output_dir = Path("output_refactor")
 
     # initialize graphlet data
     protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
-        network_ppi_path, network_reg_path
+        input_ppi, input_reg
     )
 
     # print graph information
@@ -843,12 +850,33 @@ def main():
     print(f"Number of edges: {len(G_prime.edges())}")
 
     # two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
-    #     count_two_node_graphlet(G, output_dir, species)
+    #     count_two_node_graphlet(G, output_dir)
     # )
 
-    count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
+    count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
 
     # plot_runtime_stats()
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="GRphin Algorithm"
+    )
+    parser.add_argument(
+        "input_ppi", 
+        type=str, 
+        help="Path to the input file."
+    )
+    parser.add_argument(
+        "input_reg", 
+        type=str, 
+        help="Path to the input file."
+    )
+    parser.add_argument(
+        "output_dir", 
+        type=str, 
+        help="Path to the output file."
+    )
+
+    args = parser.parse_args()
+
+    main(args.input_ppi, args.input_reg, args.output_dir)
