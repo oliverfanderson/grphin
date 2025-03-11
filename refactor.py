@@ -1,5 +1,6 @@
 import ast
 from collections import defaultdict
+from functools import lru_cache
 import re
 import sys
 import time
@@ -458,18 +459,11 @@ def grphin_algorithm(
     neighbors_dict = {i: set(G_prime.neighbors(i)) for i in G_prime.nodes()}
     completed_i = set()
     run_time_data = []
-
-    node_list = [
-        node for node, _ in sorted(G_prime.degree(), key=lambda x: x[1], reverse=False)
-    ]
-
-    print("len of g prime deg", len(node_list))
     print("len of g prime nodes", len(G_prime.nodes()))
 
     triple_counter = 0
     count = 0
     degree = []
-    # for i in node_list:
     for i in G_prime.nodes():
         node_start_time = time.time()
         print(f"Node: {count}/{len(G_prime.nodes)}", end="\r")
@@ -531,19 +525,6 @@ def grphin_algorithm(
                                 print("MISSING ORBIT IN CONFIG")
 
                             orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
-
-                        # orbit_dict = get_orbit_per_graphlet(
-                        #     orbit_dict,
-                        #     sorted_tuples,
-                        #     a_edges,
-                        #     b_edges,
-                        #     c_edges,
-                        #     i,
-                        #     j,
-                        #     k,
-                        #     graphlet_config,
-                        # )
-                    var = 0
         run_time_data.append(time.time() - node_start_time)
         degree.append(int(G_prime.degree(i)))
         # Once we're done processing i, mark it as completed
@@ -554,9 +535,19 @@ def grphin_algorithm(
 
     algorithm_run_time = time.time() - start_time
     print("run time : %.3f seconds" % algorithm_run_time)
-    plot_run_time_data(run_time_data, degree)
+    # plot_run_time_data(run_time_data, degree)
 
     return three_node_graphlet_dict, orbit_dict, algorithm_run_time, degree
+
+# Cached hashing for sorted_tuples
+@lru_cache(maxsize=100000)
+def cached_hash_sorted_tuples(sorted_tuples):
+    return hash(sorted_tuples)
+
+# Cached hashing for graphlet keys
+@lru_cache(maxsize=100000)
+def cached_hash_graphlet_key(graphlet_key):
+    return hash(graphlet_key)
 
 
 def get_orbit_per_graphlet(
@@ -727,9 +718,10 @@ def write_stats(
     three_node_orbit_protein_data,
     three_node_orbit_namespace,
     output_dir,
+    species
 ):
     print("getting stats")
-    with open(f"{output_dir}/bsub/stats.csv", "w") as f:
+    with open(f"{output_dir}/{species}/stats.csv", "w") as f:
         f.write(f"Number of nodes: {len(G.nodes())}\n")
         f.write(f"Number of edges: {len(G.edges())}\n")
         f.write(f"Simplified Graph:\n")
@@ -822,26 +814,54 @@ def count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
         three_node_orbit_protein_data,
         three_node_orbit_namespace,
         output_dir,
+        species
     )
+
+def plot_runtime_stats():
+    species = ["bsub", "cerevisiae", "drerio", "elegans", "fly"]
+    runtime_full_algorithm_data = [6.132, 4507.445, 407.541, 303.814, 340.379]
+    runtime_triplet_iteration_data = [0.461, 194.703, 51.803, 24.740, 29.512]
+
+    stacked_bar_data = {"below" : runtime_full_algorithm_data, "above" : runtime_triplet_iteration_data}
+
+    fig, ax = plt.subplots()
+    width = 0.5
+    bottom = np.zeros(len(species))
+
+    for stack, data in stacked_bar_data.items():
+        p = ax.bar(species, data, width=width, label=stack, bottom=bottom)
+        bottom += data
+
+    plt.show()
 
 
 def main():
     network_ppi_path = Path("data/bsub_ppi.csv")
     network_reg_path = Path("data/bsub_reg.csv")
+    species = "bsub"
+
     # network_ppi_path = Path("data/cerevisiae_ppi.csv")
     # network_reg_path = Path("data/cerevisiae_reg.csv")
+    # species = "cerevisiae"
+
     # network_ppi_path = Path("data/fly_ppi.csv")
     # network_reg_path = Path("data/fly_reg.csv")
+    # species = "fly"
+
     # network_ppi_path = Path("data/elegans_ppi.csv")
     # network_reg_path = Path("data/elegans_reg.csv")
+    # species = "elegans"
+
     # network_ppi_path = Path("data/drerio_ppi.csv")
     # network_reg_path = Path("data/drerio_reg.csv")
+    # species = "drerio"
+
+
     stress_proteins_path = Path(
         "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
     )
     counting_algorithm = True
     output_dir = Path("output_refactor")
-    species = "bsub"
 
     # initialize graphlet data
     protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
@@ -862,6 +882,7 @@ def main():
 
     count_three_node_graphlets(graphlet_config, G, G_prime, output_dir, species)
 
+    # plot_runtime_stats()
 
 if __name__ == "__main__":
     main()
