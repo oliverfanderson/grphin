@@ -215,29 +215,8 @@ def simplify_graph_to_undirected(G):
     return G_prime
 
 
+
 def load_graphlet_config(file_path):
-    """Load graphlet lookup table from a CSV file."""
-    graphlet_config = []
-    with open(file_path, mode="r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            graphlet_config.append(
-                {
-                    "key": ast.literal_eval(row["key"]),
-                    "a_expected": ast.literal_eval(row["a_expected"]),
-                    "b_expected": ast.literal_eval(row["b_expected"]),
-                    "c_expected": ast.literal_eval(row["c_expected"]),
-                    "orbits": (
-                        int(row["orbit1"]),
-                        int(row["orbit2"]),
-                        int(row.get("orbit3", -1)),
-                    ),  # Handle missing orbit3
-                }
-            )
-    return graphlet_config
-
-
-def load_graphlet_config_2(file_path):
     """Load graphlet lookup table from a CSV file."""
     graphlet_config = {}
     with open(file_path, mode="r") as file:
@@ -253,18 +232,6 @@ def load_graphlet_config_2(file_path):
                     int(row.get("orbit3", -1)),
                 ),  # Handle missing orbit3}
             }
-            # graphlet_config.append(
-            #     {
-            #         "key": ast.literal_eval(row["key"]),
-            #         "a_expected": ast.literal_eval(row["a_expected"]),
-            #         "b_expected": ast.literal_eval(row["b_expected"]),
-            #         "c_expected": ast.literal_eval(row["c_expected"]),
-            #         "orbits": (
-            #             int(row["orbit1"]),
-            #             int(row["orbit2"]),
-            #             int(row.get("orbit3", -1)),
-            #         ),  # Handle missing orbit3
-            #     }
     return graphlet_config
 
 
@@ -433,7 +400,6 @@ def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
     graphlet_config = load_graphlet_config("graphlet_config.csv")
-    graphlet_dict_orbits = load_graphlet_config_2("graphlet_config.csv")
     start_time = time.time()
 
     # create all the binary edge vectors
@@ -506,15 +472,15 @@ def grphin_algorithm(
                             a_edges,
                             b_edges,
                             c_edges,
-                            graphlet_dict_orbits[sorted_tuples]["a_expected"],
-                            graphlet_dict_orbits[sorted_tuples]["b_expected"],
-                            graphlet_dict_orbits[sorted_tuples]["c_expected"],
+                            graphlet_config[sorted_tuples]["a_expected"],
+                            graphlet_config[sorted_tuples]["b_expected"],
+                            graphlet_config[sorted_tuples]["c_expected"],
                             i,
                             j,
                             k,
                         )
                         for idx, orbit in enumerate(
-                            graphlet_dict_orbits[sorted_tuples]["orbits"]
+                            graphlet_config[sorted_tuples]["orbits"]
                         ):
                             if orbit == -1:  # Skip missing orbits
                                 continue
