@@ -14,10 +14,19 @@ from collections import defaultdict
 
 
 def count_two_node_graphlet(G, output_dir):
-
+    """
+    wrapper function that initializes variables, counts graphlet and orbits in the network, and generates output files for two node graphlets and orbits
+    Args:
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        output_dir (str) : string path of output folder
+    Returns:
+        two_node_graphlet_count (dict)
+        two_node_graphlet_id (dict)
+        two_node_orbit_dict (dict)
+    """
     two_node_graphlet_count, two_node_graphlet_id = initialize_two_node_graphlet_data()
 
-    two_node_graphlet_count, two_node_orbit_dict = get_two_node_graphlet_stats(
+    two_node_graphlet_count, two_node_orbit_dict = get_two_node_graphlets_and_orbits(
         G, two_node_graphlet_count
     )
 
@@ -236,8 +245,8 @@ def load_graphlet_config(file_path):
     return graphlet_config
 
 
-def load_graphlet_config_2(file_path):
-    """Load graphlet lookup table from a CSV file."""
+def load_orbit_config(file_path):
+    """Load orbit lookup table from a graphlet_config."""
     graphlet_config = {}
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -252,34 +261,31 @@ def load_graphlet_config_2(file_path):
                     int(row.get("orbit3", -1)),
                 ),  # Handle missing orbit3}
             }
-            # graphlet_config.append(
-            #     {
-            #         "key": ast.literal_eval(row["key"]),
-            #         "a_expected": ast.literal_eval(row["a_expected"]),
-            #         "b_expected": ast.literal_eval(row["b_expected"]),
-            #         "c_expected": ast.literal_eval(row["c_expected"]),
-            #         "orbits": (
-            #             int(row["orbit1"]),
-            #             int(row["orbit2"]),
-            #             int(row.get("orbit3", -1)),
-            #         ),  # Handle missing orbit3
-            #     }
     return graphlet_config
 
 
-def get_two_node_graphlet_stats(G, two_node_graphlet_dict):
+def get_two_node_graphlets_and_orbits(G, two_node_graphlet_dict):
+    """
+    counts all two node graphlets and orbits in a network
+    Args:
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        two_node_graphlet_dict (dict)
+    Returns:
+        two_node_graphlet_dict (dict)
+        two_node_orbit_dict (dict)
+    """
     G_adj_list = get_two_node_adjacency_list(G)
-    orbits_dict = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []}
+    two_node_orbit_dict = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []}
     for neighbors in G_adj_list:
         i = neighbors[0]
         for j in neighbors[1]:
             vectors = G_adj_list[i][1][j] + G_adj_list[j][1][i]
-            orbits_dict = get_two_node_orbit_position(
-                i, j, G_adj_list[i][1][j], G_adj_list[j][1][i], orbits_dict
+            two_node_orbit_dict = get_two_node_orbit_position(
+                i, j, G_adj_list[i][1][j], G_adj_list[j][1][i], two_node_orbit_dict
             )
             if hash(tuple(vectors)) in two_node_graphlet_dict:
                 two_node_graphlet_dict[hash(tuple(vectors))] += 1
-    return two_node_graphlet_dict, orbits_dict
+    return two_node_graphlet_dict, two_node_orbit_dict
 
 
 def get_two_node_adjacency_list(G):
@@ -312,8 +318,9 @@ def get_two_node_adjacency_list(G):
 
 
 def get_two_node_orbit_position(a, b, a_vec, b_vec, orbit_dict):
-
-    # check orbit positioning via vectors
+    """
+    check orbit positioning via vectors
+    """
     if a_vec == [1, 0, 0] and b_vec == [1, 0, 0]:
         if a not in orbit_dict[1]:
             orbit_dict[1] += [a]
@@ -360,11 +367,7 @@ def get_two_node_orbit_position(a, b, a_vec, b_vec, orbit_dict):
     return orbit_dict
 
 
-def hash_tuple(xy):
-    return hash(tuple(xy))
-
-
-# Precompute the direct mapping from tuple to index
+# global variables
 tuple_to_index = {
     (0, 0, 0): 0,
     (1, 0, 0): 1,
@@ -376,11 +379,13 @@ tuple_to_index = {
     (1, 1, 1): 7,
 }
 
-default_edge = [0, 0, 0]  # Predefined default for edges
+default_edge = [0, 0, 0]
 
 
 def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
-    # Direct lookup with precomputed tuple-to-index mapping
+    """
+    Direct lookup with precomputed tuple-to-index mapping
+    """
     return (
         tuple_to_index[tuple(ab)],
         tuple_to_index[tuple(ac)],
@@ -391,48 +396,28 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     )
 
 
-def plot_run_time_data(run_time_data, degree):
-    # x_list = [i for i in range(len(run_time_data))]
-
-    # norm_run_time = [
-    #     (x - min(run_time_data)) / (max(run_time_data) - min(run_time_data))
-    #     for x in run_time_data
-    # ]
-
-    plt.figure(figsize=(14, 8))  # Correcting figure size
-    plt.scatter(degree, run_time_data, s=2)
-    plt.xlabel("node degree")  # Adding labels for clarity
-    plt.ylabel("Run Time")
-    plt.title("Run Time Data Plot")
-    plt.show()
-
-
-def compare_csv_files(file_path1, file_path2):
-    """
-    Compares two CSV files and returns a list of differences.
-    """
-    differences = []
-    with open(file_path1, "r") as file1, open(file_path2, "r") as file2:
-        reader1 = csv.reader(file1)
-        reader2 = csv.reader(file2)
-
-        for row_num, (row1, row2) in enumerate(zip(reader1, reader2), start=1):
-            if row1 != row2:
-                differences.append(f"Row {row_num}: File1 - {row1}, File2 - {row2}")
-
-    if len(differences) == 0:
-        print("\033[42;37mPASSED TEST\033[0m")
-    else:
-        print("\033[41;37mFAILED TEST\033[0m")
-
-    return None
-
-
 def grphin_algorithm(
-    G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
+    G: nx.MultiDiGraph,
+    G_prime: nx.Graph,
+    three_node_graphlet_count,
+    three_node_orbit_protein_data,
 ):
+    """
+    grphin algorithm that counts the number of graphlets and orbits for a given network
+
+    Args:
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        G_prime (nx.Graph): The simplified undirected graph.
+        three_node_graphlet_count (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values the ordered ID values associated with each graphlet
+        three_node_orbit_protein_data (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are a list of proteins that appear in this orbit
+    Returns:
+        three_node_graphlet_count (dict)
+        three_node_orbit_protein_data (dict)
+        algorithm_run_time (float) : float that stores how long the grphin_algorithm took to execute
+    """
+
     graphlet_config = load_graphlet_config("graphlet_config.csv")
-    graphlet_dict_orbits = load_graphlet_config_2("graphlet_config.csv")
+    graphlet_dict_orbits = load_orbit_config("graphlet_config.csv")
     start_time = time.time()
 
     # create all the binary edge vectors
@@ -462,7 +447,6 @@ def grphin_algorithm(
 
     triple_counter = 0
     count = 0
-    degree = []
     for i in G_prime.nodes():
         node_start_time = time.time()
         print(f"Node: {count}/{len(G_prime.nodes)}", end="\r")
@@ -494,11 +478,11 @@ def grphin_algorithm(
                         # Sort the tuples efficiently
                         sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
                         # catch missing graphlets in config
-                        if hash(sorted_tuples) not in three_node_graphlet_dict:
+                        if hash(sorted_tuples) not in three_node_graphlet_count:
                             print("MISSING GRAPHLET IN CONFIG")
                             print(sorted_tuples)
 
-                        three_node_graphlet_dict[hash(sorted_tuples)] += 1
+                        three_node_graphlet_count[hash(sorted_tuples)] += 1
 
                         # update orbit_dict
                         orbit_change = get_orbit_position_change(
@@ -520,12 +504,13 @@ def grphin_algorithm(
                             graphlet_key = (sorted_tuples, orbit)
 
                             # catch missing orbits in config
-                            if hash(graphlet_key) not in orbit_dict:
+                            if hash(graphlet_key) not in three_node_orbit_protein_data:
                                 print("MISSING ORBIT IN CONFIG")
 
-                            orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
+                            three_node_orbit_protein_data[hash(graphlet_key)] += [
+                                orbit_change[idx]
+                            ]
         run_time_data.append(time.time() - node_start_time)
-        degree.append(int(G_prime.degree(i)))
         # Once we're done processing i, mark it as completed
         completed_i.add(i)
         count += 1
@@ -534,19 +519,8 @@ def grphin_algorithm(
 
     algorithm_run_time = time.time() - start_time
     print("run time : %.3f seconds" % algorithm_run_time)
-    # plot_run_time_data(run_time_data, degree)
 
-    return three_node_graphlet_dict, orbit_dict, algorithm_run_time, degree
-
-# Cached hashing for sorted_tuples
-@lru_cache(maxsize=100000)
-def cached_hash_sorted_tuples(sorted_tuples):
-    return hash(sorted_tuples)
-
-# Cached hashing for graphlet keys
-@lru_cache(maxsize=100000)
-def cached_hash_graphlet_key(graphlet_key):
-    return hash(graphlet_key)
+    return three_node_graphlet_count, three_node_orbit_protein_data, algorithm_run_time
 
 
 def get_orbit_per_graphlet(
@@ -591,6 +565,9 @@ def get_orbit_per_graphlet(
 def get_orbit_position_change(
     a_edges, b_edges, c_edges, a_expected, b_expected, c_expected, i, j, k
 ):
+    """
+    Given the which i, j, k proteins were chosen, orient them compared to the expected a, b, c
+    """
     # a, b, c
     if a_edges == a_expected and b_edges == b_expected and c_edges == c_expected:
         return [i, j, k]
@@ -614,13 +591,25 @@ def get_orbit_position_change(
     )
 
 
-def get_node_orbit_matrix(
+def convert_orbit_protein_dict_to_np_matrix(
     G,
     three_node_orbit_id,
     three_node_orbit_protein_data,
     three_node_orbit_namespace,
     output_dir,
 ):
+    """
+    convert the three_node_orbit_protein_data form into a numpy matrix where the columns are the orbit IDs, the rows are the protein IDs, and the entries are the counts of those proteins in those orbits
+
+    Args:
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        three_node_orbit_id (dict) : keys are hash of the graphlet form ((0, 1), (0, 1), (1, 1)). values the ordered ID values associated with each graphlet
+        three_node_orbit_protein_data (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are a list of proteins that appear in this orbit
+        * this variable may be redundant three_node_orbit_namespace (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are the string name for the graphlet-orbit form (((0, 5), (0, 7), (4, 7)), 2), Orbit 2
+        output_dir (str) : string path of output folder
+    Returns:
+        node_orbit_count_matrix (np.arr)
+    """
 
     node_orbit_count_matrix = np.zeros(
         (len(G.nodes), len(three_node_orbit_id)), dtype=int
@@ -657,18 +646,12 @@ def get_node_orbit_matrix(
                         node_orbit_count_matrix[node_count_set[0]][int(orbit_index)] = (
                             node_count_set[1]
                         )
-    print(f"{output_dir}/node_orbit.csv")
 
     np.savetxt(
         f"{output_dir}/node_orbit.csv",
         node_orbit_count_matrix,
         delimiter=",",
         fmt="%d",
-    )
-
-    compare_csv_files(
-        Path("final_output/bsub/node_orbit.csv"),
-        Path("output_refactor/bsub/node_orbit.csv"),
     )
 
     return node_orbit_count_matrix
@@ -683,6 +666,26 @@ def initialize_three_node_graphlet_data(
     three_node_graphlet_namespace,
     three_node_orbit_namespace,
 ):
+    """
+    using the graphlet_config information, initialize dictionary variables with the correct keys and default values
+
+    Args:
+        graphlet_config (dict): keys are graphlet in the form of ((0, 1), (0, 1), (1, 1)) for example. values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple)
+        three_node_graphlet_id (dict) : keys are hash of the graphlet form ((0, 1), (0, 1), (1, 1)). the ordered ID values associated with each graphlet
+        three_node_orbit_id (dict) : keys are hash of the graphlet form ((0, 1), (0, 1), (1, 1)). values the ordered ID values associated with each graphlet
+        three_node_graphlet_count (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values the ordered ID values associated with each graphlet
+        three_node_orbit_protein_data (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are a list of proteins that appear in this orbit
+        * this variable may be redundant three_node_graphlet_namespace (dict) : keys are the hash of the graphlet form ((0, 1), (0, 1), (1, 1)). values are the string name for the graphlet form ((0, 1), (0, 1), (1, 1))
+        * this variable may be redundant three_node_orbit_namespace (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are the string name for the graphlet-orbit form (((0, 5), (0, 7), (4, 7)), 2), Orbit 2
+    Returns:
+        three_node_graphlet_id (dict)
+        three_node_orbit_id (dict)
+        three_node_graphlet_count (dict)
+        three_node_orbit_protein_data (dict)
+        three_node_graphlet_namespace (dict)
+        three_node_orbit_namespace (dict)
+    """
+
     orbit_count = 0
     graphlet_count = 0
     for graphlet in graphlet_config:
@@ -721,6 +724,30 @@ def write_files(
     protein_id,
     output_dir,
 ):
+    """
+    output the following files
+    - stats.csv
+    - protein_id_mapper.csv
+    - orbit_id_mapper.csv
+    - orbit_hash_mapper.csv
+    - graphlet_id_mapper.csv
+    - graphlet_hash_mapper.csv
+    - graphlet_counts.csv
+
+    Args:
+        graphlet_config (dict): keys are graphlet in the form of ((0, 1), (0, 1), (1, 1)) for example. values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple)
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        G_prime (nx.Graph): The simplified undirected graph.
+        run_time (float) : float that stores how long the grphin_algorithm took to execute
+        three_node_graphlet_count (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values the ordered ID values associated with each graphlet
+        * this variable may be redundant three_node_graphlet_namespace (dict) : keys are the hash of the graphlet form ((0, 1), (0, 1), (1, 1)). values are the string name for the graphlet form ((0, 1), (0, 1), (1, 1))
+        three_node_orbit_protein_data (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are a list of proteins that appear in this orbit
+        * this variable may be redundant three_node_orbit_namespace (dict) : keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). values are the string name for the graphlet-orbit form (((0, 5), (0, 7), (4, 7)), 2), Orbit 2
+        protein_id (dict): keys are protein names and values are ids (int).
+        output_dir (str) : string path of output folder
+    Returns:
+        None
+    """
     print("getting stats")
     with open(f"{output_dir}/stats.csv", "w+") as f:
         f.write(f"Number of nodes: {len(G.nodes())}\n")
@@ -789,7 +816,21 @@ def write_files(
 
 
 def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir):
+    """
+    wrapper function that does variable initialization, grphin algorihtm counting, outputing result files
 
+    Args:
+        graphlet_config (dict): keys are graphlet in the form of ((0, 1), (0, 1), (1, 1)) for example. values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple)
+        protein_id (dict): keys are protein names and values are ids (int).
+        G (nx.MultiDiGraph) : stores the multi directed graph representation of our interactome.
+        G_prime (nx.Graph): The simplified undirected graph.
+        output_dir (str) : string path of output folder
+
+    Returns:
+        None
+    """
+
+    # initialize variables required for counting and storing graphlet and orbit information
     three_node_graphlet_count = {}
     three_node_graphlet_namespace = {}
     three_node_orbit_protein_data = {}
@@ -797,8 +838,8 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
     three_node_graphlet_id = {}
     three_node_orbit_id = {}
     run_time = 0
-    node_orbit_arr = np.zeros((len(G.nodes), len(three_node_orbit_id)), dtype=int)
 
+    # using the graphlet_config to initialize dictionaries with information
     (
         three_node_graphlet_id,
         three_node_orbit_id,
@@ -816,22 +857,22 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
         three_node_orbit_namespace,
     )
 
-    (
-        three_node_graphlet_count,
-        three_node_orbit_protein_data,
-        run_time,
-        degree
-    ) = grphin_algorithm(
-        G, G_prime, three_node_graphlet_count, three_node_orbit_protein_data
+    # use the grphin algorithm to count graphlets and orbits
+    (three_node_graphlet_count, three_node_orbit_protein_data, run_time) = (
+        grphin_algorithm(
+            G, G_prime, three_node_graphlet_count, three_node_orbit_protein_data
+        )
     )
 
-    node_orbit_count_matrix = get_node_orbit_matrix(
+    node_orbit_count_matrix = convert_orbit_protein_dict_to_np_matrix(
         G,
         three_node_orbit_id,
         three_node_orbit_protein_data,
         three_node_orbit_namespace,
         output_dir,
     )
+
+    # output necessary files
     write_files(
         G,
         G_prime,
@@ -845,23 +886,6 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
         protein_id,
         output_dir,
     )
-
-def plot_runtime_stats():
-    species = ["bsub", "cerevisiae", "drerio", "elegans", "fly"]
-    runtime_full_algorithm_data = [6.132, 4507.445, 407.541, 303.814, 340.379]
-    runtime_triplet_iteration_data = [0.461, 194.703, 51.803, 24.740, 29.512]
-
-    stacked_bar_data = {"below" : runtime_full_algorithm_data, "above" : runtime_triplet_iteration_data}
-
-    fig, ax = plt.subplots()
-    width = 0.5
-    bottom = np.zeros(len(species))
-
-    for stack, data in stacked_bar_data.items():
-        p = ax.bar(species, data, width=width, label=stack, bottom=bottom)
-        bottom += data
-
-    plt.show()
 
 
 def main(input_ppi, input_reg, output_dir):
@@ -883,33 +907,18 @@ def main(input_ppi, input_reg, output_dir):
     print(f"Number of nodes: {len(G_prime.nodes())}")
     print(f"Number of edges: {len(G_prime.edges())}")
 
-    # two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
-    #     count_two_node_graphlet(G, output_dir)
-    # )
+    two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
+        count_two_node_graphlet(G, output_dir)
+    )
 
     count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
 
-    # plot_runtime_stats()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="GRphin Algorithm"
-    )
-    parser.add_argument(
-        "input_ppi", 
-        type=str, 
-        help="Path to the input file."
-    )
-    parser.add_argument(
-        "input_reg", 
-        type=str, 
-        help="Path to the input file."
-    )
-    parser.add_argument(
-        "output_dir", 
-        type=str, 
-        help="Path to the output file."
-    )
+    parser = argparse.ArgumentParser(description="GRphin Algorithm")
+    parser.add_argument("input_ppi", type=str, help="Path to the input file.")
+    parser.add_argument("input_reg", type=str, help="Path to the input file.")
+    parser.add_argument("output_dir", type=str, help="Path to the output file.")
 
     args = parser.parse_args()
 
