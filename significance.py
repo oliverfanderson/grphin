@@ -17,6 +17,7 @@ def main():
 
     for txid in taxon_ids:
         stress_graphlet_counts = f"final_output/{species_dict[txid]}_stress/graphlet_counts.csv"
+        output_file = f"final_output/{species_dict[txid]}_stress/graphlet_significance.csv"
 
         # Open the stress file and parse the data into a dictionary
         data_dict = {}
@@ -30,6 +31,10 @@ def main():
         # Convert the stress dictionary to a DataFrame
         stress = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
         print(stress.head())
+
+        # Initialize the significance DataFrame with the same columns as the stress DataFrame, and set the tally column to zero
+        significance = stress.copy()
+        significance['Tally'] = 0
 
         for i in range(iterations):
 
@@ -47,6 +52,13 @@ def main():
             # Convert the stress dictionary to a DataFrame
             random = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
             print(random.head())
+
+            # Count the number of times the graphlets appear in the randomized networks more than the stress network
+            for _, stress_row in stress.iterrows():
+                for _, random_row in random.iterrows():
+                    if stress_row['Graphlet'] == random_row['Graphlet']:
+                        if stress_row['Count'] <= random_row['Count']:
+                            significance.loc[significance['Graphlet'] == stress_row['Graphlet'], 'Tally'] += 1
 
 if __name__ == "__main__":
     main()
