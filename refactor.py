@@ -37,11 +37,11 @@ def generate_two_node_output_files(
     two_node_orbit_dict,
     output_dir,
 ):
-    print("\ntwo node graphlet counts")
+    print("\nTwo node graphlet counts")
     for key in two_node_graphlet_id:
         print(f"G_{two_node_graphlet_id[key]} = {two_node_graphlet_count[key]}")
 
-    print("\ntwo node graphlet orbit counts")
+    print("\nTwo node graphlet orbit counts")
     for key in two_node_orbit_dict:
         print(f"{key} = {len(two_node_orbit_dict[key])}")
 
@@ -111,7 +111,7 @@ def process_edges(
     file_path, G, protein_id_dict, visited_nodes, label, node_limit, edge_limit
 ):
     """Helper function to process edges and add them to the graph."""
-    print(f"processing {label} edges")
+    # print(f"Processing {label} edges")
     with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
         next(csv_reader)  # Skip header
@@ -142,6 +142,7 @@ def initialize_two_node_graphlet_data():
     Get all 2-node graphlet binary edge vectors
     see diagram for reference
     """
+
     # 2-node graphlet binary edge vectors
     # See 2-node graphlet figure in GRPhIN paper
     a_1 = (1, 0, 0)
@@ -171,6 +172,7 @@ def initialize_two_node_graphlet_data():
 
 def get_protein_id_dict(ppi_path, reg_path):
     """Creates a dictionary mapping protein IDs to unique integers."""
+
     res_dict = {}
     start_index = 0
     start_index = update_protein_id_dict(ppi_path, res_dict, start_index)
@@ -180,6 +182,7 @@ def get_protein_id_dict(ppi_path, reg_path):
 
 def update_protein_id_dict(file_path, res_dict, start_index):
     """Helper function to update the protein ID dictionary from a file."""
+
     with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
         next(csv_reader)
@@ -201,6 +204,7 @@ def simplify_graph_to_undirected(G):
     Returns:
     G_prime (networkx.Graph): The simplified undirected graph.
     """
+
     # Create an empty undirected graph
     G_prime = nx.Graph()
 
@@ -217,6 +221,7 @@ def simplify_graph_to_undirected(G):
 
 def load_graphlet_config(file_path):
     """Load graphlet lookup table from a CSV file. Creates a list."""
+
     graphlet_config = []
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -239,6 +244,7 @@ def load_graphlet_config(file_path):
 
 def load_graphlet_config_2(file_path):
     """Load graphlet lookup table from a CSV file. Creates a dictionary."""
+
     graphlet_config = {}
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -257,6 +263,8 @@ def load_graphlet_config_2(file_path):
 
 
 def get_two_node_graphlet_stats(G, two_node_graphlet_dict):
+    """Get the counts of 2-node graphlets in the graph and their orbit positions."""
+
     G_adj_list = get_two_node_adjacency_list(G)
     orbits_dict = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []}
     for neighbors in G_adj_list:
@@ -273,7 +281,8 @@ def get_two_node_graphlet_stats(G, two_node_graphlet_dict):
 
 def get_two_node_adjacency_list(G):
     """Get the adjacency list for a MultiDiGraph"""
-    print("\ngetting adjacency list")
+
+    print("\nGetting adjacency list")
 
     adj_list_vector = [{} for _ in range(len(G.nodes()))]
 
@@ -422,6 +431,23 @@ def compare_csv_files(file_path1, file_path2):
 def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
+    """
+    A function to generate randomized networks based on 2-node graphlet edge labels.
+    
+    Parameters:
+        -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
+        -d / --directed: Command-line argument for directed edges input file (Example: Regulatory edges).
+        -o / --output_dir: Command-line argument for output directory.
+
+    Returns:
+        Counts of graphlets and node orbit positions within a mixed graph.
+
+    Example:
+        python3 grphin.py -u data/bsub_ppi.csv -d data/bsub_reg.csv -o output/bsub
+
+        This will count the occurences of all 2 and 3-node mixed graphlets in the mixed network generated from the two input files. It will also output node orbit positions and various statistics to the specified output directory.
+    """
+
     graphlet_config = load_graphlet_config_2("graphlet_config.csv")
     start_time = time.time()
 
@@ -448,14 +474,13 @@ def grphin_algorithm(
     neighbors_dict = {i: set(G_prime.neighbors(i)) for i in G_prime.nodes()}
     completed_i = set()
     run_time_data = []
-    print("len of g prime nodes", len(G_prime.nodes()))
 
     triple_counter = 0
     count = 0
     degree = []
     for i in G_prime.nodes():
         node_start_time = time.time()
-        print(f"Node: {count}/{len(G_prime.nodes)}", end="\r")
+        print(f"Node: {count+1}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
                 if (i != k) and (i != j) and (j != k):
@@ -485,7 +510,7 @@ def grphin_algorithm(
                         sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
                         # catch missing graphlets in config
                         if hash(sorted_tuples) not in three_node_graphlet_dict:
-                            print("MISSING GRAPHLET IN CONFIG")
+                            print("Warning! Missing graphlet in config.")
                             print(sorted_tuples)
 
                         three_node_graphlet_dict[hash(sorted_tuples)] += 1
@@ -511,7 +536,7 @@ def grphin_algorithm(
 
                             # catch missing orbits in config
                             if hash(graphlet_key) not in orbit_dict:
-                                print("MISSING ORBIT IN CONFIG")
+                                print("Warning! Missing orbit in config.")
 
                             orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
         run_time_data.append(time.time() - node_start_time)
@@ -520,10 +545,10 @@ def grphin_algorithm(
         completed_i.add(i)
         count += 1
 
-    print("triple counter", triple_counter)
+    # print("triple counter", triple_counter)
 
     algorithm_run_time = time.time() - start_time
-    print("run time : %.3f seconds" % algorithm_run_time)
+    print("\nRun time: %.3f seconds" % algorithm_run_time)
     # plot_run_time_data(run_time_data, degree)
 
     return three_node_graphlet_dict, orbit_dict, algorithm_run_time, degree
@@ -571,7 +596,7 @@ def get_orbit_per_graphlet(
 
                 # catch missing orbits in config
                 if hash(graphlet_key) not in orbit_dict:
-                    print("MISSING ORBIT IN CONFIG")
+                    print("Warning! Missing orbit in config.")
 
                 orbit_dict[hash(graphlet_key)] += [orbit_change[idx]]
 
@@ -611,6 +636,7 @@ def get_node_orbit_matrix(
     three_node_orbit_namespace,
     output_dir,
 ):
+    node_orbit_out = f'{output_dir}/node_orbit.csv'
 
     node_orbit_count_matrix = np.zeros(
         (len(G.nodes), len(three_node_orbit_id)), dtype=int
@@ -647,10 +673,10 @@ def get_node_orbit_matrix(
                         node_orbit_count_matrix[node_count_set[0]][int(orbit_index)] = (
                             node_count_set[1]
                         )
-    print(f"{output_dir}/node_orbit.csv")
+    print(f"\nNode orbits file saved to: {node_orbit_out}")
 
     np.savetxt(
-        f"{output_dir}/node_orbit.csv",
+        node_orbit_out,
         node_orbit_count_matrix,
         delimiter=",",
         fmt="%d",
@@ -658,7 +684,7 @@ def get_node_orbit_matrix(
 
     compare_csv_files(
         Path("final_output/bsub/node_orbit.csv"),
-        Path("output_refactor/bsub/node_orbit.csv"),
+        Path(node_orbit_out),
     )
 
     return node_orbit_count_matrix
@@ -711,15 +737,19 @@ def write_files(
     protein_id,
     output_dir,
 ):
-    print("getting stats")
+    """
+    A function to write GRPhIN output files.
+    """
+
+    print("Getting statitics...")
     with open(f"{output_dir}/stats.csv", "w+") as f:
         f.write(f"Number of nodes: {len(G.nodes())}\n")
         f.write(f"Number of edges: {len(G.edges())}\n")
         f.write(f"Simplified Graph:\n")
         f.write(f"Number of nodes: {len(G_prime.nodes())}\n")
         f.write(f"Number of edges: {len(G_prime.edges())}\n")
-        f.write(f"run time : %.3f seconds\n" % run_time)
-        f.write("three node graphlet counts\n")
+        f.write(f"Run time : %.3f seconds\n" % run_time)
+        f.write("Three node graphlet counts\n")
         count = 0
         for key in three_node_graphlet_count:
             f.write(
@@ -727,8 +757,8 @@ def write_files(
             )
             count += three_node_graphlet_count[key]
         f.write(f"Total graphlets found: {count}\n")
-        f.write(f"unique graphlet counts : {len(three_node_graphlet_count)}\n")
-        f.write(f"three node orbit counts\n")
+        f.write(f"Unique graphlet counts : {len(three_node_graphlet_count)}\n")
+        f.write(f"Three node orbit counts\n")
         total_orbit_count = 0
 
         for orbit in three_node_orbit_protein_data:
@@ -738,7 +768,7 @@ def write_files(
             total_orbit_count += orbit_count
             f.write(f"{three_node_orbit_namespace[orbit]} : {orbit_count}\n")
         f.write(f"Total orbits found: {total_orbit_count}\n")
-        f.write(f"unique orbits counts : {len(three_node_orbit_protein_data)}\n")
+        f.write(f"Unique orbits counts : {len(three_node_orbit_protein_data)}\n")
     f.close()
 
     with open(f"{output_dir}/protein_id_mapper.csv", "w+") as f:
@@ -837,6 +867,10 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
     )
 
 def plot_runtime_stats():
+    """
+    Plots runtime statistics for internal benchmarking and optimization.
+    """
+
     species = ["bsub", "cerevisiae", "drerio", "elegans", "fly"]
     runtime_full_algorithm_data = [6.132, 4507.445, 407.541, 303.814, 340.379]
     runtime_triplet_iteration_data = [0.461, 194.703, 51.803, 24.740, 29.512]
@@ -856,7 +890,7 @@ def plot_runtime_stats():
 
 def main(input_ppi, input_reg, output_dir):
     """
-    A function to generate randomized networks based on 2-node graphlet edge labels.
+    A function that generates node orbit counts, graphlet counts and summary statistics for a mixed network from a directed and an undirected edge file.
     
     Parameters:
         -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
@@ -872,17 +906,12 @@ def main(input_ppi, input_reg, output_dir):
         This will count the occurences of all 2 and 3-node mixed graphlets in the mixed network generated from the two input files. It will also output node orbit positions and various statistics to the specified output directory.
     """
 
-    stress_proteins_path = Path(
-        "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
-    )
-    counting_algorithm = True
-
-    # initialize graphlet data
+    # Initialize graphlet data with config file
     protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
         input_ppi, input_reg
     )
 
-    # print graph information
+    # Print graph information
     print(f"Complete Graph:")
     print(f"Number of nodes: {len(G.nodes())}")
     print(f"Number of edges: {len(G.edges())}")
@@ -896,6 +925,9 @@ def main(input_ppi, input_reg, output_dir):
 
     count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
 
+    print("GRPhIN Algorithm finished successfully.")
+
+    ## LEAVE THIS LINE UNCOMMENTED TO PLOT RUNTIME STATISTICS
     # plot_runtime_stats()
 
 if __name__ == "__main__":
