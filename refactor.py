@@ -46,13 +46,13 @@ def generate_two_node_output_files(
     two_node_orbit_dict,
     output_dir,
 ):
-    print("\nTwo node graphlet counts")
-    for key in two_node_graphlet_id:
-        print(f"G_{two_node_graphlet_id[key]} = {two_node_graphlet_count[key]}")
+    # print("\nTwo node graphlet counts")
+    # for key in two_node_graphlet_id:
+    #     print(f"G_{two_node_graphlet_id[key]} = {two_node_graphlet_count[key]}")
 
-    print("\nTwo node graphlet orbit counts")
-    for key in two_node_orbit_dict:
-        print(f"{key} = {len(two_node_orbit_dict[key])}")
+    # print("\nTwo node graphlet orbit counts")
+    # for key in two_node_orbit_dict:
+    #     print(f"{key} = {len(two_node_orbit_dict[key])}")
 
     with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
         for key in two_node_graphlet_id:
@@ -299,7 +299,7 @@ def get_two_node_graphlets_and_orbits(G, two_node_graphlet_dict):
 def get_two_node_adjacency_list(G):
     """Get the adjacency list for a MultiDiGraph"""
 
-    print("\nGetting adjacency list")
+    print("\nGetting 2-node adjacency list...")
 
     adj_list_vector = [{} for _ in range(len(G.nodes()))]
 
@@ -955,10 +955,12 @@ def main(input_ppi, input_reg, output_dir):
     print(f"Number of nodes: {len(G_prime.nodes())}")
     print(f"Number of edges: {len(G_prime.edges())}")
 
-    two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
-        count_two_node_graphlet(G, output_dir)
-    )
+    # Count two-node graphlets
+    # two_node_graphlet_count, two_node_graphlet_id, two_node_orbit_dict = (
+    #     count_two_node_graphlet(G, output_dir)
+    # )
 
+    # Count three-node graphlets
     count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
 
     print("GRPhIN Algorithm finished successfully.")
