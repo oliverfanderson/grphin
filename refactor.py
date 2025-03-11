@@ -223,6 +223,7 @@ def simplify_graph_to_undirected(G):
     return G_prime
 
 
+
 def load_graphlet_config(file_path):
     """Load graphlet lookup table from a CSV file."""
     graphlet_config = []
@@ -489,15 +490,15 @@ def grphin_algorithm(
                             a_edges,
                             b_edges,
                             c_edges,
-                            graphlet_dict_orbits[sorted_tuples]["a_expected"],
-                            graphlet_dict_orbits[sorted_tuples]["b_expected"],
-                            graphlet_dict_orbits[sorted_tuples]["c_expected"],
+                            graphlet_config[sorted_tuples]["a_expected"],
+                            graphlet_config[sorted_tuples]["b_expected"],
+                            graphlet_config[sorted_tuples]["c_expected"],
                             i,
                             j,
                             k,
                         )
                         for idx, orbit in enumerate(
-                            graphlet_dict_orbits[sorted_tuples]["orbits"]
+                            graphlet_config[sorted_tuples]["orbits"]
                         ):
                             if orbit == -1:  # Skip missing orbits
                                 continue
