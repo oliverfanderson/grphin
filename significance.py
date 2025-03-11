@@ -13,6 +13,8 @@ species_dict = {
 def main():
     # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    # taxon_ids = ["txid224308"]
+
     iterations = 50  # Number of randomized networks to compare
 
     for txid in taxon_ids:
@@ -59,6 +61,14 @@ def main():
                     if stress_row['Graphlet'] == random_row['Graphlet']:
                         if stress_row['Count'] <= random_row['Count']:
                             significance.loc[significance['Graphlet'] == stress_row['Graphlet'], 'Tally'] += 1
+
+        # Calculate the significance by dividing the tally by the number of iterations
+        significance['Significance'] = significance['Tally'] / iterations
+        significance.drop('Tally', axis=1, inplace=True)
+
+        # Save the significance DataFrame to a CSV file
+        significance.to_csv(output_file, sep='\t', index=False)
+        print(significance.head())
 
 if __name__ == "__main__":
     main()
