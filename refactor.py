@@ -217,6 +217,28 @@ def simplify_graph_to_undirected(G):
 
 def load_graphlet_config(file_path):
     """Load graphlet lookup table from a CSV file."""
+    graphlet_config = []
+    with open(file_path, mode="r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            graphlet_config.append(
+                {
+                    "key": ast.literal_eval(row["key"]),
+                    "a_expected": ast.literal_eval(row["a_expected"]),
+                    "b_expected": ast.literal_eval(row["b_expected"]),
+                    "c_expected": ast.literal_eval(row["c_expected"]),
+                    "orbits": (
+                        int(row["orbit1"]),
+                        int(row["orbit2"]),
+                        int(row.get("orbit3", -1)),
+                    ),  # Handle missing orbit3
+                }
+            )
+    return graphlet_config
+
+
+def load_graphlet_config_2(file_path):
+    """Load graphlet lookup table from a CSV file."""
     graphlet_config = {}
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file)
@@ -398,7 +420,7 @@ def compare_csv_files(file_path1, file_path2):
 def grphin_algorithm(
     G: nx.MultiDiGraph, G_prime: nx.Graph, three_node_graphlet_dict, orbit_dict
 ):
-    graphlet_config = load_graphlet_config("graphlet_config.csv")
+    graphlet_config = load_graphlet_config_2("graphlet_config.csv")
     start_time = time.time()
 
     # create all the binary edge vectors
