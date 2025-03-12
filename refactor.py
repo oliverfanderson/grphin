@@ -833,8 +833,7 @@ def write_graphlet_counts(
         three_node_graphlet_id,
         three_node_graphlet_namespace,
         three_node_graphlet_count,
-        output_dir,
-        num_random_nets
+        output_dir
         ):
     """
     For use in "graphlets only" mode. Writes graphlet counts to a CSV file. For use in generating graphlet counts from randomized networks.
@@ -846,16 +845,15 @@ def write_graphlet_counts(
         output_dir (str): Path to output folder.
         num_random_nets (int): The number of random randomized networks to run GRPhIN on.
     Returns:
-        - graphlet_counts{i}.csv
+        - graphlet_counts.csv
     """
 
-    for i in range(num_random_nets):
-        with open(f"{output_dir}/graphlet_counts{i}.csv", "w+") as f:
-            for graphlet in three_node_graphlet_id:
-                if graphlet in three_node_graphlet_namespace:
-                    f.write(
-                        f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
-                    )
+    with open(f"{output_dir}/graphlet_counts.csv", "w+") as f:
+        for graphlet in three_node_graphlet_id:
+            if graphlet in three_node_graphlet_namespace:
+                f.write(
+                    f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
+                )
 
 
 def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only):
@@ -923,7 +921,7 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
             three_node_graphlet_namespace,
             three_node_graphlet_count,
             output_dir,
-            1,
+            50,
         )
     else: 
         write_files(
