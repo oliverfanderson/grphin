@@ -12,9 +12,9 @@ usage() {
 # Parse command-line arguments
 ALL_TXIDS=true
 SPECIFIC_TXIDS=""
-NUM_NETWORKS=50
+NUM_NETWORKS=49
 
-while getopts ":as:" opt; do
+while getopts ":as:n:" opt; do
     case $opt in
         a)
             ALL_TXIDS=true
@@ -35,24 +35,26 @@ done
 # Function to run GRPhIN by TXID
 grphin_by_txid() {
     local txid=$1
+    local i=$2
     local ppi="data/oxidative_stress/$txid/randomized_networks/stress_ppi$i.csv"
     local reg="data/oxidative_stress/$txid/randomized_networks/stress_reg$i.csv"
-    local out="data/oxidative_stress/$txid/randomized_networks/"
-    echo "Running GRPhIN on TXID: $txid..."
-    cat python3 refactor.py -u $ppi -d $reg -o $out -g True
-    echo "TXID: $txid finished."
+    local out="data/oxidative_stress/$txid/randomized_networks"
+    echo "Running GRPhIN on TXID: $txid, Network: $i..."
+    python3 refactor.py -u "$ppi" -d "$reg" -o "$out" -g True
+    echo "TXID: $txid, Network: $i finished."
 }
 
-# Import data based on the provided options
-if [ "$ALL_TXIDS" = true ]; then
-    grphin_by_txid txid7227
-    grphin_by_txid txid224308
-    grphin_by_txid txid7955
-    grphin_by_txid txid6239
-    grphin_by_txid txid559292
-else
-    IFS=',' read -ra TXID_ARRAY <<< "$SPECIFIC_TXIDS"
-    for txid in "${TXID_ARRAY[@]}"; do
-        grphin_by_txid $txid
-    done
-fi
+# Loop over randomized networks
+for ((i=0; i<NUM_NETWORKS; i++)); do
+    echo "Running GRPhIN on randomized network $i..."
+    if [ "$ALL_TXIDS" = true ]; then
+        for txid in 7227 224308 7955 6239 559292; do
+            grphin_by_txid "txid$txid" "$i"
+        done
+    else
+        IFS=',' read -ra TXID_ARRAY <<< "$SPECIFIC_TXIDS"
+        for txid in "${TXID_ARRAY[@]}"; do
+            grphin_by_txid "txid$txid" "$i"
+        done
+    fi
+done
