@@ -12,7 +12,7 @@ usage() {
 # Parse command-line arguments
 ALL_TXIDS=true
 SPECIFIC_TXIDS=""
-NUM_NETWORKS=49
+NUM_NETWORKS=50
 
 while getopts ":as:n:" opt; do
     case $opt in
@@ -45,7 +45,7 @@ grphin_by_txid() {
 }
 
 # Loop over randomized networks
-for ((i=0; i<NUM_NETWORKS; i++)); do
+for ((i=0; i<=(NUM_NETWORKS-1); i++)); do
     echo "Running GRPhIN on randomized network $i..."
     if [ "$ALL_TXIDS" = true ]; then
         for txid in 7227 224308 7955 6239 559292; do
