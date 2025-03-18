@@ -839,8 +839,36 @@ def write_files(
                     f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
                 )
 
+def write_graphlet_counts(
+        three_node_graphlet_id,
+        three_node_graphlet_namespace,
+        three_node_graphlet_count,
+        output_dir,
+        num_random_nets
+        ):
+    """
+    For use in "graphlets only" mode. Writes graphlet counts to a CSV file. For use in generating graphlet counts from randomized networks.
+    
+    Parameters:
+        graphlet_config (dict): keys are graphlet in the form of ((0, 1), (0, 1), (1, 1)) for example. values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple)
+        three_node_graphlet_count (dict): Keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). Values are the ordered ID values associated with each graphlet.
+        three_node_graphlet_namespace (dict): Keys are the hash of the graphlet form: ((0, 1), (0, 1), (1, 1)). Values are the string name for the graphlet form: ((0, 1), (0, 1), (1, 1)).
+        output_dir (str): Path to output folder.
+        num_random_nets (int): The number of random randomized networks to run GRPhIN on.
+    Returns:
+        - graphlet_counts{i}.csv
+    """
 
-def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir):
+    for i in range(num_random_nets):
+        with open(f"{output_dir}/graphlet_counts{i}.csv", "w+") as f:
+            for graphlet in three_node_graphlet_id:
+                if graphlet in three_node_graphlet_namespace:
+                    f.write(
+                        f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
+                    )
+
+
+def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only):
     """
     Wrapper function for variable initialization, running GRPhIN algorithm, and outputing result files for 3-node graphlets.
 
@@ -850,6 +878,7 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
         G (nx.MultiDiGraph): Stores the graph representation of our mixed interaction network.
         G_prime (nx.Graph): The simplified undirected graph.
         output_dir (str): String to output folder.
+        graphlets_only (bool): Boolean indicating whether to run GRPhIN in graphlets only mode.
 
     Returns:
         None
@@ -897,20 +926,29 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
         output_dir,
     )
 
-    # output necessary files
-    write_files(
-        G,
-        G_prime,
-        run_time,
-        three_node_graphlet_count,
-        three_node_graphlet_namespace,
-        three_node_orbit_protein_data,
-        three_node_orbit_namespace,
-        three_node_orbit_id,
-        three_node_graphlet_id,
-        protein_id,
-        output_dir,
-    )
+    # Output necessary files
+    if graphlets_only == True:
+        write_graphlet_counts(
+            three_node_graphlet_id,
+            three_node_graphlet_namespace,
+            three_node_graphlet_count,
+            output_dir,
+            1,
+        )
+    else: 
+        write_files(
+            G,
+            G_prime,
+            run_time,
+            three_node_graphlet_count,
+            three_node_graphlet_namespace,
+            three_node_orbit_protein_data,
+            three_node_orbit_namespace,
+            three_node_orbit_id,
+            three_node_graphlet_id,
+            protein_id,
+            output_dir,
+        )
 
 def plot_runtime_stats():
     """
@@ -934,7 +972,7 @@ def plot_runtime_stats():
     plt.show()
 
 
-def main(input_ppi, input_reg, output_dir):
+def main(input_ppi, input_reg, output_dir, graphlets_only=False):
     """
     A function that generates node orbit counts, graphlet counts and summary statistics for a mixed network from a directed and an undirected edge file.
     
@@ -942,6 +980,7 @@ def main(input_ppi, input_reg, output_dir):
         -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
         -d / --directed: Command-line argument for directed edges input file (Example: Regulatory edges).
         -o / --output_dir: Command-line argument for output directory.
+        -g / --graphlets_only: Command-line argument to run GRPhIN in graphlets only mode.
 
     Returns:
         Counts of graphlets and node orbit positions within a mixed graph.
@@ -965,11 +1004,16 @@ def main(input_ppi, input_reg, output_dir):
     print(f"Number of nodes: {len(G_prime.nodes())}")
     print(f"Number of edges: {len(G_prime.edges())}")
 
-    # Count two-node graphlets
-    count_two_node_graphlet(G, output_dir)
+    if graphlets_only:
+        print("Graphlets only mode enabled.")
+        # Count three-node graphlets
+        count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only)
+    else:
+        # Count two-node graphlets
+        count_two_node_graphlet(G, output_dir)
 
-    # Count three-node graphlets
-    count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
+        # Count three-node graphlets
+        count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only)
 
     print("GRPhIN Algorithm finished successfully.")
 
@@ -1001,7 +1045,13 @@ if __name__ == "__main__":
         help="Path to the output directory.",
         required=True
     )
+    parser.add_argument(
+        "-g",
+        "--graphlets_only", 
+        type=bool,
+        help="Run GRPhIN in graphlets only mode."
+    )
 
     args = parser.parse_args()
 
-    main(args.undirected, args.directed, args.output_dir)
+    main(args.undirected, args.directed, args.output_dir, args.graphlets_only)
