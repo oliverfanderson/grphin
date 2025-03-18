@@ -242,63 +242,6 @@ def swap_edges(G_prime, num_swaps):
     
     return G_random
 
-# def swap_edges(G_prime, num_swaps):
-#     G_random = nx.DiGraph()
-#     G_random.update(G_prime)
-#     edges = list(G_random.edges(data=True))  # (u, v, data)
-#     swaps = 0
-#     random.seed(42)
-    
-#     while swaps < num_swaps:
-#         # Select two random edges (ensuring distinct nodes)
-#         (u, v, data1), (x, y, data2) = random.sample(edges, 2)
-
-#         if len({u, v, x, y}) < 4:
-#             continue  # Skip if nodes are not unique
-        
-#         # Ensure the edges have the same label
-#         uv_type = data1.get("label")
-#         xy_type = data2.get("label")
-#         if uv_type != xy_type or not uv_type:
-#             continue
-
-#         # Ensure the edges have the same label for the swap
-#         uy_type = G_random.get_edge_data(u, y, default={}).get("label")
-#         xv_type = G_random.get_edge_data(x, v, default={}).get("label")
-#         if uy_type != xv_type:
-#             continue
-
-#         # Get the edges and their data
-#         uv_edge = data1
-#         xy_edge = data2
-#         uy_edge = G_random.get_edge_data(u, y, default={})
-#         xv_edge = G_random.get_edge_data(x, v, default={})
-
-#         # Perform the swap: (u, v) ↔ (u, y) and (x, y) ↔ (x, v)
-#         if not uy_edge and not xv_edge:
-#             G_random.remove_edge(u, v)
-#             G_random.remove_edge(x, y)
-#             G_random.add_edge(u, y, **uv_edge)
-#             G_random.add_edge(x, v, **xy_edge)
-#         else:
-#             # Swap the edges
-#             G_random.remove_edge(u, v)
-#             G_random.remove_edge(x, y)
-#             G_random.remove_edge(u, y)
-#             G_random.remove_edge(x, v)
-#             G_random.add_edge(u, y, **uv_edge)
-#             G_random.add_edge(x, v, **xy_edge)
-#             if uy_edge:
-#                 G_random.add_edge(u, v, **uy_edge)
-#             if xv_edge:
-#                 G_random.add_edge(x, y, **xv_edge)
-        
-#         # Update the edges list
-#         edges = list(G_random.edges(data=True))
-#         swaps += 1
-    
-#     return G_random
-
 def split_to_csv(G_random, out_ppi_path, out_reg_path):
     """
     Writes the randomized graph to CSV files based on 2-node graphlet edge labels.
@@ -381,8 +324,8 @@ def main():
     """
 
    # List of taxon IDs to process
-    # taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
-    taxon_ids = ["txid6239"]
+    taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
+    # taxon_ids = ["txid6239"]
 
     num_swaps = int(args.swaps)
     num_iterations = int(args.iterations)
