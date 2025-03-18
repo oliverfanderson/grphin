@@ -438,12 +438,12 @@ def main():
                 break
             
 
-            # Print a few examples of swapped edges
+            ## Print a few examples of swapped edges
             # if only_in_prime and only_in_random:
             #     print("Before shuffle:", list(only_in_prime)[:5])
             #     print("After shuffle:", list(only_in_random)[:5])
 
-            # Troubleshooting: Draw the graphs
+            ## Troubleshooting: Draw the graphs
             # nx.draw_networkx(G_prime, with_labels=True, font_size=10)
             # plt.show()
 

@@ -479,8 +479,8 @@ def grphin_algorithm(
                         ca = adj_list_vector[k].get(i, default_edge)
                         cb = adj_list_vector[k].get(j, default_edge)
 
-                        print(i, j, k)
-                        print(ab, ac, ba, bc, ca, cb)
+                        # print(i, j, k)
+                        # print(ab, ac, ba, bc, ca, cb)
 
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
                             ab, ac, ba, bc, ca, cb
@@ -1040,8 +1040,10 @@ def main(input_ppi, input_reg, output_dir, graphlets_only=False):
     print(f"Number of edges: {len(G_prime.edges())}")
 
     if graphlets_only:
+        # File number for looping through randomized networks in countRandomizedNets.sh
+        file_number = int(re.search(r'(\d+)\.csv$', input_ppi).group(1))
         print("Graphlets only mode enabled.")
-        outfile_path = f"{output_dir}/graphlet_counts.csv"
+        outfile_path = f"{output_dir}/graphlet_counts{file_number}.csv"
         # Count three-node graphlets
         count_three_node_graphlets_only(graphlet_config, G, G_prime, outfile_path)
     else:
