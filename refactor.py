@@ -462,12 +462,17 @@ def grphin_algorithm(
     count = 0
     for i in G_prime.nodes():
         node_start_time = time.time()
-        print(f"Node: {count+1}/{len(G_prime.nodes)}", end="\r")
+        # print(f"Node: {count+1}/{len(G_prime.nodes)}", end="\r")
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
                 if (i != k) and (i != j) and (j != k):
 
-                    triplet = tuple(sorted([i, j, k]))
+                    # triplet = tuple(sorted([i, j, k]))
+
+                    triplet = [i,j,k]
+                    triplet.sort()
+                    triplet = tuple(triplet)
+
                     if triplet not in three_node_combination:
                         triple_counter += 1
                         three_node_combination.add(triplet)
@@ -489,7 +494,12 @@ def grphin_algorithm(
                         c_edges = (min(c_a, c_b), max(c_a, c_b))
 
                         # Sort the tuples efficiently
-                        sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
+                        # sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
+
+                        list_tuple = [a_edges, b_edges, c_edges]
+                        list_tuple.sort()
+                        sorted_tuples = tuple(list_tuple)
+
                         # catch missing graphlets in config
                         if hash(sorted_tuples) not in three_node_graphlet_count:
                             print("Warning! Missing graphlet in config.")
@@ -528,7 +538,7 @@ def grphin_algorithm(
         completed_i.add(i)
         count += 1
 
-    # print("triple counter", triple_counter)
+    print("triple counter", triple_counter) 
 
     algorithm_run_time = time.time() - start_time
     print("\nRun time: %.3f seconds" % algorithm_run_time)

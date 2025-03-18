@@ -3,8 +3,8 @@ Number of edges: 115966
 Simplified Graph:
 Number of nodes: 16603
 Number of edges: 70941
-run time : 478.416 seconds
-three node graphlet counts
+Run time : 372.086 seconds
+Three node graphlet counts
 ((0, 1), (0, 1), (1, 1)) = 892182
 ((0, 1), (0, 4), (1, 5)) = 737
 ((0, 1), (0, 5), (1, 4)) = 459
@@ -104,8 +104,8 @@ three node graphlet counts
 ((2, 6), (3, 6), (6, 6)) = 0
 ((6, 6), (6, 6), (6, 6)) = 0
 Total graphlets found: 67288323
-unique graphlet counts : 98
-three node orbit counts
+Unique graphlet counts : 98
+Three node orbit counts
 (((0, 1), (0, 1), (1, 1)), 0), Orbit 0 : 1784364
 (((0, 1), (0, 1), (1, 1)), 1), Orbit 1 : 892182
 (((0, 1), (0, 4), (1, 5)), 0), Orbit 0 : 737
@@ -366,4 +366,4 @@ three node orbit counts
 (((2, 6), (3, 6), (6, 6)), 2), Orbit 2 : 0
 (((6, 6), (6, 6), (6, 6)), 0), Orbit 0 : 0
 Total orbits found: 201864969
-unique orbits counts : 259
+Unique orbits counts : 259
