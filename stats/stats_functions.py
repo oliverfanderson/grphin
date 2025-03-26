@@ -1,9 +1,12 @@
+import ast
+import csv
 import os
+import re
 import sys
 from matplotlib import pyplot as plt
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from refactor import load_graphlet_config, initialize_three_node_graphlet_data
 
 
@@ -78,9 +81,11 @@ def read_output_files(output_dir):
     three_node_graphlet_id = {}
     three_node_orbit_id = {}
     run_time = 0
-    
+
     graphlet_config = load_graphlet_config("graphlet_config.csv")
 
+    # for graphlet in graphlet_config:
+    #     print(graphlet)
 
     # using the graphlet_config to initialize dictionaries with information
     (
@@ -100,69 +105,101 @@ def read_output_files(output_dir):
         three_node_orbit_namespace,
     )
 
-    # print("post-processing only")
-    # with open(f"{output_dir}/graphlet_hash_mapper.csv", "r") as file:
-    #     csv_reader = csv.reader(file, delimiter=":")
-    #     for row in csv_reader:
-    #         graphlet_hash = int(row[0])
-    #         graphlet = ast.literal_eval(row[1])
-    #         graphlet_mapper[graphlet_hash] = graphlet
-    # print("post processing step 1/6")
+    print("post-processing only")
+    with open(f"{output_dir}/graphlet_hash_mapper.csv", "r") as file:
+        csv_reader = csv.reader(file, delimiter=":")
+        for row in csv_reader:
+            graphlet_hash = int(row[0])
+            graphlet = ast.literal_eval(row[1])
+            three_node_graphlet_namespace[graphlet_hash] = graphlet
+    print("post processing step 1/6")
 
-    # with open(f"{output_dir}/graphlet_counts.csv", "r") as file:
-    #     csv_reader = csv.reader(file, delimiter=":")
-    #     for row in csv_reader:
-    #         graphlet = ast.literal_eval(row[0])
-    #         count = int(row[1].strip())
-    #         three_node_graphlet_dict[hash(graphlet)] = count
-    # print("post processing step 2/6")
+    # for key in three_node_graphlet_namespace:
+    #     print(key, three_node_graphlet_namespace[key])
 
-    # with open(f"{output_dir}/orbit_hash_mapper.csv", "r") as file:
-    #     csv_reader = csv.reader(file, delimiter=":")
-    #     for row in csv_reader:
-    #         orbit_hash = int(row[0])
-    #         orbit_mapper[orbit_hash] = row[1]
-    # print("post processing step 3/6")
+    with open(f"{output_dir}/graphlet_counts.csv", "r") as file:
+        csv_reader = csv.reader(file, delimiter=":")
+        for row in csv_reader:
+            graphlet = ast.literal_eval(row[0])
+            count = int(row[1].strip())
+            three_node_graphlet_count[hash(graphlet)] = count
+    print("post processing step 2/6")
 
-    # with open(f"{output_dir}/graphlet_id_mapper.csv", "r") as file:
-    #     csv_reader = csv.reader(file, delimiter=":")
-    #     for row in csv_reader:
-    #         graphlet = ast.literal_eval(row[0])
-    #         id = row[1].strip()
-    #         indexed_graphlet_dict[hash(graphlet)] = id
-    # print("post processing step 4/6")
+    # for key in three_node_graphlet_count:
+    #     print(key, three_node_graphlet_count[key])
 
-    # with open(f"{output_dir}/orbit_id_mapper.csv", "r") as file:
-    #     csv_reader = csv.reader(file, delimiter=":")
-    #     for row in csv_reader:
-    #         match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
-    #         if match:
-    #             result = ast.literal_eval(match.group())
-    #             id = row[1].strip()
-    #             # print(result, type(result), row[1].strip())
-    #             indexed_orbit_dict[hash(result)] = id
-    #             orbit_id_dict[id] = result
-    # print("post processing step 5/6")
+    with open(f"{output_dir}/orbit_hash_mapper.csv", "r") as file:
+        csv_reader = csv.reader(file, delimiter=":")
+        for row in csv_reader:
+            orbit_hash = int(row[0])
+            three_node_orbit_namespace[orbit_hash] = row[1]
+    print("post processing step 3/6")
 
-    # node_orbit_arr = np.loadtxt(
-    #     f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
-    # )
-    # rows, cols = node_orbit_arr.shape
+    # for key in three_node_orbit_namespace:
+    #     print(key, three_node_orbit_namespace[key])
 
-    # count = 0
-    # for orbit in orbit_id_dict:
-    #     for protein in range(0, rows, 1):
-    #         orbit_hash = hash(orbit_id_dict[orbit])
-    #         if orbit_hash not in orbit_dict:
-    #             orbit_dict[orbit_hash] = []
-    #         protein_count = node_orbit_arr[protein][int(orbit)]
-    #         orbit_dict[orbit_hash] += [(protein, protein_count)]
-    #         print(count, "/", rows * cols, end="\r")
-    #         count += 1
+    with open(f"{output_dir}/graphlet_id_mapper.csv", "r") as file:
+        csv_reader = csv.reader(file, delimiter=":")
+        for row in csv_reader:
+            graphlet = ast.literal_eval(row[0])
+            id = row[1].strip()
+            three_node_graphlet_id[hash(graphlet)] = id
+    print("post processing step 4/6")
+
+    # for key in three_node_graphlet_id:
+    #     print(key, three_node_graphlet_id[key])
+
+    orbit_id_dict = {}
+    with open(f"{output_dir}/orbit_id_mapper.csv", "r") as file:
+        csv_reader = csv.reader(file, delimiter=":")
+        for row in csv_reader:
+            match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
+            if match:
+                result = ast.literal_eval(match.group())
+                id = row[1].strip()
+                three_node_orbit_id[hash(result)] = id
+                orbit_id_dict[id] = result
+    print("post processing step 5/6")
+
+    # for key in three_node_orbit_id:
+    #     print(key, three_node_orbit_id[key])
+
+    # for key in orbit_id_dict:
+    #     print(key, orbit_id_dict[key])
+
+    node_orbit_arr = np.loadtxt(
+        f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
+    )
+    rows, cols = node_orbit_arr.shape
+
+    count = 0
+    for orbit in orbit_id_dict:
+        for protein in range(0, rows, 1):
+            orbit_hash = hash(orbit_id_dict[orbit])
+            if orbit_hash not in three_node_orbit_protein_data:
+                three_node_orbit_protein_data[orbit_hash] = []
+            protein_count = node_orbit_arr[protein][int(orbit)]
+            three_node_orbit_protein_data[orbit_hash] += [(protein, protein_count)]
+            print(count, "/", rows * cols, end="\r")
+            count += 1
+
+    # for key in three_node_orbit_protein_data:
+    #     print(key, three_node_orbit_protein_data[key][1])
+
+    return (
+        three_node_graphlet_count,
+        three_node_graphlet_namespace,
+        three_node_orbit_protein_data,
+        three_node_orbit_namespace,
+        three_node_graphlet_id,
+        three_node_orbit_id,
+        graphlet_config,
+    )
 
 
 def main():
     print("running stats")
+    read_output_files("output_refactor/bsub")
 
 
 if __name__ == "__main__":
