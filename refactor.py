@@ -46,14 +46,6 @@ def generate_two_node_output_files(
     two_node_orbit_dict,
     output_dir,
 ):
-    # print("\nTwo node graphlet counts")
-    # for key in two_node_graphlet_id:
-    #     print(f"G_{two_node_graphlet_id[key]} = {two_node_graphlet_count[key]}")
-
-    # print("\nTwo node graphlet orbit counts")
-    # for key in two_node_orbit_dict:
-    #     print(f"{key} = {len(two_node_orbit_dict[key])}")
-
     with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
         for key in two_node_graphlet_id:
             f.write(f"G_{two_node_graphlet_id[key]}, {two_node_graphlet_count[key]}\n")
@@ -120,7 +112,6 @@ def process_edges(
     file_path, G, protein_id_dict, visited_nodes, label, node_limit, edge_limit
 ):
     """Helper function to process edges and add them to the graph."""
-    # print(f"Processing {label} edges")
     with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
         next(csv_reader)  # Skip header
@@ -225,7 +216,6 @@ def simplify_graph_to_undirected(G):
         G_prime.add_edge(u, v)
 
     return G_prime
-
 
 
 def load_graphlet_config(file_path):
@@ -466,10 +456,7 @@ def grphin_algorithm(
         for j in neighbors_dict[i]:
             for k in neighbors_dict[j].difference(completed_i):
                 if (i != k) and (i != j) and (j != k):
-
-                    # triplet = tuple(sorted([i, j, k]))
-
-                    triplet = [i,j,k]
+                    triplet = [i, j, k]
                     triplet.sort()
                     triplet = tuple(triplet)
 
@@ -494,8 +481,6 @@ def grphin_algorithm(
                         c_edges = (min(c_a, c_b), max(c_a, c_b))
 
                         # Sort the tuples efficiently
-                        # sorted_tuples = tuple(sorted([a_edges, b_edges, c_edges]))
-
                         list_tuple = [a_edges, b_edges, c_edges]
                         list_tuple.sort()
                         sorted_tuples = tuple(list_tuple)
@@ -538,7 +523,7 @@ def grphin_algorithm(
         completed_i.add(i)
         count += 1
 
-    print("triple counter", triple_counter) 
+    print("triple counter", triple_counter)
 
     algorithm_run_time = time.time() - start_time
     print("\nRun time: %.3f seconds" % algorithm_run_time)
@@ -633,7 +618,7 @@ def convert_orbit_protein_dict_to_np_matrix(
     Returns:
         node_orbit_count_matrix (np.arr)
     """
-    node_orbit_out = f'{output_dir}/node_orbit.csv'
+    node_orbit_out = f"{output_dir}/node_orbit.csv"
 
     node_orbit_count_matrix = np.zeros(
         (len(G.nodes), len(three_node_orbit_id)), dtype=int
@@ -839,16 +824,17 @@ def write_files(
                     f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
                 )
 
+
 def write_graphlet_counts(
-        three_node_graphlet_id,
-        three_node_graphlet_namespace,
-        three_node_graphlet_count,
-        output_dir,
-        num_random_nets
-        ):
+    three_node_graphlet_id,
+    three_node_graphlet_namespace,
+    three_node_graphlet_count,
+    output_dir,
+    num_random_nets,
+):
     """
     For use in "graphlets only" mode. Writes graphlet counts to a CSV file. For use in generating graphlet counts from randomized networks.
-    
+
     Parameters:
         graphlet_config (dict): keys are graphlet in the form of ((0, 1), (0, 1), (1, 1)) for example. values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple)
         three_node_graphlet_count (dict): Keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). Values are the ordered ID values associated with each graphlet.
@@ -868,7 +854,9 @@ def write_graphlet_counts(
                     )
 
 
-def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only):
+def count_three_node_graphlets(
+    graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
+):
     """
     Wrapper function for variable initialization, running GRPhIN algorithm, and outputing result files for 3-node graphlets.
 
@@ -935,7 +923,7 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
             output_dir,
             1,
         )
-    else: 
+    else:
         write_files(
             G,
             G_prime,
@@ -950,6 +938,7 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
             output_dir,
         )
 
+
 def plot_runtime_stats():
     """
     Plots runtime statistics for internal benchmarking and optimization.
@@ -959,7 +948,10 @@ def plot_runtime_stats():
     runtime_full_algorithm_data = [6.132, 4507.445, 407.541, 303.814, 340.379]
     runtime_triplet_iteration_data = [0.461, 194.703, 51.803, 24.740, 29.512]
 
-    stacked_bar_data = {"below" : runtime_full_algorithm_data, "above" : runtime_triplet_iteration_data}
+    stacked_bar_data = {
+        "below": runtime_full_algorithm_data,
+        "above": runtime_triplet_iteration_data,
+    }
 
     fig, ax = plt.subplots()
     width = 0.5
@@ -975,7 +967,7 @@ def plot_runtime_stats():
 def main(input_ppi, input_reg, output_dir, graphlets_only=False):
     """
     A function that generates node orbit counts, graphlet counts and summary statistics for a mixed network from a directed and an undirected edge file.
-    
+
     Parameters:
         -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
         -d / --directed: Command-line argument for directed edges input file (Example: Regulatory edges).
@@ -1007,49 +999,49 @@ def main(input_ppi, input_reg, output_dir, graphlets_only=False):
     if graphlets_only:
         print("Graphlets only mode enabled.")
         # Count three-node graphlets
-        count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only)
+        count_three_node_graphlets(
+            graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
+        )
     else:
         # Count two-node graphlets
         count_two_node_graphlet(G, output_dir)
 
         # Count three-node graphlets
-        count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only)
+        count_three_node_graphlets(
+            graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
+        )
 
     print("GRPhIN Algorithm finished successfully.")
 
     ## LEAVE THIS LINE UNCOMMENTED TO PLOT RUNTIME STATISTICS
     # plot_runtime_stats()
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="GRPhIN Algorithm"
-    )
+    parser = argparse.ArgumentParser(description="GRPhIN Algorithm")
     parser.add_argument(
         "-u",
-        "--undirected", 
-        type=str, 
+        "--undirected",
+        type=str,
         help="Path to the undirected/PPI edges input file.",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "-d",
         "--directed",
-        type=str, 
+        type=str,
         help="Path to the directed/Reg edges input file.",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "-o",
-        "--output_dir", 
-        type=str, 
+        "--output_dir",
+        type=str,
         help="Path to the output directory.",
-        required=True
+        required=True,
     )
     parser.add_argument(
-        "-g",
-        "--graphlets_only", 
-        type=bool,
-        help="Run GRPhIN in graphlets only mode."
+        "-g", "--graphlets_only", type=bool, help="Run GRPhIN in graphlets only mode."
     )
 
     args = parser.parse_args()
