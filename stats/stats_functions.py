@@ -32,14 +32,14 @@ def plot_runtime_stats():
 
 
 def plot_three_node_graphlet_distribution(
-    graphlet_dict, graphlet_mapper, indexed_graphlet_dict, selected_network, output_dir
+    three_node_graphlet_count, three_node_graphlet_namespace, three_node_graphlet_id, species, output_dir
 ):
     print("plotting graphlet distribution")
     hist_data = []
-    x_label = [*range(0, len(indexed_graphlet_dict), 1)]
-    for graphlet in indexed_graphlet_dict:
-        if graphlet in graphlet_dict:
-            hist_data.append(graphlet_dict[graphlet])
+    x_label = [*range(0, len(three_node_graphlet_id), 1)]
+    for graphlet in three_node_graphlet_id:
+        if graphlet in three_node_graphlet_count:
+            hist_data.append(three_node_graphlet_count[graphlet])
         else:
             hist_data.append(0)
     hist_data = [value if value > 0 else 0.1 for value in hist_data]
@@ -47,7 +47,7 @@ def plot_three_node_graphlet_distribution(
     fig = plt.figure(figsize=(14, 6))
     plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
     plt.yscale("log")
-    plt.title(f"{selected_network} Graphlet Count Distribution", fontsize=16)
+    plt.title(f"{species} Graphlet Count Distribution", fontsize=16)
     plt.xlabel("Graphlet Index", fontsize=14)
     plt.ylabel("Count (log scale)", fontsize=14)
     plt.xticks(x_label[::2], fontsize=8)
@@ -59,7 +59,7 @@ def plot_three_node_graphlet_distribution(
     sorted_graphlet_dict = {
         key: value
         for key, value in sorted(
-            graphlet_dict.items(), key=lambda item: item[1], reverse=True
+            three_node_graphlet_count.items(), key=lambda item: item[1], reverse=True
         )
     }
 
@@ -67,7 +67,7 @@ def plot_three_node_graphlet_distribution(
         f.write(f"graphlet\tid\tcount\n")
         for graphlet in sorted_graphlet_dict:
             f.write(
-                f"{graphlet_mapper[graphlet]}\t{indexed_graphlet_dict[graphlet]}\t{sorted_graphlet_dict[graphlet]}\n"
+                f"{three_node_graphlet_namespace[graphlet]}\t{three_node_graphlet_id[graphlet]}\t{sorted_graphlet_dict[graphlet]}\n"
             )
 
     return None
@@ -199,7 +199,22 @@ def read_output_files(output_dir):
 
 def main():
     print("running stats")
-    read_output_files("output_refactor/bsub")
+    output_dir = "output_refactor/bsub"
+    species = "bsub"
+
+    (
+        three_node_graphlet_count,
+        three_node_graphlet_namespace,
+        three_node_orbit_protein_data,
+        three_node_orbit_namespace,
+        three_node_graphlet_id,
+        three_node_orbit_id,
+        graphlet_config,
+    ) = read_output_files(output_dir)
+
+    plot_three_node_graphlet_distribution(three_node_graphlet_count, three_node_graphlet_namespace, three_node_graphlet_id, species, output_dir)
+
+    
 
 
 if __name__ == "__main__":
