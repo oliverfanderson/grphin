@@ -1,4 +1,5 @@
 import ast
+from collections import defaultdict
 import csv
 import os
 from pathlib import Path
@@ -315,10 +316,203 @@ def compare_files(file1, file2):
         return content1 == content2
 
 
+def species_wide_3_node_plots(n):
+    species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
+    graphlet_counts = defaultdict(int)
+    species_graphlet_counts = {}
+    for species in species_list:
+        with open(f"output_refactor/{species}/top_graphlet_counts.csv", "r") as file:
+            csv_reader = csv.reader(file, delimiter="\t")
+            next(csv_reader)
+            for row in csv_reader:
+                graphlet_id = row[1]
+                count = int(row[2])
+                graphlet_counts[graphlet_id] += count
+                if species not in species_graphlet_counts:
+                    species_graphlet_counts[species] = {}
+                if graphlet_id not in species_graphlet_counts[species]:
+                    species_graphlet_counts[species][graphlet_id] = count
+
+    top_graphlets = sorted(graphlet_counts.items(), key=lambda x: x[1], reverse=True)[
+        :n
+    ]
+
+    with open(
+        f"output_refactor/species_wide/global_top_three_node_graphlet_counts.csv", "w"
+    ) as f:
+        f.write(f"graphlet_id\ttotal_count\tbsub\tdrerio\telegans\tfly\n")
+        for graphlet, count in top_graphlets:
+            f.write(
+                f"{graphlet[0]}\t{species_graphlet_counts['bsub'][graphlet]}\t{species_graphlet_counts['drerio'][graphlet]}\t{species_graphlet_counts['elegans'][graphlet]}\t{species_graphlet_counts['fly'][graphlet]}\n"
+            )
+    return None
+
+
+def species_wide_two_node_plots():
+    species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
+    graphlet_ids = ["G_1", "G_2", "G_3", "G_4", "G_5"]
+    species_graphlet_data = {}
+
+    for species in species_list:
+        species_graphlet_data[species] = {}
+        with open(
+            f"output_refactor/{species}/two_node_graphlet_counts.csv", "r"
+        ) as file:
+            csv_reader = csv.reader(file, delimiter=",")
+            for row in csv_reader:
+                species_graphlet_data[species][row[0]] = int(row[1].strip())
+
+    graphlet_counts = {graphlet: [] for graphlet in graphlet_ids}
+
+    for species_name in species_list:
+        species_counts = species_graphlet_data[species_name]
+        total_count = sum(species_counts[graphlet] for graphlet in graphlet_ids)
+        for graphlet in graphlet_ids:
+            percentage = (
+                (species_counts[graphlet] / total_count) * 100 if total_count > 0 else 0
+            )
+            graphlet_counts[graphlet].append(percentage)
+
+    index = np.arange(len(species_list))
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bar_width = 0.5
+    bottom_values = np.zeros(len(species_list))
+    colors = ["blue", "green", "red", "yellow", "pink"]
+
+    for i, graphlet in enumerate(graphlet_ids):
+        bar = ax.bar(
+            index,
+            graphlet_counts[graphlet],
+            bar_width,
+            bottom=bottom_values,
+            label=graphlet,
+            color=colors[i],
+        )
+        bottom_values += np.array(graphlet_counts[graphlet])
+
+    ax.set_xlabel("Species")
+    ax.set_ylabel("Percentage of Graphlet Counts")
+    ax.set_title("Stacked Bar Chart of Graphlet Percentages per Species")
+    ax.set_xticks(index)
+    ax.set_xticklabels(species_list)
+    ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(
+        "output_refactor/species_wide/species_two_node_graphlet_dist_percentage.pdf"
+    )
+    # plt.show()
+    plt.close()
+
+    orbit_ids = ["1", "2", "3", "4", "5", "6", "7"]
+    species_orbit_data = {}
+
+    for species in species_list:
+        species_orbit_data[species] = {}
+        with open(f"output_refactor/{species}/two_node_orbit_counts.csv", "r") as file:
+            csv_reader = csv.reader(file, delimiter=",")
+            for row in csv_reader:
+                species_orbit_data[species][row[0]] = int(row[1].strip())
+
+    orbit1_count = []
+    orbit2_count = []
+    orbit3_count = []
+    orbit4_count = []
+    orbit5_count = []
+    orbit6_count = []
+    orbit7_count = []
+
+    for species_name in species_list:
+        species_counts = species_orbit_data[species_name]
+        total_count = sum(species_counts.values())
+        orbit1_count.append(species_counts["1"] / total_count * 100)
+        orbit2_count.append(species_counts["2"] / total_count * 100)
+        orbit3_count.append(species_counts["3"] / total_count * 100)
+        orbit4_count.append(species_counts["4"] / total_count * 100)
+        orbit5_count.append(species_counts["5"] / total_count * 100)
+        orbit6_count.append(species_counts["6"] / total_count * 100)
+        orbit7_count.append(species_counts["7"] / total_count * 100)
+
+    orbit1_count = np.array(orbit1_count)
+    orbit2_count = np.array(orbit2_count)
+    orbit3_count = np.array(orbit3_count)
+    orbit4_count = np.array(orbit4_count)
+    orbit5_count = np.array(orbit5_count)
+    orbit6_count = np.array(orbit6_count)
+    orbit7_count = np.array(orbit7_count)
+
+    index = np.arange(len(species_list))
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bar_width = 0.5
+    bar1 = ax.bar(index, orbit1_count, bar_width, label="1", color="blue")
+    bar2 = ax.bar(
+        index, orbit2_count, bar_width, bottom=orbit1_count, label="2", color="green"
+    )
+    bar3 = ax.bar(
+        index,
+        orbit3_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count,
+        label="3",
+        color="red",
+    )
+    bar4 = ax.bar(
+        index,
+        orbit4_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count,
+        label="4",
+        color="yellow",
+    )
+    bar5 = ax.bar(
+        index,
+        orbit5_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count,
+        label="5",
+        color="pink",
+    )
+    bar6 = ax.bar(
+        index,
+        orbit6_count,
+        bar_width,
+        bottom=orbit1_count + orbit2_count + orbit3_count + orbit4_count + orbit5_count,
+        label="6",
+        color="orange",
+    )
+    bar7 = ax.bar(
+        index,
+        orbit7_count,
+        bar_width,
+        bottom=orbit1_count
+        + orbit2_count
+        + orbit3_count
+        + orbit4_count
+        + orbit5_count
+        + orbit6_count,
+        label="7",
+        color="purple",
+    )
+
+    ax.set_xlabel("Species")
+    ax.set_ylabel("Percentage of orbit ids")
+    ax.set_title("Stacked Bar Chart of Orbit Percentages per Species")
+    ax.set_xticks(index)
+    ax.set_xticklabels(species_list)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(f"output_refactor/species_wide/species_two_node_orbit_dist.pdf")
+    # plt.show()
+    plt.close()
+
+    return None
+
+
 def main():
     print("running stats")
 
-    species = "cerevisiae"
+    species = "fly"
     output_dir = f"output_refactor/{species}"
     input_ppi = f"data/{species}_ppi.csv"
     input_reg = f"data/{species}_reg.csv"
@@ -359,21 +553,23 @@ def main():
 
     # significance orbit stats
 
-    stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+    # stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-    significance = plot_stress_orbit_distribution(
-        three_node_orbit_protein_data,
-        three_node_orbit_id,
-        stress_proteins_list,
-        protein_id,
-        species,
-        output_dir,
-        node_orbit_arr,
-    )
+    # significance = plot_stress_orbit_distribution(
+    #     three_node_orbit_protein_data,
+    #     three_node_orbit_id,
+    #     stress_proteins_list,
+    #     protein_id,
+    #     species,
+    #     output_dir,
+    #     node_orbit_arr,
+    # )
 
     # species wide stats
+    species_wide_3_node_plots(10)
 
     # two node graphlet stats
+    species_wide_two_node_plots()
 
 
 if __name__ == "__main__":
