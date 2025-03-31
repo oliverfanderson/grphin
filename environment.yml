@@ -46,6 +46,7 @@ dependencies:
   - openjpeg=2.5.3=h7fd6d84_0
   - openssl=3.4.0=hd471939_0
   - packaging=24.2=pyhd8ed1ab_2
+  - pandas=2.2.3
   - pillow=11.0.0=py313h4d44d4f_0
   - pip=24.3.1=pyh145f28c_2
   - pthread-stubs=0.4=h00291cd_1002
