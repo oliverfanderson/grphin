@@ -225,6 +225,7 @@ def swap_edges(G_prime, num_swaps):
                 G_random.remove_edge(x, y)
                 G_random.add_edge(u, y, **uv_edge)
                 G_random.add_edge(x, v, **xy_edge)
+                # print(f"Swapped edges: {u}->{v} and {x}->{y}")
             else:
                 # IDEA: Maybe we can just swap label instead of removing and adding new edges
                 G_random.remove_edge(u, v)
@@ -235,10 +236,12 @@ def swap_edges(G_prime, num_swaps):
                 G_random.add_edge(x, v, **xy_edge)
                 G_random.add_edge(u, v, **uy_edge)
                 G_random.add_edge(x, y, **xv_edge)
+                # print(f"Swapped edges: {u}->{v}, {x}->{y}, {u}->{y}, {x}->{v}")
         
         # Update the edges list
         edges = list(G_random.edges(data=True))
         swaps += 1
+        # print(f"Swaps: {swaps}")
     
     return G_random
 
@@ -326,6 +329,10 @@ def main():
    # List of taxon IDs to process
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     # taxon_ids = ["txid6239"]
+    # taxon_ids = ["txid7227"]
+    # taxon_ids = ["txid7955"]
+    # taxon_ids = ["txid224308", "txid7955"]
+    # taxon_ids = ["txid559292"]
 
     num_swaps = int(args.swaps)
     num_iterations = int(args.iterations)

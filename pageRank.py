@@ -214,6 +214,10 @@ def main():
         # Convert the set back to a list if needed
         restart_nodes = list(restart_nodes)
 
+        G_sub = nx.induced_subgraph(G, restart_nodes)
+        G_sub = nx.Graph(G_sub)
+        print(f"Number of connected components without RWR: {nx.number_connected_components(G_sub)}")
+
         print(f"Total Stress Proteins: {len(restart_nodes)}")
 
         # Create the personalization vector
@@ -249,6 +253,8 @@ def main():
         G_induced = get_induced_subnetwork(G, pagerank_out)
         
         print(f"Induced subnetwork: {G_induced}")
+
+        print(f"Number of connected components after RWR: {nx.number_connected_components(G_induced)}")
 
         split_to_csv(G_induced, output_dir)
 

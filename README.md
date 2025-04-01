@@ -9,12 +9,17 @@ GRPhIN takes as input (1) an undirected PPI network and (2) a directed regulator
 2. To run the GRPhIN orbit and graphlet counting algorithm on the example networks, run the `grphin.py` script with `python3 grphin.py`.
 3. Follow the menu options for your organism of interest.
 
-## File Descriptions
+## Directories
 - **`data/`** – Contains raw data files for case studies.
-- **`final_output/`** – Contains output data files for case studies.- **`enrichment.py`** – Script for calculating graphlet enrichment statistics.
+- **`final_output/`** – Contains output data files for case studies.
+## File Descriptions
+- **`countRandomizedNetworks.sh`** - Script to run GRPhIN in graphlets-only mode on a user-defined number of networks. Used to count graphlets in 1000 randomized networks for oxidative stress case studies.
+- **`enrichment.py`** – Script for calculating graphlet enrichment statistics.
 - **`environment.yml`** – Set up the conda environment with all dependencies required to run the project.
 - **`grphin.py`** – Script for running the GRPhIN algorithm.
 - **`generateNetworks.py`** – Script to generate randomized networks for significance testing.
+- **`iterations_swaps.R`** - Script to generate plot showing thresholds for swaps for each species based on the percent randomization.
+- **`iterations_swaps.txt`** - Dataset to calculate the percent randomization based on different numbers of swaps for all species. 
 - **`orbit_proteins.py`** – Script for finding protein identities and overrepresented orbits in GRPhIN results.
 - **`pageRank.py`** – Script for running simple Random Walk with Restart algorithm to capture a subnetwork based on oxidative stress pathways.
 - **`README.md`** – This file, providing documentation for the repository.
