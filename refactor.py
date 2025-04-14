@@ -471,6 +471,9 @@ def grphin_algorithm(
                         ca = adj_list_vector[k].get(i, default_edge)
                         cb = adj_list_vector[k].get(j, default_edge)
 
+                        # print(i, j, k)
+                        # print(ab, ac, ba, bc, ca, cb)
+
                         a_b, a_c, b_a, b_c, c_a, c_b = get_three_node_graphlet_dict(
                             ab, ac, ba, bc, ca, cb
                         )
@@ -826,12 +829,11 @@ def write_files(
 
 
 def write_graphlet_counts(
-    three_node_graphlet_id,
-    three_node_graphlet_namespace,
-    three_node_graphlet_count,
-    output_dir,
-    num_random_nets,
-):
+        three_node_graphlet_id,
+        three_node_graphlet_namespace,
+        three_node_graphlet_count,
+        outfile_path
+        ):
     """
     For use in "graphlets only" mode. Writes graphlet counts to a CSV file. For use in generating graphlet counts from randomized networks.
 
@@ -840,33 +842,29 @@ def write_graphlet_counts(
         three_node_graphlet_count (dict): Keys are the hash of the graphlet-orbit form (((0, 1), (0, 1), (1, 1)), 0). Values are the ordered ID values associated with each graphlet.
         three_node_graphlet_namespace (dict): Keys are the hash of the graphlet form: ((0, 1), (0, 1), (1, 1)). Values are the string name for the graphlet form: ((0, 1), (0, 1), (1, 1)).
         output_dir (str): Path to output folder.
-        num_random_nets (int): The number of random randomized networks to run GRPhIN on.
+        num_random_nets (int): The number of random randomized networks to run GRPhIN on. Match this input with the -n flag for countRandomizedNets.sh.
     Returns:
-        - graphlet_counts{i}.csv
+        - graphlet_counts.csv
     """
+    
+    with open(f"{outfile_path}", "w+") as f:
+        for graphlet in three_node_graphlet_id:
+            if graphlet in three_node_graphlet_namespace:
+                f.write(
+                    f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
+                )
 
-    for i in range(num_random_nets):
-        with open(f"{output_dir}/graphlet_counts{i}.csv", "w+") as f:
-            for graphlet in three_node_graphlet_id:
-                if graphlet in three_node_graphlet_namespace:
-                    f.write(
-                        f"{three_node_graphlet_namespace[graphlet]} : {three_node_graphlet_count[graphlet]}\n"
-                    )
 
-
-def count_three_node_graphlets(
-    graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
-):
+def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir):
     """
     Wrapper function for variable initialization, running GRPhIN algorithm, and outputing result files for 3-node graphlets.
 
-    Args:
+    Parameters:
         graphlet_config (dict): Keys are graphlet in the form of: ((0, 1), (0, 1), (1, 1)). Values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple).
         protein_id (dict): Keys are protein names and values are IDs (int).
         G (nx.MultiDiGraph): Stores the graph representation of our mixed interaction network.
         G_prime (nx.Graph): The simplified undirected graph.
         output_dir (str): String to output folder.
-        graphlets_only (bool): Boolean indicating whether to run GRPhIN in graphlets only mode.
 
     Returns:
         None
@@ -906,36 +904,81 @@ def count_three_node_graphlets(
         )
     )
 
+    # Output necessary files
     node_orbit_count_matrix = convert_orbit_protein_dict_to_np_matrix(
+    G,
+    three_node_orbit_id,
+    three_node_orbit_protein_data,
+    three_node_orbit_namespace,
+    output_dir,
+    )
+        
+    write_files(
         G,
-        three_node_orbit_id,
+        G_prime,
+        run_time,
+        three_node_graphlet_count,
+        three_node_graphlet_namespace,
         three_node_orbit_protein_data,
         three_node_orbit_namespace,
+        three_node_orbit_id,
+        three_node_graphlet_id,
+        protein_id,
         output_dir,
     )
 
-    # Output necessary files
-    if graphlets_only == True:
-        write_graphlet_counts(
-            three_node_graphlet_id,
-            three_node_graphlet_namespace,
-            three_node_graphlet_count,
-            output_dir,
-            1,
+def count_three_node_graphlets_only(graphlet_config, G, G_prime, outfile_path):
+    """
+    A modification of the count_three_node_graphlets() function for variable initialization, running GRPhIN algorithm, and outputing result files for 3-node graphlets. The modification is for use on oxidative stress response randomized networks. Allows effective looping of GRPhIN algorithm.
+
+    Parameters:
+        graphlet_config (dict): Keys are graphlet in the form of: ((0, 1), (0, 1), (1, 1)). Values are "key": ast.literal_eval(row["key"]),"a_expected": (tuple),"b_expected": (tuple),"c_expected": (tuple),"orbits": (tuple).
+        G (nx.MultiDiGraph): Stores the graph representation of our mixed interaction network.
+        G_prime (nx.Graph): The simplified undirected graph.
+        output_filepath (str): String to output graphlet_counts.csv. Effective for looping through multiple inputs.
+    Returns:
+        None
+    """
+
+    # initialize variables required for counting and storing graphlet and orbit information
+    three_node_graphlet_count = {}
+    three_node_graphlet_namespace = {}
+    three_node_orbit_protein_data = {}
+    three_node_orbit_namespace = {}
+    three_node_graphlet_id = {}
+    three_node_orbit_id = {}
+    run_time = 0
+
+    # using the graphlet_config to initialize dictionaries with information
+    (
+        three_node_graphlet_id,
+        three_node_orbit_id,
+        three_node_graphlet_count,
+        three_node_orbit_protein_data,
+        three_node_graphlet_namespace,
+        three_node_orbit_namespace,
+    ) = initialize_three_node_graphlet_data(
+        graphlet_config,
+        three_node_graphlet_id,
+        three_node_orbit_id,
+        three_node_graphlet_count,
+        three_node_orbit_protein_data,
+        three_node_graphlet_namespace,
+        three_node_orbit_namespace,
+    )
+
+    # use the grphin algorithm to count graphlets and orbits
+    (three_node_graphlet_count, three_node_orbit_protein_data, run_time) = (
+        grphin_algorithm(
+            G, G_prime, three_node_graphlet_count, three_node_orbit_protein_data
         )
-    else:
-        write_files(
-            G,
-            G_prime,
-            run_time,
-            three_node_graphlet_count,
-            three_node_graphlet_namespace,
-            three_node_orbit_protein_data,
-            three_node_orbit_namespace,
-            three_node_orbit_id,
+    )
+
+    write_graphlet_counts(
             three_node_graphlet_id,
-            protein_id,
-            output_dir,
+            three_node_graphlet_namespace,
+            three_node_graphlet_count,
+            outfile_path,
         )
 
 
@@ -972,7 +1015,7 @@ def main(input_ppi, input_reg, output_dir, graphlets_only=False):
         -u / --undirected: Command-line argument for undirected edges input file (Example: PPI edges).
         -d / --directed: Command-line argument for directed edges input file (Example: Regulatory edges).
         -o / --output_dir: Command-line argument for output directory.
-        -g / --graphlets_only: Command-line argument to run GRPhIN in graphlets only mode.
+        -g / --graphlets_only: Command-line argument to run GRPhIN in graphlets only mode. For us in looping through multiple networks with countRandomizedNets.sh.
 
     Returns:
         Counts of graphlets and node orbit positions within a mixed graph.
@@ -997,19 +1040,18 @@ def main(input_ppi, input_reg, output_dir, graphlets_only=False):
     print(f"Number of edges: {len(G_prime.edges())}")
 
     if graphlets_only:
+        # File number for looping through randomized networks in countRandomizedNets.sh
+        file_number = int(re.search(r'(\d+)\.csv$', input_ppi).group(1))
         print("Graphlets only mode enabled.")
+        outfile_path = f"{output_dir}/graphlet_counts{file_number}.csv"
         # Count three-node graphlets
-        count_three_node_graphlets(
-            graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
-        )
+        count_three_node_graphlets_only(graphlet_config, G, G_prime, outfile_path)
     else:
         # Count two-node graphlets
         count_two_node_graphlet(G, output_dir)
 
         # Count three-node graphlets
-        count_three_node_graphlets(
-            graphlet_config, protein_id, G, G_prime, output_dir, graphlets_only
-        )
+        count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_dir)
 
     print("GRPhIN Algorithm finished successfully.")
 

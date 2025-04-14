@@ -1,6 +1,13 @@
 import math
 import pandas as pd
 import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-i", "--iterations", required=True, help="Number of iterations to run"
+)
+args = parser.parse_args()
 
 species_dict = {
     "txid6239" : "elegans",
@@ -15,11 +22,11 @@ def main():
     taxon_ids = ["txid6239", "txid7227", "txid7955", "txid224308", "txid559292"]
     # taxon_ids = ["txid224308"]
 
-    iterations = 50  # Number of randomized networks to compare
+    iterations = int(args.iterations)  # Number of randomized networks to compare
 
     for txid in taxon_ids:
         stress_graphlet_counts = f"final_output/{species_dict[txid]}_stress/graphlet_counts.csv"
-        output_file = f"final_output/{species_dict[txid]}_stress/graphlet_significance.csv"
+        output_file = f"data/oxidative_stress/{txid}/graphlet_significance.csv"
 
         # Open the stress file and parse the data into a dictionary
         data_dict = {}
@@ -32,7 +39,7 @@ def main():
 
         # Convert the stress dictionary to a DataFrame
         stress = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
-        print(stress.head())
+        # print(stress.head())
 
         # Initialize the significance DataFrame with the same columns as the stress DataFrame, and set the tally column to zero
         significance = stress.copy()
@@ -53,7 +60,7 @@ def main():
 
             # Convert the stress dictionary to a DataFrame
             random = pd.DataFrame(list(data_dict.items()), columns=['Graphlet', 'Count'])
-            print(random.head())
+            # print(random.head())
 
             # Count the number of times the graphlets appear in the randomized networks more than the stress network
             for _, stress_row in stress.iterrows():
@@ -64,11 +71,12 @@ def main():
 
         # Calculate the significance by dividing the tally by the number of iterations
         significance['Significance'] = significance['Tally'] / iterations
-        significance.drop('Tally', axis=1, inplace=True)
+        # significance.drop('Tally', axis=1, inplace=True)
 
         # Save the significance DataFrame to a CSV file
         significance.to_csv(output_file, sep='\t', index=False)
-        print(significance.head())
+        # print(significance.head())
+        print(f"Graphlet significance written to {output_file}")
 
 if __name__ == "__main__":
     main()

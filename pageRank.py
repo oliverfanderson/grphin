@@ -61,28 +61,6 @@ def read_csv(
 
     return G
 
-def simplify_graph_to_undirected(G):
-    """
-    Simplify the given graph to a new undirected graph with only one edge per connected node pair.
-
-    Parameters:
-    G (networkx.Graph): The original graph (can be directed or undirected, multigraph or simple).
-
-    Returns:
-    G_prime (networkx.Graph): The simplified undirected graph.
-    """
-    # Create an empty undirected graph
-    G_prime = nx.Graph()
-
-    # Add all nodes to G_prime
-    G_prime.add_nodes_from(G.nodes())
-
-    # Add a single undirected edge for every connected node pair in G
-    for u, v in G.edges():
-        G_prime.add_edge(u, v)
-
-    return G_prime
-
 def threshold_stress_recovery(pagerank, stress_proteins, threshold):
     """
     Thresholds PageRank results by percent of stress proteins recovered.
@@ -198,7 +176,7 @@ def main():
             reg_path
         )
 
-        G_prime = simplify_graph_to_undirected(G)
+        G_prime = G.to_undirected()
         
         # # Example: Print basic graph stats
         # print(f"Original graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
@@ -213,6 +191,10 @@ def main():
 
         # Convert the set back to a list if needed
         restart_nodes = list(restart_nodes)
+
+        G_sub = nx.induced_subgraph(G, restart_nodes)
+        G_sub = nx.Graph(G_sub)
+        print(f"Number of connected components without RWR: {nx.number_connected_components(G_sub)}")
 
         print(f"Total Stress Proteins: {len(restart_nodes)}")
 
@@ -249,6 +231,8 @@ def main():
         G_induced = get_induced_subnetwork(G, pagerank_out)
         
         print(f"Induced subnetwork: {G_induced}")
+        G_induced_prime = G_induced.to_undirected()
+        print(f"Number of connected components after RWR: {nx.number_connected_components(G_induced_prime)}")
 
         split_to_csv(G_induced, output_dir)
 
