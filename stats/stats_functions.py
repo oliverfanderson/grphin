@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from refactor import (
+from grphin import (
     initialize_graphlet_data,
     load_graphlet_config,
     initialize_three_node_graphlet_data,
