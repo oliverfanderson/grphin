@@ -1,0 +1,108 @@
+D. melanogaster
+Number of nodes: 12823
+Number of edges: 483638
+getting adjacency list
+
+two node graphlet counts
+G_1 = 461238
+G_2 = 1842
+G_3 = 1186
+G_4 = 12026
+G_5 = 2476
+
+two node graphlet orbit counts
+1 = 11490
+2 = 4555
+3 = 4555
+4 = 1297
+5 = 1297
+6 = 604
+7 = 1962
+
+
+B. subtilis
+Number of nodes: 3143
+Number of edges: 18516
+getting adjacency list
+
+two node graphlet counts
+G_1 = 12702
+G_2 = 86
+G_3 = 8
+G_4 = 5416
+G_5 = 124
+
+two node graphlet orbit counts
+1 = 1852
+2 = 2661
+3 = 2661
+4 = 103
+5 = 103
+6 = 8
+7 = 222
+
+
+S. cerevisiae
+Number of nodes: 7644
+Number of edges: 566179
+getting adjacency list
+
+two node graphlet counts
+G_1 = 320030
+G_2 = 4359
+G_3 = 116
+G_4 = 230639
+G_5 = 2201
+
+two node graphlet orbit counts
+1 = 6783
+2 = 6549
+3 = 6549
+4 = 2744
+5 = 2744
+6 = 67
+7 = 1370
+
+
+D. rerio
+Number of nodes: 16603
+Number of edges: 115966
+getting adjacency list
+
+two node graphlet counts
+G_1 = 89962
+G_2 = 22
+G_3 = 0
+G_4 = 25933
+G_5 = 5
+
+two node graphlet orbit counts
+1 = 6433
+2 = 13771
+3 = 13771
+4 = 25
+5 = 25
+6 = 0
+7 = 10
+
+
+C. elegans
+Number of nodes: 4098
+Number of edges: 106053
+getting adjacency list
+
+two node graphlet counts
+G_1 = 27112
+G_2 = 342
+G_3 = 34
+G_4 = 76954
+G_5 = 893
+
+two node graphlet orbit counts
+1 = 2985
+2 = 3694
+3 = 3694
+4 = 282
+5 = 282
+6 = 22
+7 = 645
