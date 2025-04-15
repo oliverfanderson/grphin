@@ -64,7 +64,7 @@ def plot_three_node_graphlet_distribution(
     plt.xticks(x_label[::2], fontsize=10)
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/three_node_graphlet_dist.pdf")
+    plt.savefig(f"{output_dir}/{species}/three_node_graphlet_dist.pdf")
     # plt.show()
 
     sorted_graphlet_dict = {
@@ -74,7 +74,7 @@ def plot_three_node_graphlet_distribution(
         )
     }
 
-    with open(f"{output_dir}/top_graphlet_counts.csv", "w") as f:
+    with open(f"{output_dir}/{species}/top_graphlet_counts.csv", "w") as f:
         f.write(f"graphlet\tid\tcount\n")
         for graphlet in sorted_graphlet_dict:
             f.write(
@@ -114,7 +114,7 @@ def read_output_files(output_dir, species):
     )
 
     print("post-processing only")
-    with open(f"{output_dir}/graphlet_hash_mapper.csv", "r") as file:
+    with open(f"{output_dir}/{species}/graphlet_hash_mapper.csv", "r") as file:
         csv_reader = csv.reader(file, delimiter=":")
         for row in csv_reader:
             graphlet_hash = int(row[0])
@@ -122,7 +122,7 @@ def read_output_files(output_dir, species):
             three_node_graphlet_namespace[graphlet_hash] = graphlet
     print("post processing step 1/6")
 
-    with open(f"{output_dir}/graphlet_counts.csv", "r") as file:
+    with open(f"{output_dir}/{species}/graphlet_counts.csv", "r") as file:
         csv_reader = csv.reader(file, delimiter=":")
         for row in csv_reader:
             graphlet = ast.literal_eval(row[0])
@@ -130,14 +130,14 @@ def read_output_files(output_dir, species):
             three_node_graphlet_count[hash(graphlet)] = count
     print("post processing step 2/6")
 
-    with open(f"{output_dir}/orbit_hash_mapper.csv", "r") as file:
+    with open(f"{output_dir}/{species}/orbit_hash_mapper.csv", "r") as file:
         csv_reader = csv.reader(file, delimiter=":")
         for row in csv_reader:
             orbit_hash = int(row[0])
             three_node_orbit_namespace[orbit_hash] = row[1]
     print("post processing step 3/6")
 
-    with open(f"{output_dir}/graphlet_id_mapper.csv", "r") as file:
+    with open(f"{output_dir}/{species}/graphlet_id_mapper.csv", "r") as file:
         csv_reader = csv.reader(file, delimiter=":")
         for row in csv_reader:
             graphlet = ast.literal_eval(row[0])
@@ -146,7 +146,7 @@ def read_output_files(output_dir, species):
     print("post processing step 4/6")
 
     orbit_id_dict = {}
-    with open(f"{output_dir}/orbit_id_mapper.csv", "r") as file:
+    with open(f"{output_dir}/{species}/orbit_id_mapper.csv", "r") as file:
         csv_reader = csv.reader(file, delimiter=":")
         for row in csv_reader:
             match = re.search(r"\(\(\(.*?\)\), \d+\)", row[0])
@@ -158,7 +158,7 @@ def read_output_files(output_dir, species):
     print("post processing step 5/6")
 
     node_orbit_arr = np.loadtxt(
-        f"{output_dir}/node_orbit.csv", delimiter=",", dtype=int
+        f"{output_dir}/{species}/node_orbit.csv", delimiter=",", dtype=int
     )
     rows, cols = node_orbit_arr.shape
 
@@ -174,7 +174,7 @@ def read_output_files(output_dir, species):
             count += 1
 
     compare_files(
-        Path(f"output_refactor/{species}/node_orbit.csv"),
+        Path(f"{output_dir}/{species}/node_orbit.csv"),
         Path(f"final_output/{species}/node_orbit.csv"),
     )
 
@@ -280,7 +280,7 @@ def plot_stress_orbit_distribution(
             significance[orbit] = 0
             # print(three_node_orbit_id[orbit], ": NOT significant")
 
-    with open(f"{output_dir}/stress_orbit_significance.csv", "w") as f:
+    with open(f"{output_dir}/{species}/stress_orbit_significance.csv", "w") as f:
         f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
         for orbit in significance:
             f.write(
@@ -299,7 +299,7 @@ def plot_stress_orbit_distribution(
                 f"{species} Random Median Samples at Orbit {int(three_node_orbit_id[orbit])} Distribution",
                 fontsize=16,
             )
-            plt.savefig(f"{output_dir}/sig_orbit/orbit{i}.pdf")
+            plt.savefig(f"{output_dir}/{species}/sig_orbit/orbit{i}.pdf")
             plt.close()
         i += 1
     return None
@@ -316,12 +316,12 @@ def compare_files(file1, file2):
         return content1 == content2
 
 
-def species_wide_3_node_plots(n):
+def species_wide_3_node_plots(n, output_dir):
     species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
     graphlet_counts = defaultdict(int)
     species_graphlet_counts = {}
     for species in species_list:
-        with open(f"output_refactor/{species}/top_graphlet_counts.csv", "r") as file:
+        with open(f"{output_dir}/{species}/top_graphlet_counts.csv", "r") as file:
             csv_reader = csv.reader(file, delimiter="\t")
             next(csv_reader)
             for row in csv_reader:
@@ -338,7 +338,7 @@ def species_wide_3_node_plots(n):
     ]
 
     with open(
-        f"output_refactor/species_wide/global_top_three_node_graphlet_counts.csv", "w"
+        f"{output_dir}/species_wide/global_top_three_node_graphlet_counts.csv", "w"
     ) as f:
         f.write(f"graphlet_id\ttotal_count\tbsub\tdrerio\telegans\tfly\n")
         for graphlet, count in top_graphlets:
@@ -348,16 +348,14 @@ def species_wide_3_node_plots(n):
     return None
 
 
-def species_wide_two_node_plots():
+def species_wide_two_node_plots(output_dir):
     species_list = ["bsub", "fly", "cerevisiae", "drerio", "elegans"]
     graphlet_ids = ["G_1", "G_2", "G_3", "G_4", "G_5"]
     species_graphlet_data = {}
 
     for species in species_list:
         species_graphlet_data[species] = {}
-        with open(
-            f"output_refactor/{species}/two_node_graphlet_counts.csv", "r"
-        ) as file:
+        with open(f"{output_dir}/{species}/two_node_graphlet_counts.csv", "r") as file:
             csv_reader = csv.reader(file, delimiter=",")
             for row in csv_reader:
                 species_graphlet_data[species][row[0]] = int(row[1].strip())
@@ -399,7 +397,7 @@ def species_wide_two_node_plots():
 
     plt.tight_layout()
     plt.savefig(
-        "output_refactor/species_wide/species_two_node_graphlet_dist_percentage.pdf"
+        f"{output_dir}/species_wide/species_two_node_graphlet_dist_percentage.pdf"
     )
     # plt.show()
     plt.close()
@@ -409,7 +407,7 @@ def species_wide_two_node_plots():
 
     for species in species_list:
         species_orbit_data[species] = {}
-        with open(f"output_refactor/{species}/two_node_orbit_counts.csv", "r") as file:
+        with open(f"{output_dir}/{species}/two_node_orbit_counts.csv", "r") as file:
             csv_reader = csv.reader(file, delimiter=",")
             for row in csv_reader:
                 species_orbit_data[species][row[0]] = int(row[1].strip())
@@ -502,7 +500,7 @@ def species_wide_two_node_plots():
     ax.set_xticklabels(species_list)
     ax.legend()
     plt.tight_layout()
-    plt.savefig(f"output_refactor/species_wide/species_two_node_orbit_dist.pdf")
+    plt.savefig(f"{output_dir}/species_wide/species_two_node_orbit_dist.pdf")
     # plt.show()
     plt.close()
 
@@ -512,8 +510,8 @@ def species_wide_two_node_plots():
 def main():
     print("running stats")
 
-    species = "fly"
-    output_dir = f"output_refactor/{species}"
+    species = "cerevisiae"
+    output_dir = f"stats/output"
     input_ppi = f"data/{species}_ppi.csv"
     input_reg = f"data/{species}_reg.csv"
 
@@ -553,23 +551,23 @@ def main():
 
     # significance orbit stats
 
-    # stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+    stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-    # significance = plot_stress_orbit_distribution(
-    #     three_node_orbit_protein_data,
-    #     three_node_orbit_id,
-    #     stress_proteins_list,
-    #     protein_id,
-    #     species,
-    #     output_dir,
-    #     node_orbit_arr,
-    # )
+    significance = plot_stress_orbit_distribution(
+        three_node_orbit_protein_data,
+        three_node_orbit_id,
+        stress_proteins_list,
+        protein_id,
+        species,
+        output_dir,
+        node_orbit_arr,
+    )
 
     # species wide stats
-    species_wide_3_node_plots(10)
+    species_wide_3_node_plots(10, output_dir)
 
     # two node graphlet stats
-    species_wide_two_node_plots()
+    species_wide_two_node_plots(output_dir)
 
 
 if __name__ == "__main__":
