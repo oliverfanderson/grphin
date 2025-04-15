@@ -40,7 +40,7 @@ grphin_by_txid() {
     local reg="data/oxidative_stress/$txid/randomized_networks/stress_reg$i.csv"
     local out="data/oxidative_stress/$txid/randomized_networks"
     echo "Running GRPhIN on TXID: $txid, Network: $i..."
-    python3 refactor.py -u "$ppi" -d "$reg" -o "$out" -g True
+    python3 grphin.py -u "$ppi" -d "$reg" -o "$out" -g True
     echo "TXID: $txid, Network: $i finished."
 }
 
