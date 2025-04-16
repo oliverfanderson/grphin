@@ -6,8 +6,10 @@ from pathlib import Path
 import random
 import re
 import sys
+from urllib import request
 from matplotlib import pyplot as plt
 import numpy as np
+import requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from grphin import (
@@ -15,6 +17,15 @@ from grphin import (
     load_graphlet_config,
     initialize_three_node_graphlet_data,
 )
+
+PANTHER_URL = "https://pantherdb.org/services/oai/pantherdb/enrich/overrep"
+species_txid = {
+    "fly": "7227",
+    "bsub": "224308",
+    "drerio": "7955",
+    "cerevisiae": "559292",
+    "elegans": "6239",
+}
 
 
 def plot_runtime_stats():
@@ -211,6 +222,10 @@ def plot_stress_orbit_distribution(
     output_dir,
     node_orbit_arr,
 ):
+    id_to_protein = {}
+
+    for protein in protein_id:
+        id_to_protein[protein_id[protein]] = protein
 
     observed_median_count = {}
     # print("Stress proteins : ", stress_proteins_list)
@@ -235,22 +250,28 @@ def plot_stress_orbit_distribution(
             orbit_list = stress_protein_orbit_dict[orbit]
         sorted_list = np.sort(orbit_list)
         median = np.median(sorted_list)
-        observed_median_count[orbit] = median
+        observed_median_count[orbit] = median  # why do we do median instead of mean?
 
     sample = 1000
-    sample_size = len(stress_proteins_list)
+    sample_size = len(
+        stress_proteins_list
+    )  # the size will effect the significance right? more vs less stress proteins
     print("getting non stress proteins \n")
     non_stress_proteins = []
     for protein in protein_id:
         # print(f"protein {protein}", end="\r")
         if protein_id[protein] not in stress_proteins_list:
-            non_stress_proteins.append(protein_id[protein])
+            non_stress_proteins.append(
+                protein_id[protein]
+            )  # use set for faster computation
 
     sample_results = {}
 
     for i in range(0, sample):
         print("sample :", i, end="\r")
-        non_stress_sample = random.sample(non_stress_proteins, sample_size)
+        non_stress_sample = random.sample(
+            non_stress_proteins, sample_size
+        )  # this is the slow part i feel
         array_stack = []
         for protein in non_stress_sample:
             array_stack.append(node_orbit_arr[protein])
@@ -278,7 +299,6 @@ def plot_stress_orbit_distribution(
             print(three_node_orbit_id[orbit], ": significant")
         else:
             significance[orbit] = 0
-            # print(three_node_orbit_id[orbit], ": NOT significant")
 
     with open(f"{output_dir}/{species}/stress_orbit_significance.csv", "w") as f:
         f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
@@ -302,6 +322,67 @@ def plot_stress_orbit_distribution(
             plt.savefig(f"{output_dir}/{species}/sig_orbit/orbit{i}.pdf")
             plt.close()
         i += 1
+
+    # find all the stress proteins that arein significant orbits
+    significant_orbit_list = [
+        orbit for orbit in significance if significance[orbit] == 1
+    ]
+
+    sig_orbit_stress_protein_dict = {}
+
+    for protein in stress_proteins_list:
+        for orbit in significant_orbit_list:
+            if node_orbit_arr[protein][int(three_node_orbit_id[orbit])] > 0:
+                if orbit not in sig_orbit_stress_protein_dict:
+                    sig_orbit_stress_protein_dict[orbit] = []
+                sig_orbit_stress_protein_dict[orbit] += [
+                    (protein, node_orbit_arr[protein][int(three_node_orbit_id[orbit])])
+                ]
+    # go_class = "GO:0008150"
+    # go_class = "GO:0003674"
+    go_class = "GO:0005575"
+    
+    # # biological process = GO:0008150
+    # # molecular function = GO:0003674
+    # # Cellular Component = GO:0005575
+    # do go enrichment analysis
+    with open(f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+") as f:
+        writer = csv.writer(f, delimiter="\t")
+        for orbit in sig_orbit_stress_protein_dict:
+            gene_list = []
+            for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                protein = id_to_protein[protein_count_tuple[0]]
+                count = protein_count_tuple[1]
+                gene_list.append(protein)
+
+            gene_list = format_gene_list(gene_list)
+ 
+            query_params = build_query_params(
+                gene_list, species_txid[species], "GO:0003674", "FISHER", "FDR", "NONE"
+            )
+            results = call_panther_api(query_params)
+            parsed_results = parse_results(results)
+            top_hits = filter_and_sort_results(
+                parsed_results, fdr_threshold=0.05, top_n=5
+            )
+            for hit in top_hits:
+                writer.writerows([three_node_orbit_id[orbit]])
+        f.close()
+
+    with open(f"{output_dir}/{species}/sig_orbit/summary.txt", "w+") as f:
+        headers = ["orbit", "protein", "count"]
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(headers)
+        for orbit in sig_orbit_stress_protein_dict:
+            for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                protein = protein_count_tuple[0]
+                count = protein_count_tuple[1]
+                row = [three_node_orbit_id[orbit], id_to_protein[protein], count]
+                writer.writerow(
+                    [three_node_orbit_id[orbit], id_to_protein[protein], count]
+                )
+        f.close()
+
     return None
 
 
@@ -507,6 +588,75 @@ def species_wide_two_node_plots(output_dir):
     return None
 
 
+def format_gene_list(gene_list):
+    return ",".join(gene_list)
+
+
+def build_query_params(
+    gene_list, txid, go_class, enrichment_test, correction, mapped_info
+):
+
+    return {
+        "geneInputList": format_gene_list(gene_list),
+        "organism": txid,
+        "annotDataSet": go_class,
+        "enrichmentTestType": enrichment_test,
+        "correction": correction,
+        "mappedInfo": mapped_info,
+    }
+
+
+def call_panther_api(query_params):
+    response = requests.get(PANTHER_URL, params=query_params)
+    if response.ok:
+        return response.json()
+    else:
+        raise RuntimeError(f"API failed {response.status_code} - {response.text}")
+
+
+def parse_results(data):
+    results = data.get("results", {}).get("result", [])
+    parsed = []
+
+    for entry in results:
+        result_entry = {
+            "term_id": entry.get("term", {}).get("id", "NA"),
+            "term_label": entry.get("term", {}).get("label", "NA"),
+            "pValue": entry.get("pValue", "NA"),
+            "fdr": entry.get("fdr", "NA"),
+            "fold_enrichment": entry.get("fold_enrichment", "NA"),
+            "expected": entry.get("expected", "NA"),
+            "number_in_list": entry.get("number_in_list", "NA"),
+            "number_in_reference": entry.get("number_in_reference", "NA"),
+            "plus_minus": entry.get("plus_minus", "NA"),
+        }
+        parsed.append(result_entry)
+    return parsed
+
+
+def print_results(parsed_results):
+    for res in parsed_results:
+        print(
+            f"{res['term']} - p-value: {res['p-value']}, FDR: {res['fdr']}, "
+            f"Fold Enrichment: {res['fold_enrichment']}, Count: {res['number_in_list']}"
+        )
+
+
+def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
+    filtered = []
+    for r in results:
+        try:
+            fdr = float(r["fdr"])
+            if fdr <= fdr_threshold:
+                filtered.append(r)
+        except (ValueError, TypeError):
+            continue
+    # Sort by FDR ascending
+    sorted_filtered = sorted(filtered, key=lambda x: float(x["fdr"]))
+
+    return sorted_filtered[:top_n]
+
+
 def main():
     print("running stats")
 
@@ -563,11 +713,11 @@ def main():
         node_orbit_arr,
     )
 
-    # species wide stats
-    species_wide_3_node_plots(10, output_dir)
+    # # species wide stats
+    # species_wide_3_node_plots(10, output_dir)
 
-    # two node graphlet stats
-    species_wide_two_node_plots(output_dir)
+    # # two node graphlet stats
+    # species_wide_two_node_plots(output_dir)
 
 
 if __name__ == "__main__":
