@@ -338,36 +338,74 @@ def plot_stress_orbit_distribution(
                 sig_orbit_stress_protein_dict[orbit] += [
                     (protein, node_orbit_arr[protein][int(three_node_orbit_id[orbit])])
                 ]
-    # go_class = "GO:0008150"
-    # go_class = "GO:0003674"
-    go_class = "GO:0005575"
-    
-    # # biological process = GO:0008150
-    # # molecular function = GO:0003674
-    # # Cellular Component = GO:0005575
-    # do go enrichment analysis
-    with open(f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+") as f:
-        writer = csv.writer(f, delimiter="\t")
-        for orbit in sig_orbit_stress_protein_dict:
-            gene_list = []
-            for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
-                protein = id_to_protein[protein_count_tuple[0]]
-                count = protein_count_tuple[1]
-                gene_list.append(protein)
+    # go_class = "GO:0008150" # biological process
+    # go_class = "GO:0003674" # molecular function
+    # go_class = "GO:0005575" # Cellular Component
 
-            gene_list = format_gene_list(gene_list)
- 
-            query_params = build_query_params(
-                gene_list, species_txid[species], "GO:0003674", "FISHER", "FDR", "NONE"
+    # do go enrichment analysis
+    go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
+    for go_class in go_class_list:
+        with open(
+            f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+"
+        ) as f:
+            writer = csv.writer(f, delimiter="\t")
+            writer.writerows(
+                [
+                    [
+                        "orbit",
+                        "term_id",
+                        "term_label",
+                        "pValue",
+                        "fdr",
+                        "fold_enrichment",
+                        "expected",
+                        "number_in_list",
+                        "number_in_reference",
+                        "plus_minus",
+                    ]
+                ]
             )
-            results = call_panther_api(query_params)
-            parsed_results = parse_results(results)
-            top_hits = filter_and_sort_results(
-                parsed_results, fdr_threshold=0.05, top_n=5
-            )
-            for hit in top_hits:
-                writer.writerows([three_node_orbit_id[orbit]])
-        f.close()
+            for orbit in sig_orbit_stress_protein_dict:
+                gene_list = []
+                for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                    protein = id_to_protein[protein_count_tuple[0]]
+                    count = protein_count_tuple[1]
+                    gene_list.append(protein)
+
+                gene_list = format_gene_list(gene_list)
+
+                query_params = build_query_params(
+                    gene_list,
+                    species_txid[species],
+                    "GO:0003674",
+                    "FISHER",
+                    "FDR",
+                    "NONE",
+                )
+                results = call_panther_api(query_params)
+                parsed_results = parse_results(results)
+                top_hits = filter_and_sort_results(
+                    parsed_results, fdr_threshold=0.05, top_n=10
+                )
+                for hit in top_hits:
+                    print(hit)
+                    writer.writerows(
+                        [
+                            [
+                                str(three_node_orbit_id[orbit]),
+                                hit["term_id"],
+                                hit["term_label"],
+                                hit["pValue"],
+                                hit["fdr"],
+                                hit["fold_enrichment"],
+                                hit["expected"],
+                                hit["number_in_list"],
+                                hit["number_in_reference"],
+                                hit["plus_minus"],
+                            ]
+                        ]
+                    )
+            f.close()
 
     with open(f"{output_dir}/{species}/sig_orbit/summary.txt", "w+") as f:
         headers = ["orbit", "protein", "count"]
@@ -659,59 +697,64 @@ def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
 
 def main():
     print("running stats")
+    species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
+    # species_list = ["drerio"]
 
-    species = "cerevisiae"
     output_dir = f"stats/output"
-    input_ppi = f"data/{species}_ppi.csv"
-    input_reg = f"data/{species}_reg.csv"
 
-    if species == "bsub":
-        stress_dir = "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
-    if species == "drerio":
-        stress_dir = "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
-    if species == "fly":
-        stress_dir = "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
-    if species == "elegans":
-        stress_dir = "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
-    if species == "cerevisiae":
-        stress_dir = "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
+    # species = "cerevisiae"
+    # if species == "bsub":
+    #     stress_dir = "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
+    # if species == "drerio":
+    #     stress_dir = "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
+    # if species == "fly":
+    #     stress_dir = "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
+    # if species == "elegans":
+    #     stress_dir = "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
+    # if species == "cerevisiae":
+    #     stress_dir = "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
 
-    protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
-        input_ppi, input_reg
-    )
+    for species in species_list:
+        print(species)
+        input_ppi = f"data/{species}_ppi.csv"
+        input_reg = f"data/{species}_reg.csv"
+        stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
+        protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
+            input_ppi, input_reg
+        )
 
-    (
-        three_node_graphlet_count,
-        three_node_graphlet_namespace,
-        three_node_orbit_protein_data,
-        three_node_orbit_namespace,
-        three_node_graphlet_id,
-        three_node_orbit_id,
-        graphlet_config,
-        node_orbit_arr,
-    ) = read_output_files(output_dir, species)
+        (
+            three_node_graphlet_count,
+            three_node_graphlet_namespace,
+            three_node_orbit_protein_data,
+            three_node_orbit_namespace,
+            three_node_graphlet_id,
+            three_node_orbit_id,
+            graphlet_config,
+            node_orbit_arr,
+        ) = read_output_files(output_dir, species)
 
-    plot_three_node_graphlet_distribution(
-        three_node_graphlet_count,
-        three_node_graphlet_namespace,
-        three_node_graphlet_id,
-        species,
-        output_dir,
-    )
+        plot_three_node_graphlet_distribution(
+            three_node_graphlet_count,
+            three_node_graphlet_namespace,
+            three_node_graphlet_id,
+            species,
+            output_dir,
+        )
 
-    # significance orbit stats
+        # significance orbit stats
 
-    stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+        stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-    significance = plot_stress_orbit_distribution(
-        three_node_orbit_protein_data,
-        three_node_orbit_id,
-        stress_proteins_list,
-        protein_id,
-        species,
-        output_dir,
-        node_orbit_arr,
-    )
+        significance = plot_stress_orbit_distribution(
+            three_node_orbit_protein_data,
+            three_node_orbit_id,
+            stress_proteins_list,
+            protein_id,
+            species,
+            output_dir,
+            node_orbit_arr,
+        )
 
     # # species wide stats
     # species_wide_3_node_plots(10, output_dir)
