@@ -3,12 +3,10 @@ import ast
 from collections import defaultdict
 from functools import lru_cache
 import re
-import sys
 import time
 from matplotlib import pyplot as plt
 import networkx as nx
 import csv
-from pathlib import Path
 import numpy as np
 from collections import defaultdict
 
@@ -829,11 +827,11 @@ def write_files(
 
 
 def write_graphlet_counts(
-        three_node_graphlet_id,
-        three_node_graphlet_namespace,
-        three_node_graphlet_count,
-        outfile_path
-        ):
+    three_node_graphlet_id,
+    three_node_graphlet_namespace,
+    three_node_graphlet_count,
+    outfile_path,
+):
     """
     For use in "graphlets only" mode. Writes graphlet counts to a CSV file. For use in generating graphlet counts from randomized networks.
 
@@ -846,7 +844,7 @@ def write_graphlet_counts(
     Returns:
         - graphlet_counts.csv
     """
-    
+
     with open(f"{outfile_path}", "w+") as f:
         for graphlet in three_node_graphlet_id:
             if graphlet in three_node_graphlet_namespace:
@@ -906,13 +904,13 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
 
     # Output necessary files
     node_orbit_count_matrix = convert_orbit_protein_dict_to_np_matrix(
-    G,
-    three_node_orbit_id,
-    three_node_orbit_protein_data,
-    three_node_orbit_namespace,
-    output_dir,
+        G,
+        three_node_orbit_id,
+        three_node_orbit_protein_data,
+        three_node_orbit_namespace,
+        output_dir,
     )
-        
+
     write_files(
         G,
         G_prime,
@@ -926,6 +924,7 @@ def count_three_node_graphlets(graphlet_config, protein_id, G, G_prime, output_d
         protein_id,
         output_dir,
     )
+
 
 def count_three_node_graphlets_only(graphlet_config, G, G_prime, outfile_path):
     """
@@ -975,11 +974,11 @@ def count_three_node_graphlets_only(graphlet_config, G, G_prime, outfile_path):
     )
 
     write_graphlet_counts(
-            three_node_graphlet_id,
-            three_node_graphlet_namespace,
-            three_node_graphlet_count,
-            outfile_path,
-        )
+        three_node_graphlet_id,
+        three_node_graphlet_namespace,
+        three_node_graphlet_count,
+        outfile_path,
+    )
 
 
 def plot_runtime_stats():
@@ -1041,7 +1040,7 @@ def main(input_ppi, input_reg, output_dir, graphlets_only=False):
 
     if graphlets_only:
         # File number for looping through randomized networks in countRandomizedNets.sh
-        file_number = int(re.search(r'(\d+)\.csv$', input_ppi).group(1))
+        file_number = int(re.search(r"(\d+)\.csv$", input_ppi).group(1))
         print("Graphlets only mode enabled.")
         outfile_path = f"{output_dir}/graphlet_counts{file_number}.csv"
         # Count three-node graphlets

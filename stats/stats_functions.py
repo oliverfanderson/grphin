@@ -6,7 +6,6 @@ from pathlib import Path
 import random
 import re
 import sys
-from urllib import request
 from matplotlib import pyplot as plt
 import numpy as np
 import requests
