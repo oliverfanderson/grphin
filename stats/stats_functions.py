@@ -9,6 +9,8 @@ import sys
 from matplotlib import pyplot as plt
 import numpy as np
 import requests
+import seaborn as sns
+import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from grphin import (
@@ -76,6 +78,7 @@ def plot_three_node_graphlet_distribution(
     plt.tight_layout()
     plt.savefig(f"{output_dir}/{species}/three_node_graphlet_dist.pdf")
     # plt.show()
+    plt.close()
 
     sorted_graphlet_dict = {
         key: value
@@ -341,6 +344,8 @@ def plot_stress_orbit_distribution(
     # go_class = "GO:0003674" # molecular function
     # go_class = "GO:0005575" # Cellular Component
 
+    fdr_dist_data = []
+
     # do go enrichment analysis
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
     for go_class in go_class_list:
@@ -383,11 +388,14 @@ def plot_stress_orbit_distribution(
                 )
                 results = call_panther_api(query_params)
                 parsed_results = parse_results(results)
+
+                for entry in parsed_results:
+                    fdr_dist_data.append({"fdr": entry["fdr"], "species" : species, "go_class": go_class})
+
                 top_hits = filter_and_sort_results(
                     parsed_results, fdr_threshold=0.05, top_n=10
                 )
                 for hit in top_hits:
-                    print(hit)
                     writer.writerows(
                         [
                             [
@@ -420,7 +428,7 @@ def plot_stress_orbit_distribution(
                 )
         f.close()
 
-    return None
+    return fdr_dist_data
 
 
 def compare_files(file1, file2):
@@ -701,17 +709,7 @@ def main():
 
     output_dir = f"stats/output"
 
-    # species = "cerevisiae"
-    # if species == "bsub":
-    #     stress_dir = "data/oxidative_stress/txid224308/txid224308-stress-proteins.csv"
-    # if species == "drerio":
-    #     stress_dir = "data/oxidative_stress/txid7955/txid7955-stress-proteins.csv"
-    # if species == "fly":
-    #     stress_dir = "data/oxidative_stress/txid7227/txid7227-stress-proteins.csv"
-    # if species == "elegans":
-    #     stress_dir = "data/oxidative_stress/txid6239/txid6239-stress-proteins.csv"
-    # if species == "cerevisiae":
-    #     stress_dir = "data/oxidative_stress/txid559292/txid559292-stress-proteins.csv"
+    fdr_dist_data = []
 
     for species in species_list:
         print(species)
@@ -745,7 +743,7 @@ def main():
 
         stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-        significance = plot_stress_orbit_distribution(
+        fdr_dist_data.extend(plot_stress_orbit_distribution(
             three_node_orbit_protein_data,
             three_node_orbit_id,
             stress_proteins_list,
@@ -754,12 +752,23 @@ def main():
             output_dir,
             node_orbit_arr,
         )
+        )
+    fdr_df = pd.DataFrame(fdr_dist_data)
+    plt.figure(figsize=(12,8))
+    sns.violinplot(data=fdr_df, x="species", y="fdr", hue="go_class")
+    plt.savefig(f"{output_dir}/species_wide/fdr_violin_plot.pdf")
+    # plt.show()
+    plt.close()
 
-    # # species wide stats
-    # species_wide_3_node_plots(10, output_dir)
+    plt.savefig(f"{output_dir}/species_wide/fdr_boxplot.pdf")
+    plt.show()
+    plt.close()
 
-    # # two node graphlet stats
-    # species_wide_two_node_plots(output_dir)
+    # species wide stats
+    species_wide_3_node_plots(10, output_dir)
+
+    # two node graphlet stats
+    species_wide_two_node_plots(output_dir)
 
 
 if __name__ == "__main__":
