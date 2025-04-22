@@ -11,6 +11,7 @@ import numpy as np
 import requests
 import seaborn as sns
 import pandas as pd
+from PyPDF2 import PdfMerger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from grphin import (
@@ -47,7 +48,7 @@ def plot_runtime_stats():
         p = ax.bar(species, data, width=width, label=stack, bottom=bottom)
         bottom += data
 
-    plt.show()
+    # plt.show()
 
 
 def plot_three_node_graphlet_distribution(
@@ -215,7 +216,7 @@ def get_stress_proteins(protein_id_dict, stress_path, delimiter):
     return stress_proteins
 
 
-def plot_stress_orbit_distribution(
+def analyze_stress_proteins(
     three_node_orbit_protein_data,
     three_node_orbit_id,
     stress_proteins_list,
@@ -224,62 +225,78 @@ def plot_stress_orbit_distribution(
     output_dir,
     node_orbit_arr,
 ):
-    id_to_protein = {}
 
+    id_to_protein = {}
     for protein in protein_id:
         id_to_protein[protein_id[protein]] = protein
 
-    observed_median_count = {}
-    # print("Stress proteins : ", stress_proteins_list)
-    stress_protein_orbit_dict = {}
+    orbit_stress_median_dict = {}
+    orbit_stress_protein_dict = (
+        {}
+    )  # for each orbit, store counts of stress proteins i.e. orbit-1 = [12,4,5,0,3,2,6]
+
     print("Counting stress proteins\n")
     for orbit in three_node_orbit_protein_data:
-        # print(f"orbit {orbit}", end="\r")
-        stress_protein_orbit_dict[orbit] = []
+        orbit_stress_protein_dict[orbit] = []
         for protein in stress_proteins_list:
             protein_orbit_count = node_orbit_arr[protein][
                 int(three_node_orbit_id[orbit])
             ]
-            stress_protein_orbit_dict[orbit] += [protein_orbit_count]
+            orbit_stress_protein_dict[orbit] += [protein_orbit_count]
 
     print("Counting stress medians\n")
-    for orbit in stress_protein_orbit_dict:
-        # print(f"orbit {orbit}", end="\r")
+    for orbit in orbit_stress_protein_dict:
         orbit_list = []
-        if len(stress_protein_orbit_dict[orbit]) == 0:
+        if len(orbit_stress_protein_dict[orbit]) == 0:
             orbit_list = [0]
         else:
-            orbit_list = stress_protein_orbit_dict[orbit]
-        sorted_list = np.sort(orbit_list)
+            orbit_list = orbit_stress_protein_dict[orbit]
+        sorted_list = np.sort(
+            orbit_list
+        )  # loses the order of which protein in the list
         median = np.median(sorted_list)
-        observed_median_count[orbit] = median  # why do we do median instead of mean?
+        orbit_stress_median_dict[orbit] = (
+            median  # for each orbit, store the median counts for all stress proteins
+        )
+        # TODO: why do we do median instead of mean?
 
     sample = 1000
     sample_size = len(
         stress_proteins_list
-    )  # the size will effect the significance right? more vs less stress proteins
+    )  # TODO: the size will effect the significance right? more vs less stress proteins
+
     print("getting non stress proteins \n")
     non_stress_proteins = []
     for protein in protein_id:
-        # print(f"protein {protein}", end="\r")
         if protein_id[protein] not in stress_proteins_list:
-            non_stress_proteins.append(
-                protein_id[protein]
-            )  # use set for faster computation
+            non_stress_proteins.append(protein_id[protein])
 
     sample_results = {}
+    # dict where the keys are orbits
+    # the values are lists of all sampled non stress protein median counts at each orbit
 
     for i in range(0, sample):
         print("sample :", i, end="\r")
         non_stress_sample = random.sample(
             non_stress_proteins, sample_size
-        )  # this is the slow part i feel
+        )  # this can affect our analysis right?
+
         array_stack = []
+        # for each non-stress protein, get all the orbit counts as a list. then store this in array_stack
+        # non-stress-protein-1 = [0,21,2,....2]
+        # non-stress-protein-2 = [1,2,242,....21]
+        # non-stress-protein-3 = [3,1,25,....231]
+        # array_stack = [non-stress-protein-1, non-stress-protein-4, non-stress-protein-3]
+
         for protein in non_stress_sample:
             array_stack.append(node_orbit_arr[protein])
+
+        # since all elements in array_stack have the same length,
+        # we can stack them and find the median for each index (representing an orbit)
         stacked = np.vstack(array_stack)
         orbit_medians_list = np.median(stacked, axis=0)
 
+        # append each sampled orbit medians to sample results
         for orbit in three_node_orbit_protein_data:
             orbit_index = three_node_orbit_id[orbit]
             if orbit not in sample_results:
@@ -287,15 +304,13 @@ def plot_stress_orbit_distribution(
             sample_results[orbit] += [orbit_medians_list[int(orbit_index)]]
 
     significance = {}
-
     # Calculate if an orbit is significant
     for orbit in three_node_orbit_protein_data:
         count = 0
         # from the vector of all the random medians at a given orbit
         for random_median in sample_results[orbit]:
-            if observed_median_count[orbit] > random_median:
+            if orbit_stress_median_dict[orbit] > random_median:
                 count += 1
-
         if count >= float(sample) * 0.99:
             significance[orbit] = 1
             print(three_node_orbit_id[orbit], ": significant")
@@ -306,9 +321,10 @@ def plot_stress_orbit_distribution(
         f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
         for orbit in significance:
             f.write(
-                f"{three_node_orbit_id[orbit]}\t{significance[orbit]}\t{observed_median_count[orbit]}\t{sample_results[orbit]}\n"
+                f"{three_node_orbit_id[orbit]}\t{significance[orbit]}\t{orbit_stress_median_dict[orbit]}\t{sample_results[orbit]}\n"
             )
 
+    # plot each significant orbits' p value with observed stress proteins' median count at the orbit
     i = 0
     for orbit in three_node_orbit_protein_data:
         if significance[orbit] == 1:
@@ -316,7 +332,9 @@ def plot_stress_orbit_distribution(
 
             fig = plt.figure(figsize=(14, 6))
             plt.hist(hist_data)
-            plt.axvline(x=int(observed_median_count[orbit]), color="r", linestyle="--")
+            plt.axvline(
+                x=int(orbit_stress_median_dict[orbit]), color="r", linestyle="--"
+            )
             plt.title(
                 f"{species} Random Median Samples at Orbit {int(three_node_orbit_id[orbit])} Distribution",
                 fontsize=16,
@@ -325,7 +343,7 @@ def plot_stress_orbit_distribution(
             plt.close()
         i += 1
 
-    # find all the stress proteins that arein significant orbits
+    # find all the stress proteins that are significant orbits
     significant_orbit_list = [
         orbit for orbit in significance if significance[orbit] == 1
     ]
@@ -340,14 +358,18 @@ def plot_stress_orbit_distribution(
                 sig_orbit_stress_protein_dict[orbit] += [
                     (protein, node_orbit_arr[protein][int(three_node_orbit_id[orbit])])
                 ]
+
+    # do go enrichment analysis
     # go_class = "GO:0008150" # biological process
     # go_class = "GO:0003674" # molecular function
     # go_class = "GO:0005575" # Cellular Component
 
     fdr_dist_data = []
-
-    # do go enrichment analysis
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
+    # stress_protein_data = []
+    protein_size_data = []
+    orbit_data = []
+    go_data = []
     for go_class in go_class_list:
         with open(
             f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+"
@@ -375,7 +397,10 @@ def plot_stress_orbit_distribution(
                     protein = id_to_protein[protein_count_tuple[0]]
                     count = protein_count_tuple[1]
                     gene_list.append(protein)
-
+                if go_class == "GO:0008150":
+                    protein_size_data.append(len(gene_list))
+                    orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
+                # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
                 gene_list = format_gene_list(gene_list)
 
                 query_params = build_query_params(
@@ -390,7 +415,9 @@ def plot_stress_orbit_distribution(
                 parsed_results = parse_results(results)
 
                 for entry in parsed_results:
-                    fdr_dist_data.append({"fdr": entry["fdr"], "species" : species, "go_class": go_class})
+                    fdr_dist_data.append(
+                        {"fdr": entry["fdr"], "species": species, "go_class": go_class}
+                    )
 
                 top_hits = filter_and_sort_results(
                     parsed_results, fdr_threshold=0.05, top_n=10
@@ -428,6 +455,17 @@ def plot_stress_orbit_distribution(
                 )
         f.close()
 
+    # print(stress_protein_data["orbit"])
+    # print(type(stress_protein_data["orbit"]))
+
+    plt.figure(figsize=(12, 8))
+    plt.title(f"{species} GO enrichment gene set size per orbit")
+    plt.ylabel("Gene set size")
+    plt.xlabel("Orbit")
+    plt.bar(orbit_data, protein_size_data, color="skyblue")
+    plt.savefig(f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf")
+    # plt.show()
+    plt.close()
     return fdr_dist_data
 
 
@@ -704,8 +742,8 @@ def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
 
 def main():
     print("running stats")
-    species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["drerio"]
+    # species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
+    species_list = ["drerio", "fly"]
 
     output_dir = f"stats/output"
 
@@ -743,25 +781,31 @@ def main():
 
         stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-        fdr_dist_data.extend(plot_stress_orbit_distribution(
-            three_node_orbit_protein_data,
-            three_node_orbit_id,
-            stress_proteins_list,
-            protein_id,
-            species,
-            output_dir,
-            node_orbit_arr,
+        fdr_dist_data.extend(
+            analyze_stress_proteins(
+                three_node_orbit_protein_data,
+                three_node_orbit_id,
+                stress_proteins_list,
+                protein_id,
+                species,
+                output_dir,
+                node_orbit_arr,
+            )
         )
-        )
+
+    merger = PdfMerger()
+    for species in species_list:
+        pdf_path = f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf"
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+    merger.write(f"{output_dir}/species_wide/orbit_gene_set_plt.pdf")
+    
+    
     fdr_df = pd.DataFrame(fdr_dist_data)
-    plt.figure(figsize=(12,8))
+    plt.figure(figsize=(12, 8))
     sns.violinplot(data=fdr_df, x="species", y="fdr", hue="go_class")
     plt.savefig(f"{output_dir}/species_wide/fdr_violin_plot.pdf")
     # plt.show()
-    plt.close()
-
-    plt.savefig(f"{output_dir}/species_wide/fdr_boxplot.pdf")
-    plt.show()
     plt.close()
 
     # species wide stats
