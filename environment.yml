@@ -54,6 +54,7 @@ dependencies:
   - python=3.13.1=h2334245_102_cp313
   - python-dateutil=2.9.0.post0=pyhff2d567_1
   - python_abi=3.13=5_cp313
+  - pyvis=0.3.2
   - qhull=2020.2=h3c5361c_5
   - readline=8.2=h9e318b2_1
   - scipy=1.14.1=py313hd641537_2

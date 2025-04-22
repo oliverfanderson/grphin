@@ -213,3 +213,54 @@ txid6239_onetail <- inner_join(txid6239_onetail, graphlet_key)
 txid559292_onetail <- inner_join(txid559292_onetail, graphlet_key)
 txid7227_onetail <- inner_join(txid7227_onetail, graphlet_key)
 txid7955_onetail <- inner_join(txid7955_onetail, graphlet_key)
+
+# Joining in common names to B. subtilis and D. rerio
+## B. subtilis
+ppi_224308 <- read_csv("txid224308-protein_protein_interaction.csv")
+reg_224308 <- read_csv("txid224308-regulatory_interaction.csv")
+stress_ppi_224308 <- read_csv("txid224308/stress_ppi.csv")
+stress_reg_224308 <- read_csv("txid224308/stress_reg.csv")
+
+stress_net_224308_ppi <- rbind(
+    inner_join(stress_ppi_224308, ppi_224308, by = c("id1", "id2")) %>% select(id1, id2, name1, name2),
+    inner_join(stress_ppi_224308, ppi_224308, by = c("id1", "id2")) %>% rename(id2 = id1, id1 = id2, name2 = name1, name1 = name2) %>% select(id1, id2, name1, name2)
+)
+
+stress_net_224308_ppi <- stress_net_224308_ppi %>% 
+  mutate(geneName1 = str_c(str_to_lower(str_sub(name1, 1, 1)), str_sub(name1, 2))) %>% 
+  mutate(geneName2 = str_c(str_to_lower(str_sub(name2, 1, 1)), str_sub(name2, 2))) %>% 
+  select(id1, id2, geneName1, geneName2)
+
+stress_net_224308_reg <- inner_join(stress_reg_224308, reg_224308, by = c("id1", "id2")) %>% select(id1, id2, geneName1, geneName2)
+
+## D. rerio
+stress_ppi_7955 <- read_csv("txid7955/stress_ppi.csv")
+stress_reg_7955 <- read_csv("txid7955/stress_reg.csv")
+ppi_7955 <- read_csv("txid7955-protein_protein_interaction.csv")
+reg_7955 <- read_csv("txid7955-regulatory_interaction.csv")
+
+stress_net_7955_ppi <- rbind(
+  inner_join(stress_ppi_7955, ppi_7955, by = c("id1", "id2")) %>% select(id1, geneName1, id2, geneName2),
+  inner_join(stress_ppi_7955, ppi_7955, by = c("id1", "id2")) %>% rename(id2 = id1, id1 = id2, geneName2 = geneName1, geneName1 = geneName2) %>% select(id1, id2, geneName1, geneName2)
+)
+# get missing common
+stress_net_7955_ppi %>%
+  filter(str_starts(geneName1, "Q") | str_starts(geneName2, "Q"))
+# replace missing names
+stress_net_7955_ppi <- stress_net_7955_ppi %>% 
+  mutate(geneName1 = replace(geneName1, geneName1 == 'Q7T3D1', 'ero1a')) %>% 
+  mutate(geneName2 = replace(geneName2, geneName2 == 'Q7T3D1', 'ero1a')) %>% 
+  mutate(geneName1 = replace(geneName1, geneName1 == 'Q7ZV14', 'gpx8')) %>% 
+  mutate(geneName2 = replace(geneName2, geneName2 == 'Q7ZV14', 'gpx8')) %>% 
+  select(id1, id2, geneName1, geneName2)
+
+
+stress_net_7955_reg <- inner_join(stress_reg_7955, reg_7955, by = c("id1", "id2")) %>% select(id1, id2, geneName1, geneName2)
+# add in the single missing geneName
+stress_net_7955_reg <- stress_net_7955_reg %>% 
+  mutate(geneName2 = replace(geneName2, geneName2 == '-', 'zgc:103499'))
+
+write_csv(stress_net_7955_reg, "txid7955/stress_reg_names.csv")
+write_csv(stress_net_7955_ppi, "txid7955/stress_ppi_names.csv")
+write_csv(stress_net_224308_reg, "txid224308/stress_reg_names.csv")
+write_csv(stress_net_224308_ppi, "txid224308/stress_ppi_names.csv")
