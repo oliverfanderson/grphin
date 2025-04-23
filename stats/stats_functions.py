@@ -393,15 +393,29 @@ def analyze_stress_proteins(
             )
             for orbit in sig_orbit_stress_protein_dict:
                 gene_list = []
-                for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+
+                # filter the number of stress proteins
+                # default
+                # for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                #     protein = id_to_protein[protein_count_tuple[0]]
+                #     count = protein_count_tuple[1]
+                #     gene_list.append(protein)
+
+                # filter based on only top 25th percentile of counts
+                sorted_protein_count_list = sorted(sig_orbit_stress_protein_dict[orbit], key=lambda x:[1])
+                sorted_count_list = [x[1] for x in sorted_protein_count_list]
+                percentile = np.percentile(sorted_count_list, 75)
+                for protein_count_tuple in sorted_protein_count_list:
                     protein = id_to_protein[protein_count_tuple[0]]
                     count = protein_count_tuple[1]
-                    gene_list.append(protein)
+                    if count >= percentile:
+                        gene_list.append(protein)
                 if go_class == "GO:0008150":
                     protein_size_data.append(len(gene_list))
                     orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
                 # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
                 gene_list = format_gene_list(gene_list)
+                # print(f"{three_node_orbit_id[orbit]} - {len(gene_list)}")
 
                 query_params = build_query_params(
                     gene_list,
@@ -742,8 +756,8 @@ def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
 
 def main():
     print("running stats")
-    # species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    species_list = ["drerio", "fly"]
+    species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
+    # species_list = ["drerio"]
 
     output_dir = f"stats/output"
 
