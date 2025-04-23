@@ -61,6 +61,7 @@ def plot_three_node_graphlet_distribution(
     print("plotting graphlet distribution")
     hist_data = []
     x_label = [*range(0, len(three_node_graphlet_id), 1)]
+
     for graphlet in three_node_graphlet_id:
         if graphlet in three_node_graphlet_count:
             hist_data.append(three_node_graphlet_count[graphlet])
@@ -68,19 +69,30 @@ def plot_three_node_graphlet_distribution(
             hist_data.append(0)
     hist_data = [value if value > 0 else 0.1 for value in hist_data]
 
+    n = 10
+    top_n_graphlets = sorted(
+        three_node_graphlet_count.items(), key=lambda item: item[1], reverse=True
+    )[:n]
+    top_n_graphlet_set = set([g[0] for g in top_n_graphlets])
+
+    bar_colors = [
+        "red" if graphlet in top_n_graphlet_set else "skyblue"
+        for graphlet in three_node_graphlet_id
+    ]
+
     fig = plt.figure(figsize=(14, 6))
-    plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
+    plt.bar(x_label, hist_data, color=bar_colors, edgecolor="black")
     plt.yscale("log")
     plt.title(f"{species} Graphlet Count Distribution", fontsize=16)
     plt.xlabel("Graphlet Index", fontsize=14)
     plt.ylabel("Count (log scale)", fontsize=14)
-    plt.xticks(x_label[::2], fontsize=10)
+    plt.xticks(x_label[::2], fontsize=12)
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
     plt.savefig(f"{output_dir}/{species}/three_node_graphlet_dist.pdf")
-    # plt.show()
     plt.close()
 
+    # Save top graphlet counts
     sorted_graphlet_dict = {
         key: value
         for key, value in sorted(
@@ -753,11 +765,26 @@ def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
 
     return sorted_filtered[:top_n]
 
+def merge_pdfs(output_dir, species_list):
+    merger = PdfMerger()
+    for species in species_list:
+        pdf_path = f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf"
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+    merger.write(f"{output_dir}/species_wide/orbit_gene_set_plt.pdf")
+
+    merger = PdfMerger()
+    for species in species_list:
+        pdf_path = f"{output_dir}/{species}/three_node_graphlet_dist.pdf"
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+    merger.write(f"{output_dir}/species_wide/three_node_graphlet_dist.pdf")
+
 
 def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["drerio"]
+    # species_list = ["drerio", "bsub"]
 
     output_dir = f"stats/output"
 
@@ -807,12 +834,7 @@ def main():
             )
         )
 
-    merger = PdfMerger()
-    for species in species_list:
-        pdf_path = f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf"
-        if os.path.exists(pdf_path):
-            merger.append(pdf_path)
-    merger.write(f"{output_dir}/species_wide/orbit_gene_set_plt.pdf")
+    merge_pdfs(output_dir ,species_list)
     
     
     fdr_df = pd.DataFrame(fdr_dist_data)
