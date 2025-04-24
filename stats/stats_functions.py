@@ -239,8 +239,8 @@ def analyze_stress_proteins(
 ):
 
     id_to_protein = {}
-    for protein in protein_id:
-        id_to_protein[protein_id[protein]] = protein
+    for protein, id in protein_id.items():
+        id_to_protein[id] = protein
 
     orbit_stress_median_dict = {}
     orbit_stress_protein_dict = (
@@ -378,6 +378,7 @@ def analyze_stress_proteins(
 
     fdr_dist_data = []
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
+    # go_class_list = ["GO:0008150"]
     # stress_protein_data = []
     protein_size_data = []
     orbit_data = []
@@ -403,36 +404,40 @@ def analyze_stress_proteins(
                     ]
                 ]
             )
+            print(go_class)
             for orbit in sig_orbit_stress_protein_dict:
+                print()
                 gene_list = []
 
                 # filter the number of stress proteins
                 # default
-                # for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                    protein = id_to_protein[protein_count_tuple[0]]
+                    # print(protein)
+                    count = protein_count_tuple[1]
+                    gene_list.append(protein)
+
+                # # filter based on only top 25th percentile of counts
+                # sorted_protein_count_list = sorted(sig_orbit_stress_protein_dict[orbit], key=lambda x:[1])
+                # sorted_count_list = [x[1] for x in sorted_protein_count_list]
+                # percentile = np.percentile(sorted_count_list, 75)
+                # for protein_count_tuple in sorted_protein_count_list:
                 #     protein = id_to_protein[protein_count_tuple[0]]
                 #     count = protein_count_tuple[1]
-                #     gene_list.append(protein)
-
-                # filter based on only top 25th percentile of counts
-                sorted_protein_count_list = sorted(sig_orbit_stress_protein_dict[orbit], key=lambda x:[1])
-                sorted_count_list = [x[1] for x in sorted_protein_count_list]
-                percentile = np.percentile(sorted_count_list, 75)
-                for protein_count_tuple in sorted_protein_count_list:
-                    protein = id_to_protein[protein_count_tuple[0]]
-                    count = protein_count_tuple[1]
-                    if count >= percentile:
-                        gene_list.append(protein)
-                if go_class == "GO:0008150":
-                    protein_size_data.append(len(gene_list))
-                    orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
-                # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
-                gene_list = format_gene_list(gene_list)
+                #     if count >= percentile:
+                #         gene_list.append(protein)
+                # if go_class == "GO:0008150":
+                #     protein_size_data.append(len(gene_list))
+                #     orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
+                # # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
+                # gene_list = format_gene_list(gene_list)
                 # print(f"{three_node_orbit_id[orbit]} - {len(gene_list)}")
 
+                gene_list = (",".join(gene_list),)
                 query_params = build_query_params(
                     gene_list,
                     species_txid[species],
-                    "GO:0003674",
+                    go_class,
                     "FISHER",
                     "FDR",
                     "NONE",
@@ -445,9 +450,11 @@ def analyze_stress_proteins(
                         {"fdr": entry["fdr"], "species": species, "go_class": go_class}
                     )
 
-                top_hits = filter_and_sort_results(
-                    parsed_results, fdr_threshold=0.05, top_n=10
+                top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.05)
+                print(
+                    f"orbit-{three_node_orbit_id[orbit]}significant p-value hits = {len(top_hits)}"
                 )
+
                 for hit in top_hits:
                     writer.writerows(
                         [
@@ -751,19 +758,20 @@ def print_results(parsed_results):
         )
 
 
-def filter_and_sort_results(results, fdr_threshold=0.05, top_n=10):
+def filter_and_sort_results(results, fdr_threshold=0.05):
     filtered = []
     for r in results:
         try:
             fdr = float(r["fdr"])
             if fdr <= fdr_threshold:
                 filtered.append(r)
+                # print(r)
         except (ValueError, TypeError):
             continue
     # Sort by FDR ascending
     sorted_filtered = sorted(filtered, key=lambda x: float(x["fdr"]))
+    return sorted_filtered
 
-    return sorted_filtered[:top_n]
 
 def merge_pdfs(output_dir, species_list):
     merger = PdfMerger()
@@ -784,7 +792,7 @@ def merge_pdfs(output_dir, species_list):
 def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["drerio", "bsub"]
+    # species_list = ["drerio"]
 
     output_dir = f"stats/output"
 
@@ -834,15 +842,14 @@ def main():
             )
         )
 
-    merge_pdfs(output_dir ,species_list)
-    
-    
-    fdr_df = pd.DataFrame(fdr_dist_data)
-    plt.figure(figsize=(12, 8))
-    sns.violinplot(data=fdr_df, x="species", y="fdr", hue="go_class")
-    plt.savefig(f"{output_dir}/species_wide/fdr_violin_plot.pdf")
-    # plt.show()
-    plt.close()
+    merge_pdfs(output_dir, species_list)
+
+    # fdr_df = pd.DataFrame(fdr_dist_data)
+    # plt.figure(figsize=(12, 8))
+    # sns.violinplot(data=fdr_df, x="species", y="fdr", hue="go_class")
+    # plt.savefig(f"{output_dir}/species_wide/fdr_violin_plot.pdf")
+    # # plt.show()
+    # plt.close()
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
