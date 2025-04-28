@@ -12,6 +12,10 @@ import requests
 import seaborn as sns
 import pandas as pd
 from PyPDF2 import PdfMerger
+from pyvis.network import Network
+import networkx as nx
+import webbrowser
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from grphin import (
@@ -789,67 +793,141 @@ def merge_pdfs(output_dir, species_list):
     merger.write(f"{output_dir}/species_wide/three_node_graphlet_dist.pdf")
 
 
+def get_go_network(path):
+    G = nx.DiGraph()
+    with open(path, "r") as f:
+        csvreader = csv.reader(f, delimiter="\t")
+        next(csvreader)
+        i = 0
+        for row in csvreader:
+            g1 = row[0]
+            g2 = row[1]
+
+            if not G.has_node(g1):
+                G.add_node(g1)
+            if not G.has_node(g2):
+                G.add_node(g2)
+            if not G.has_edge(g1, g2):
+                G.add_edge(g1, g2)
+            # if i == 10:
+            #     break
+            i += 1
+
+    return G
+
+def analyze_go_enrichment(species_list):
+
+    go_enrichment_files_list = [
+        "go_enrichment_GO:0003674.txt",
+        "go_enrichment_GO:0005575.txt",
+        "go_enrichment_GO:0008150.txt",
+    ]
+
+    output_dir = "stats/output"
+    go_path = Path("data/go_hierarchy/is_a_import_2024-07-17.tsv")
+    G = get_go_network(go_path)
+    go_id_to_name = {}
+    results = {}
+
+    for species in species_list:
+        for file in go_enrichment_files_list:
+            go_type = file.split("_")[-1].split(".")[0]
+            file_path = Path(f"{output_dir}/{species}/sig_orbit/{file}")
+            node_list = []
+            with open(file_path, "r") as f:
+                csvreader = csv.reader(f, delimiter="\t")
+                next(csvreader)
+                for row in csvreader:
+                    orbit = row[0]
+                    go_id = row[1]
+                    go_name = row[2]
+
+                    if go_id not in go_id_to_name:
+                        go_id_to_name[go_id] = go_name
+
+                    key = f"{species}_{go_type}_{orbit}"
+                    if key not in results:
+                        results[key] = []
+                    results[key].append(go_id)
+
+    for key in results:
+        filename = "_".join(key.split("_")[1:3])
+        species = key.split("_")[0]
+        output_path = f"{output_dir}/{species}/sig_orbit/vis/{filename}.html"
+        H = nx.induced_subgraph(G, results[key])
+
+        nt = Network("1000px", "1000px")
+        nt.from_nx(H)
+        for node in nt.nodes:
+            go_id = node["id"]
+            go_name = go_id_to_name.get(go_id, go_id)
+            node["label"] = go_name
+
+        nt.show(output_path, notebook=False)
+        abs_path = os.path.abspath(output_path)
+        print(f"Visualization saved to: {abs_path}")
+        # webbrowser.open(f"file://{abs_path}")
+
 def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
     # species_list = ["drerio"]
 
-    output_dir = f"stats/output"
+    output_dir = "stats/output"
 
-    fdr_dist_data = []
+    go_enrichment_data = True
 
-    for species in species_list:
-        print(species)
-        input_ppi = f"data/{species}_ppi.csv"
-        input_reg = f"data/{species}_reg.csv"
-        stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
-        protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
-            input_ppi, input_reg
-        )
+    if not go_enrichment_data:
+        fdr_dist_data = []
 
-        (
-            three_node_graphlet_count,
-            three_node_graphlet_namespace,
-            three_node_orbit_protein_data,
-            three_node_orbit_namespace,
-            three_node_graphlet_id,
-            three_node_orbit_id,
-            graphlet_config,
-            node_orbit_arr,
-        ) = read_output_files(output_dir, species)
+        for species in species_list:
+            print(species)
+            input_ppi = f"data/{species}_ppi.csv"
+            input_reg = f"data/{species}_reg.csv"
+            stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
+            protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
+                input_ppi, input_reg
+            )
 
-        plot_three_node_graphlet_distribution(
-            three_node_graphlet_count,
-            three_node_graphlet_namespace,
-            three_node_graphlet_id,
-            species,
-            output_dir,
-        )
-
-        # significance orbit stats
-
-        stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
-
-        fdr_dist_data.extend(
-            analyze_stress_proteins(
+            (
+                three_node_graphlet_count,
+                three_node_graphlet_namespace,
                 three_node_orbit_protein_data,
+                three_node_orbit_namespace,
+                three_node_graphlet_id,
                 three_node_orbit_id,
-                stress_proteins_list,
-                protein_id,
+                graphlet_config,
+                node_orbit_arr,
+            ) = read_output_files(output_dir, species)
+
+            plot_three_node_graphlet_distribution(
+                three_node_graphlet_count,
+                three_node_graphlet_namespace,
+                three_node_graphlet_id,
                 species,
                 output_dir,
-                node_orbit_arr,
             )
-        )
 
-    merge_pdfs(output_dir, species_list)
+            # significance orbit stats
 
-    # fdr_df = pd.DataFrame(fdr_dist_data)
-    # plt.figure(figsize=(12, 8))
-    # sns.violinplot(data=fdr_df, x="species", y="fdr", hue="go_class")
-    # plt.savefig(f"{output_dir}/species_wide/fdr_violin_plot.pdf")
-    # # plt.show()
-    # plt.close()
+            stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+
+            fdr_dist_data.extend(
+                analyze_stress_proteins(
+                    three_node_orbit_protein_data,
+                    three_node_orbit_id,
+                    stress_proteins_list,
+                    protein_id,
+                    species,
+                    output_dir,
+                    node_orbit_arr,
+                )
+            )
+
+        merge_pdfs(output_dir, species_list)
+
+
+    analyze_go_enrichment(species_list)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)

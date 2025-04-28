@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "GO:0000305", "label": "response to oxygen radical", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0000302", "label": "response to reactive oxygen species", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0009636", "label": "response to toxic substance", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042221", "label": "response to chemical", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042168", "label": "heme metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006778", "label": "porphyrin-containing compound metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042440", "label": "pigment metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0062197", "label": "cellular response to chemical stress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0033554", "label": "cellular response to stress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0070887", "label": "cellular response to chemical stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0046149", "label": "pigment catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:1901700", "label": "response to oxygen-containing compound", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042743", "label": "hydrogen peroxide metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0072593", "label": "reactive oxygen species metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006979", "label": "response to oxidative stress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006950", "label": "response to stress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0050896", "label": "response to stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0071450", "label": "cellular response to oxygen radical", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0034614", "label": "cellular response to reactive oxygen species", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0034599", "label": "cellular response to oxidative stress", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0033015", "label": "tetrapyrrole catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0033013", "label": "tetrapyrrole metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0009410", "label": "response to xenobiotic stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0051716", "label": "cellular response to stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042167", "label": "heme catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006787", "label": "porphyrin-containing compound catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006801", "label": "superoxide metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0071379", "label": "cellular response to prostaglandin stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0034694", "label": "response to prostaglandin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:1990748", "label": "cellular detoxification", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0098754", "label": "detoxification", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042542", "label": "response to hydrogen peroxide", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0071451", "label": "cellular response to superoxide", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0000303", "label": "response to superoxide", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0030536", "label": "larval feeding behavior", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0007631", "label": "feeding behavior", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0030537", "label": "larval behavior", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0019430", "label": "removal of superoxide radicals", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0098869", "label": "cellular oxidant detoxification", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:1901701", "label": "cellular response to oxygen-containing compound", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0097237", "label": "cellular response to toxic substance", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0009056", "label": "catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0008152", "label": "metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0042744", "label": "hydrogen peroxide catabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0071466", "label": "cellular response to xenobiotic stimulus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0006788", "label": "heme oxidation", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:2000377", "label": "regulation of reactive oxygen species metabolic process", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GO:0045454", "label": "cell redox homeostasis", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"from": "GO:0000305", "to": "GO:0000302", "width": 1}, {"from": "GO:0009636", "to": "GO:0042221", "width": 1}, {"from": "GO:0042168", "to": "GO:0006778", "width": 1}, {"from": "GO:0042168", "to": "GO:0042440", "width": 1}, {"from": "GO:0062197", "to": "GO:0033554", "width": 1}, {"from": "GO:0062197", "to": "GO:0070887", "width": 1}, {"from": "GO:0046149", "to": "GO:0042440", "width": 1}, {"from": "GO:1901700", "to": "GO:0042221", "width": 1}, {"from": "GO:0042743", "to": "GO:0072593", "width": 1}, {"from": "GO:0006979", "to": "GO:0006950", "width": 1}, {"from": "GO:0006950", "to": "GO:0050896", "width": 1}, {"from": "GO:0071450", "to": "GO:0000305", "width": 1}, {"from": "GO:0071450", "to": "GO:0034614", "width": 1}, {"from": "GO:0034599", "to": "GO:0006979", "width": 1}, {"from": "GO:0034599", "to": "GO:0062197", "width": 1}, {"from": "GO:0033015", "to": "GO:0033013", "width": 1}, {"from": "GO:0009410", "to": "GO:0042221", "width": 1}, {"from": "GO:0033554", "to": "GO:0006950", "width": 1}, {"from": "GO:0033554", "to": "GO:0051716", "width": 1}, {"from": "GO:0042167", "to": "GO:0006787", "width": 1}, {"from": "GO:0042167", "to": "GO:0042168", "width": 1}, {"from": "GO:0042167", "to": "GO:0046149", "width": 1}, {"from": "GO:0006801", "to": "GO:0072593", "width": 1}, {"from": "GO:0071379", "to": "GO:0034694", "width": 1}, {"from": "GO:1990748", "to": "GO:0098754", "width": 1}, {"from": "GO:0042542", "to": "GO:0000302", "width": 1}, {"from": "GO:0071451", "to": "GO:0000303", "width": 1}, {"from": "GO:0071451", "to": "GO:0071450", "width": 1}, {"from": "GO:0030536", "to": "GO:0007631", "width": 1}, {"from": "GO:0030536", "to": "GO:0030537", "width": 1}, {"from": "GO:0006787", "to": "GO:0006778", "width": 1}, {"from": "GO:0006787", "to": "GO:0033015", "width": 1}, {"from": "GO:0019430", "to": "GO:0006801", "width": 1}, {"from": "GO:0019430", "to": "GO:0098869", "width": 1}, {"from": "GO:1901701", "to": "GO:0070887", "width": 1}, {"from": "GO:1901701", "to": "GO:1901700", "width": 1}, {"from": "GO:0097237", "to": "GO:0009636", "width": 1}, {"from": "GO:0097237", "to": "GO:0070887", "width": 1}, {"from": "GO:0006778", "to": "GO:0033013", "width": 1}, {"from": "GO:0009056", "to": "GO:0008152", "width": 1}, {"from": "GO:0042744", "to": "GO:0042743", "width": 1}, {"from": "GO:0000303", "to": "GO:0000305", "width": 1}, {"from": "GO:0042221", "to": "GO:0050896", "width": 1}, {"from": "GO:0098869", "to": "GO:1990748", "width": 1}, {"from": "GO:0071466", "to": "GO:0009410", "width": 1}, {"from": "GO:0071466", "to": "GO:0070887", "width": 1}, {"from": "GO:0000302", "to": "GO:0006979", "width": 1}, {"from": "GO:0000302", "to": "GO:1901700", "width": 1}, {"from": "GO:0070887", "to": "GO:0042221", "width": 1}, {"from": "GO:0070887", "to": "GO:0051716", "width": 1}, {"from": "GO:0042440", "to": "GO:0008152", "width": 1}, {"from": "GO:0006788", "to": "GO:0042168", "width": 1}, {"from": "GO:0051716", "to": "GO:0050896", "width": 1}, {"from": "GO:0034614", "to": "GO:0000302", "width": 1}, {"from": "GO:0034614", "to": "GO:0034599", "width": 1}, {"from": "GO:0034614", "to": "GO:1901701", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
