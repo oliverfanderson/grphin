@@ -64,7 +64,7 @@ def plot_three_node_graphlet_distribution(
 ):
     print("plotting graphlet distribution")
     hist_data = []
-    x_label = [*range(0, len(three_node_graphlet_id), 1)]
+    x_label = [*range(1, len(three_node_graphlet_id) + 1, 1)]
 
     for graphlet in three_node_graphlet_id:
         if graphlet in three_node_graphlet_count:
@@ -861,16 +861,22 @@ def analyze_go_enrichment(species_list):
 
         nt = Network("1000px", "1000px")
         
+        # for edge in H.edges():
+        #     nt.add_edge(edge[0], edge[1], arrows="to")
+
         nt.from_nx(H)
         for node in nt.nodes:
             go_id = node["id"]
             go_name = go_id_to_name.get(go_id, go_id)
             node["label"] = go_name
 
+        for edge in nt.edges:
+            edge["arrows"]="from"
+
         nt.show(output_path, notebook=False)
         abs_path = os.path.abspath(output_path)
         print(f"Visualization saved to: {abs_path}")
-        # webbrowser.open(f"file://{abs_path}")
+        # # webbrowser.open(f"file://{abs_path}")
 
 
 def get_mixed_orbit_list():
@@ -890,7 +896,7 @@ def main():
 
     output_dir = "stats/output"
 
-    go_enrichment_data = True
+    go_enrichment_data = False
 
     if not go_enrichment_data:
         fdr_dist_data = []
@@ -925,23 +931,23 @@ def main():
 
             # significance orbit stats
 
-            stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+            # stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-            fdr_dist_data.extend(
-                analyze_stress_proteins(
-                    three_node_orbit_protein_data,
-                    three_node_orbit_id,
-                    stress_proteins_list,
-                    protein_id,
-                    species,
-                    output_dir,
-                    node_orbit_arr,
-                )
-            )
+            # fdr_dist_data.extend(
+            #     analyze_stress_proteins(
+            #         three_node_orbit_protein_data,
+            #         three_node_orbit_id,
+            #         stress_proteins_list,
+            #         protein_id,
+            #         species,
+            #         output_dir,
+            #         node_orbit_arr,
+            #     )
+            # )
 
         merge_pdfs(output_dir, species_list)
 
-    analyze_go_enrichment(species_list)
+    # analyze_go_enrichment(species_list)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
