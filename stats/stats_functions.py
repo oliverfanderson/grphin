@@ -808,14 +808,16 @@ def get_go_network(path):
             if not G.has_node(g2):
                 G.add_node(g2)
             if not G.has_edge(g1, g2):
-                G.add_edge(g1, g2)
+                G.add_edge(g2, g1)
             # if i == 10:
             #     break
             i += 1
 
     return G
 
+
 def analyze_go_enrichment(species_list):
+    mixed_orbits_list = get_mixed_orbit_list()
 
     go_enrichment_files_list = [
         "go_enrichment_GO:0003674.txt",
@@ -839,24 +841,26 @@ def analyze_go_enrichment(species_list):
                 next(csvreader)
                 for row in csvreader:
                     orbit = row[0]
-                    go_id = row[1]
-                    go_name = row[2]
+                    if int(orbit) in mixed_orbits_list:
+                        go_id = row[1]
+                        go_name = row[2]
 
-                    if go_id not in go_id_to_name:
-                        go_id_to_name[go_id] = go_name
+                        if go_id not in go_id_to_name:
+                            go_id_to_name[go_id] = go_name
 
-                    key = f"{species}_{go_type}_{orbit}"
-                    if key not in results:
-                        results[key] = []
-                    results[key].append(go_id)
+                        key = f"{species}_{go_type}_{orbit}"
+                        if key not in results:
+                            results[key] = []
+                        results[key].append(go_id)
 
     for key in results:
         filename = "_".join(key.split("_")[1:3])
         species = key.split("_")[0]
-        output_path = f"{output_dir}/{species}/sig_orbit/vis/{filename}.html"
+        output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
         H = nx.induced_subgraph(G, results[key])
 
         nt = Network("1000px", "1000px")
+        
         nt.from_nx(H)
         for node in nt.nodes:
             go_id = node["id"]
@@ -867,6 +871,17 @@ def analyze_go_enrichment(species_list):
         abs_path = os.path.abspath(output_path)
         print(f"Visualization saved to: {abs_path}")
         # webbrowser.open(f"file://{abs_path}")
+
+
+def get_mixed_orbit_list():
+    result = []
+    result.extend(list(range(2, 62)))
+    result.extend(list(range(79, 113)))
+    result.extend(list(range(113, 187)))
+    result.extend(list(range(187, 244)))
+
+    return result
+
 
 def main():
     print("running stats")
@@ -925,7 +940,6 @@ def main():
             )
 
         merge_pdfs(output_dir, species_list)
-
 
     analyze_go_enrichment(species_list)
 
