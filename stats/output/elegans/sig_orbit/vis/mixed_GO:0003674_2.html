@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "expected": "0.011348733985675374", "fdr": "0.005235621574807054", "fold_enrichment": "176.23111111111112", "id": "GO:0016721", "label": "oxidoreductase activity, acting on superoxide radicals as acceptor", "number_in_list": "2", "number_in_reference": "5", "orbit": "2", "pValue": "5.015702319269837e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.011348733985675374", "fdr": "0.005041709664629014", "fold_enrichment": "176.23111111111112", "id": "GO:0004784", "label": "superoxide dismutase activity", "number_in_list": "2", "number_in_reference": "5", "orbit": "2", "pValue": "5.015702319269837e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.10667809946534854", "fdr": "9.754984685234492e-17", "fold_enrichment": "103.11394799054374", "id": "GO:0016209", "label": "antioxidant activity", "number_in_list": "11", "number_in_reference": "47", "orbit": "2", "pValue": "3.5943200756206676e-20", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.07036215071118733", "fdr": "6.517277552355216e-10", "fold_enrichment": "99.48530465949821", "id": "GO:0004601", "label": "peroxidase activity", "number_in_list": "7", "number_in_reference": "31", "orbit": "2", "pValue": "4.802710060689179e-13", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.2619792192071018", "fdr": "4.663916632572163e-10", "fold_enrichment": "11.886091127098322", "id": "GO:0016491", "label": "oxidoreductase activity", "number_in_list": "15", "number_in_reference": "556", "orbit": "2", "pValue": "6.873863865250056e-13", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.0726318975083224", "fdr": "5.552075852667091e-10", "fold_enrichment": "96.3763888888889", "id": "GO:0016684", "label": "oxidoreductase activity, acting on peroxide as acceptor", "number_in_list": "7", "number_in_reference": "32", "orbit": "2", "pValue": "6.13715090567475e-13", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "5.113739533945324", "fdr": "0.00016128019605886253", "fold_enrichment": "3.5199289835774525", "id": "GO:0005515", "label": "protein binding", "number_in_list": "18", "number_in_reference": "2253", "orbit": "2", "pValue": "7.725285736054581e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.22243518611923738", "fdr": "0.006476263640730081", "fold_enrichment": "17.982766439909295", "id": "GO:0008134", "label": "transcription factor binding", "number_in_list": "4", "number_in_reference": "98", "orbit": "2", "pValue": "7.15872915334939e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "4.52133561989307", "fdr": "1.570130078844537e-07", "fold_enrichment": "4.644645247657295", "id": "GO:0043169", "label": "cation binding", "number_in_list": "21", "number_in_reference": "1992", "orbit": "2", "pValue": "3.4711792457874803e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "4.471401190356098", "fdr": "6.620963042594292e-07", "fold_enrichment": "4.47287084038353", "id": "GO:0046872", "label": "metal ion binding", "number_in_list": "20", "number_in_reference": "1970", "orbit": "2", "pValue": "2.1956030723415117e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.6501059215171998", "fdr": "0.0033548499346213677", "fold_enrichment": "5.454195323246217", "id": "GO:0140110", "label": "transcription regulator activity", "number_in_list": "9", "number_in_reference": "727", "orbit": "2", "pValue": "3.0903186575362634e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.3958942802380712", "fdr": "0.006208160904958617", "fold_enrichment": "5.731093044263776", "id": "GO:0003700", "label": "DNA-binding transcription factor activity", "number_in_list": "8", "number_in_reference": "615", "orbit": "2", "pValue": "6.404882289566737e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.006809240391405225", "fdr": "0.002275343740250486", "fold_enrichment": "293.7185185185185", "id": "GO:0004096", "label": "catalase activity", "number_in_list": "2", "number_in_reference": "3", "orbit": "2", "pValue": "1.5090710141676028e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.006809240391405225", "fdr": "0.0021555888065530916", "fold_enrichment": "293.7185185185185", "id": "GO:0051920", "label": "peroxiredoxin activity", "number_in_list": "2", "number_in_reference": "3", "orbit": "2", "pValue": "1.5090710141676028e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "13.071471804700897", "fdr": "7.649390253054411e-08", "fold_enrichment": "2.6010842931836162", "id": "GO:0005488", "label": "binding", "number_in_list": "34", "number_in_reference": "5759", "orbit": "2", "pValue": "1.409246546251734e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "7.1723998789468375", "fdr": "4.237819818686085e-07", "fold_enrichment": "3.4855836849507735", "id": "GO:0036094", "label": "small molecule binding", "number_in_list": "25", "number_in_reference": "3160", "orbit": "2", "pValue": "1.249173122678286e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.363159487541612", "fdr": "0.00342277462299004", "fold_enrichment": "13.768055555555557", "id": "GO:0046906", "label": "tetrapyrrole binding", "number_in_list": "5", "number_in_reference": "160", "orbit": "2", "pValue": "3.026771958428923e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.35635024715020674", "fdr": "0.003409786523880293", "fold_enrichment": "14.031139419674453", "id": "GO:0020037", "label": "heme binding", "number_in_list": "5", "number_in_reference": "157", "orbit": "2", "pValue": "2.764012657530083e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "9.877938061131848", "fdr": "1.5290260767003584e-06", "fold_enrichment": "2.834599673202614", "id": "GO:0003824", "label": "catalytic activity", "number_in_list": "28", "number_in_reference": "4352", "orbit": "2", "pValue": "6.760616403980951e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.00453949359427015", "fdr": "0.0008544895445370453", "fold_enrichment": "440.57777777777784", "id": "GO:0140824", "label": "thioredoxin-dependent peroxiredoxin activity", "number_in_list": "2", "number_in_reference": "2", "orbit": "2", "pValue": "5.037521264772559e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.17477050337940078", "fdr": "0.0032763531620362877", "fold_enrichment": "22.887157287157287", "id": "GO:0140297", "label": "DNA-binding transcription factor binding", "number_in_list": "4", "number_in_reference": "77", "orbit": "2", "pValue": "2.776570476301939e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.947694946030466", "fdr": "2.4379321668981136e-07", "fold_enrichment": "3.5983157283385965", "id": "GO:0043167", "label": "ion binding", "number_in_list": "25", "number_in_reference": "3061", "orbit": "2", "pValue": "6.287960636804273e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.8534247957227883", "fdr": "0.0027622029794654003", "fold_enrichment": "8.20224586288416", "id": "GO:0000981", "label": "DNA-binding transcription factor activity, RNA polymerase II-specific", "number_in_list": "7", "number_in_reference": "376", "orbit": "2", "pValue": "2.035521723998084e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "22.266216079895088", "fdr": "9.98912694381369e-07", "fold_enrichment": "1.8413546267980518", "id": "GO:0003674", "label": "molecular_function", "number_in_list": "41", "number_in_reference": "9810", "orbit": "2", "pValue": "3.68059209425707e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.00453949359427015", "fdr": "0.0009114555141728483", "fold_enrichment": "440.57777777777784", "id": "GO:0008379", "label": "thioredoxin peroxidase activity", "number_in_list": "2", "number_in_reference": "2", "orbit": "2", "pValue": "5.037521264772559e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.2947140119035607", "fdr": "0.006637880950105565", "fold_enrichment": "4.357841521046269", "id": "GO:0030554", "label": "adenyl nucleotide binding", "number_in_list": "10", "number_in_reference": "1011", "orbit": "2", "pValue": "7.09279836230882e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.30187632401896497", "fdr": "0.0019810257829964277", "fold_enrichment": "16.56307435254804", "id": "GO:0106310", "label": "protein serine kinase activity", "number_in_list": "5", "number_in_reference": "133", "orbit": "2", "pValue": "1.2408783460183961e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.5774740240088772", "fdr": "0.0028030487796114178", "fold_enrichment": "5.705323741007194", "id": "GO:0043565", "label": "sequence-specific DNA binding", "number_in_list": "9", "number_in_reference": "695", "orbit": "2", "pValue": "2.1689028876875377e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.08398063149399777", "fdr": "0.0002806541141629317", "fold_enrichment": "47.630030030030035", "id": "GO:0042803", "label": "protein homodimerization activity", "number_in_list": "4", "number_in_reference": "37", "orbit": "2", "pValue": "1.4477367716584538e-06", "plus_minus": "+", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "from", "from": "GO:0016721", "to": "GO:0004784", "width": 1}, {"arrows": "from", "from": "GO:0016209", "to": "GO:0004601", "width": 1}, {"arrows": "from", "from": "GO:0016209", "to": "GO:0004784", "width": 1}, {"arrows": "from", "from": "GO:0016491", "to": "GO:0016684", "width": 1}, {"arrows": "from", "from": "GO:0016491", "to": "GO:0016721", "width": 1}, {"arrows": "from", "from": "GO:0005515", "to": "GO:0008134", "width": 1}, {"arrows": "from", "from": "GO:0043169", "to": "GO:0046872", "width": 1}, {"arrows": "from", "from": "GO:0140110", "to": "GO:0003700", "width": 1}, {"arrows": "from", "from": "GO:0004601", "to": "GO:0004096", "width": 1}, {"arrows": "from", "from": "GO:0004601", "to": "GO:0051920", "width": 1}, {"arrows": "from", "from": "GO:0005488", "to": "GO:0005515", "width": 1}, {"arrows": "from", "from": "GO:0005488", "to": "GO:0036094", "width": 1}, {"arrows": "from", "from": "GO:0046906", "to": "GO:0020037", "width": 1}, {"arrows": "from", "from": "GO:0003824", "to": "GO:0016491", "width": 1}, {"arrows": "from", "from": "GO:0051920", "to": "GO:0140824", "width": 1}, {"arrows": "from", "from": "GO:0008134", "to": "GO:0140297", "width": 1}, {"arrows": "from", "from": "GO:0036094", "to": "GO:0043167", "width": 1}, {"arrows": "from", "from": "GO:0016684", "to": "GO:0004601", "width": 1}, {"arrows": "from", "from": "GO:0003700", "to": "GO:0000981", "width": 1}, {"arrows": "from", "from": "GO:0003674", "to": "GO:0003824", "width": 1}, {"arrows": "from", "from": "GO:0003674", "to": "GO:0005488", "width": 1}, {"arrows": "from", "from": "GO:0003674", "to": "GO:0016209", "width": 1}, {"arrows": "from", "from": "GO:0003674", "to": "GO:0140110", "width": 1}, {"arrows": "from", "from": "GO:0140824", "to": "GO:0008379", "width": 1}, {"arrows": "from", "from": "GO:0043167", "to": "GO:0043169", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

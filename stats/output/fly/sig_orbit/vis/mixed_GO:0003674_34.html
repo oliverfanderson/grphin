@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "expected": "0.03386151508573909", "fdr": "1.3801431385658275e-06", "fold_enrichment": "118.12820512820514", "id": "GO:0016721", "label": "oxidoreductase activity, acting on superoxide radicals as acceptor", "number_in_list": "4", "number_in_reference": "4", "orbit": "34", "pValue": "4.8783979833625005e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.03386151508573909", "fdr": "1.2651312103520084e-06", "fold_enrichment": "118.12820512820514", "id": "GO:0004784", "label": "superoxide dismutase activity", "number_in_list": "4", "number_in_reference": "4", "orbit": "34", "pValue": "4.8783979833625005e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.46559583242891256", "fdr": "6.1409192643113145e-37", "fold_enrichment": "55.84242424242424", "id": "GO:0016209", "label": "antioxidant activity", "number_in_list": "26", "number_in_reference": "55", "orbit": "34", "pValue": "1.9733031054984943e-40", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.36401128717169523", "fdr": "6.430096693120558e-26", "fold_enrichment": "52.19618366129994", "id": "GO:0004601", "label": "peroxidase activity", "number_in_list": "19", "number_in_reference": "43", "orbit": "34", "pValue": "6.198679331414419e-29", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.2793574994573475", "fdr": "0.0012832631958266663", "fold_enrichment": "17.8982128982129", "id": "GO:0015036", "label": "disulfide oxidoreductase activity", "number_in_list": "5", "number_in_reference": "33", "orbit": "34", "pValue": "7.834833136473862e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.07618840894291296", "fdr": "0.007091827916713647", "fold_enrichment": "39.376068376068375", "id": "GO:0015038", "label": "glutathione disulfide oxidoreductase activity", "number_in_list": "3", "number_in_reference": "9", "orbit": "34", "pValue": "4.785616524774633e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "5.003038853917952", "fdr": "1.0745014023002076e-16", "fold_enrichment": "6.795869668966115", "id": "GO:0016491", "label": "oxidoreductase activity", "number_in_list": "34", "number_in_reference": "591", "orbit": "34", "pValue": "1.3811072009000098e-19", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.38940742348599955", "fdr": "1.286109057192778e-06", "fold_enrichment": "20.544035674470457", "id": "GO:0016667", "label": "oxidoreductase activity, acting on a sulfur group of donors", "number_in_list": "8", "number_in_reference": "46", "orbit": "34", "pValue": "4.132741186352114e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.36401128717169523", "fdr": "9.645145039680837e-26", "fold_enrichment": "52.19618366129994", "id": "GO:0016684", "label": "oxidoreductase activity, acting on peroxide as acceptor", "number_in_list": "19", "number_in_reference": "43", "orbit": "34", "pValue": "6.198679331414419e-29", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "10.971130887779466", "fdr": "0.009353993134139784", "fold_enrichment": "2.278707660652105", "id": "GO:0140096", "label": "catalytic activity, acting on a protein", "number_in_list": "25", "number_in_reference": "1296", "orbit": "34", "pValue": "7.815032824152776e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.8539179509442154", "fdr": "0.00044880097802662693", "fold_enrichment": "5.933380166256878", "id": "GO:0004672", "label": "protein kinase activity", "number_in_list": "11", "number_in_reference": "219", "orbit": "34", "pValue": "2.451676293847255e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.016930757542869546", "fdr": "0.008844960965186971", "fold_enrichment": "118.12820512820514", "id": "GO:0036524", "label": "protein deglycase activity", "number_in_list": "2", "number_in_reference": "2", "orbit": "34", "pValue": "7.105527767663055e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.488821358801823", "fdr": "0.00024880241685727787", "fold_enrichment": "5.2233560090702955", "id": "GO:0016773", "label": "phosphotransferase activity, alcohol group as acceptor", "number_in_list": "13", "number_in_reference": "294", "orbit": "34", "pValue": "1.1992404411501183e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.016930757542869546", "fdr": "0.009213501005403095", "fold_enrichment": "118.12820512820514", "id": "GO:0004096", "label": "catalase activity", "number_in_list": "2", "number_in_reference": "2", "orbit": "34", "pValue": "7.105527767663055e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.11004992402865205", "fdr": "2.225129575391516e-16", "fold_enrichment": "90.86785009861933", "id": "GO:0051920", "label": "peroxiredoxin activity", "number_in_list": "10", "number_in_reference": "13", "orbit": "34", "pValue": "3.575079651978657e-19", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.1258953766008248", "fdr": "3.5030319439510665e-06", "fold_enrichment": "9.770001927896665", "id": "GO:0046906", "label": "tetrapyrrole binding", "number_in_list": "11", "number_in_reference": "133", "orbit": "34", "pValue": "1.575914113602665e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.11742999782939", "fdr": "3.485046378516115e-06", "fold_enrichment": "9.844017094017094", "id": "GO:0020037", "label": "heme binding", "number_in_list": "11", "number_in_reference": "132", "orbit": "34", "pValue": "1.455835569431539e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "46.212502713262424", "fdr": "0.007481317288325585", "fold_enrichment": "1.4714632622674388", "id": "GO:0005488", "label": "binding", "number_in_list": "68", "number_in_reference": "5459", "orbit": "34", "pValue": "5.529251209238061e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "17.997395268070328", "fdr": "0.009230990656872998", "fold_enrichment": "1.9447258605301878", "id": "GO:0036094", "label": "small molecule binding", "number_in_list": "35", "number_in_reference": "2126", "orbit": "34", "pValue": "8.008892922094183e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "31.838289559366185", "fdr": "1.0511122586679514e-09", "fold_enrichment": "2.1357931264870906", "id": "GO:0003824", "label": "catalytic activity", "number_in_list": "68", "number_in_reference": "3761", "orbit": "34", "pValue": "2.702088068555145e-12", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.5153028000868245", "fdr": "0.0004815067579579038", "fold_enrichment": "6.5993410686148115", "id": "GO:0004674", "label": "protein serine/threonine kinase activity", "number_in_list": "10", "number_in_reference": "179", "orbit": "34", "pValue": "2.785064795386333e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "3.1067940091165616", "fdr": "0.0021003929711565757", "fold_enrichment": "4.184377838328793", "id": "GO:0016301", "label": "kinase activity", "number_in_list": "13", "number_in_reference": "367", "orbit": "34", "pValue": "1.3498669480440717e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.06772303017147818", "fdr": "1.073275640201889e-14", "fold_enrichment": "118.12820512820514", "id": "GO:0140824", "label": "thioredoxin-dependent peroxiredoxin activity", "number_in_list": "8", "number_in_reference": "8", "orbit": "34", "pValue": "2.0692975068159817e-17", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "16.92229216409811", "fdr": "0.00705240358906103", "fold_enrichment": "2.009184079219097", "id": "GO:0043167", "label": "ion binding", "number_in_list": "34", "number_in_reference": "1999", "orbit": "34", "pValue": "4.985632357305355e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.059257651400043417", "fdr": "2.858058126716515e-07", "fold_enrichment": "84.37728937728937", "id": "GO:0004707", "label": "MAP kinase activity", "number_in_list": "5", "number_in_reference": "7", "orbit": "34", "pValue": "8.265592268781695e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.05079227262860864", "fdr": "1.437868467711e-10", "fold_enrichment": "118.12820512820514", "id": "GO:0008379", "label": "thioredoxin peroxidase activity", "number_in_list": "6", "number_in_reference": "6", "orbit": "34", "pValue": "3.2342799723576477e-13", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.0931191664857825", "fdr": "0.0002990668176443905", "fold_enrichment": "42.955710955710956", "id": "GO:0016671", "label": "oxidoreductase activity, acting on a sulfur group of donors, disulfide as acceptor", "number_in_list": "4", "number_in_reference": "11", "orbit": "34", "pValue": "1.53761859971409e-06", "plus_minus": "+", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "from", "from": "GO:0016721", "to": "GO:0004784", "width": 1}, {"arrows": "from", "from": "GO:0016209", "to": "GO:0004601", "width": 1}, {"arrows": "from", "from": "GO:0016209", "to": "GO:0004784", "width": 1}, {"arrows": "from", "from": "GO:0015036", "to": "GO:0015038", "width": 1}, {"arrows": "from", "from": "GO:0016491", "to": "GO:0016667", "width": 1}, {"arrows": "from", "from": "GO:0016491", "to": "GO:0016684", "width": 1}, {"arrows": "from", "from": "GO:0016491", "to": "GO:0016721", "width": 1}, {"arrows": "from", "from": "GO:0140096", "to": "GO:0004672", "width": 1}, {"arrows": "from", "from": "GO:0140096", "to": "GO:0036524", "width": 1}, {"arrows": "from", "from": "GO:0016773", "to": "GO:0004672", "width": 1}, {"arrows": "from", "from": "GO:0004601", "to": "GO:0004096", "width": 1}, {"arrows": "from", "from": "GO:0004601", "to": "GO:0051920", "width": 1}, {"arrows": "from", "from": "GO:0046906", "to": "GO:0020037", "width": 1}, {"arrows": "from", "from": "GO:0005488", "to": "GO:0036094", "width": 1}, {"arrows": "from", "from": "GO:0003824", "to": "GO:0016491", "width": 1}, {"arrows": "from", "from": "GO:0003824", "to": "GO:0140096", "width": 1}, {"arrows": "from", "from": "GO:0004672", "to": "GO:0004674", "width": 1}, {"arrows": "from", "from": "GO:0016301", "to": "GO:0004672", "width": 1}, {"arrows": "from", "from": "GO:0051920", "to": "GO:0140824", "width": 1}, {"arrows": "from", "from": "GO:0036094", "to": "GO:0043167", "width": 1}, {"arrows": "from", "from": "GO:0016684", "to": "GO:0004601", "width": 1}, {"arrows": "from", "from": "GO:0004674", "to": "GO:0004707", "width": 1}, {"arrows": "from", "from": "GO:0140824", "to": "GO:0008379", "width": 1}, {"arrows": "from", "from": "GO:0016667", "to": "GO:0015036", "width": 1}, {"arrows": "from", "from": "GO:0016667", "to": "GO:0016671", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

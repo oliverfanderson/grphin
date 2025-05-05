@@ -337,7 +337,7 @@ def analyze_stress_proteins(
         f.write(f"orbit_id\tsignificant?\tobserved_median\tvector_random_medians\n")
         for orbit in significance:
             f.write(
-                f"{three_node_orbit_id[orbit]}\t{significance[orbit]}\t{orbit_stress_median_dict[orbit]}\t{sample_results[orbit]}\n"
+                f"{int(three_node_orbit_id[orbit]) + 1}\t{significance[orbit]}\t{orbit_stress_median_dict[orbit]}\t{sample_results[orbit]}\n"
             )
 
     # plot each significant orbits' p value with observed stress proteins' median count at the orbit
@@ -355,7 +355,7 @@ def analyze_stress_proteins(
                 f"{species} Random Median Samples at Orbit {int(three_node_orbit_id[orbit])} Distribution",
                 fontsize=16,
             )
-            plt.savefig(f"{output_dir}/{species}/sig_orbit/orbit{i}.pdf")
+            plt.savefig(f"{output_dir}/{species}/sig_orbit/per_orbit/orbit{i + 1}.pdf")
             plt.close()
         i += 1
 
@@ -454,7 +454,7 @@ def analyze_stress_proteins(
                         {"fdr": entry["fdr"], "species": species, "go_class": go_class}
                     )
 
-                top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.05)
+                top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
                 print(
                     f"orbit-{three_node_orbit_id[orbit]}significant p-value hits = {len(top_hits)}"
                 )
@@ -463,7 +463,7 @@ def analyze_stress_proteins(
                     writer.writerows(
                         [
                             [
-                                str(three_node_orbit_id[orbit]),
+                                str(int(three_node_orbit_id[orbit]) + 1),
                                 hit["term_id"],
                                 hit["term_label"],
                                 hit["pValue"],
@@ -488,7 +488,7 @@ def analyze_stress_proteins(
                 count = protein_count_tuple[1]
                 row = [three_node_orbit_id[orbit], id_to_protein[protein], count]
                 writer.writerow(
-                    [three_node_orbit_id[orbit], id_to_protein[protein], count]
+                    [int(three_node_orbit_id[orbit]) + 1, id_to_protein[protein], count]
                 )
         f.close()
 
@@ -831,6 +831,9 @@ def analyze_go_enrichment(species_list):
     go_id_to_name = {}
     results = {}
 
+    mixed_orbits_summary = {}
+    node_attributes_dict = {}
+
     for species in species_list:
         for file in go_enrichment_files_list:
             go_type = file.split("_")[-1].split(".")[0]
@@ -851,32 +854,101 @@ def analyze_go_enrichment(species_list):
                         key = f"{species}_{go_type}_{orbit}"
                         if key not in results:
                             results[key] = []
+                            node_attributes_dict[key] = {}
                         results[key].append(go_id)
+                        node_attributes_dict[key][go_id] = row
+
+                        if f"{species}_{go_type}" not in mixed_orbits_summary:
+                            mixed_orbits_summary[f"{species}_{go_type}"] = []
+                        mixed_orbits_summary[f"{species}_{go_type}"].append(row)
+
+    # for key in mixed_orbits_summary:
+    #     # print(key)
+    #     species = key.split("_")[0]
+    #     go_type = key.split("_")[1]
+    #     with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", "w+") as f:
+    #         writer = csv.writer(f, delimiter="\t")
+    #         writer.writerows(
+    #             [
+    #                 [
+    #                     "orbit",
+    #                     "term_id",
+    #                     "term_label",
+    #                     "pValue",
+    #                     "fdr",
+    #                     "fold_enrichment",
+    #                     "expected",
+    #                     "number_in_list",
+    #                     "number_in_reference",
+    #                     "plus_minus",
+    #                 ]
+    #             ]
+    #         )
+    #         for row in mixed_orbits_summary[key]:
+    #             # print(row)
+    #             writer.writerows([row])
 
     for key in results:
         filename = "_".join(key.split("_")[1:3])
         species = key.split("_")[0]
+        go_type = filename.split("_")[0]
+        orbit = key.split("_")[-1]
         output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
         H = nx.induced_subgraph(G, results[key])
 
         nt = Network("1000px", "1000px")
-        
+
         # for edge in H.edges():
         #     nt.add_edge(edge[0], edge[1], arrows="to")
 
+        go_attributes = node_attributes_dict[f"{species}_{go_type}_{orbit}"]
         nt.from_nx(H)
-        for node in nt.nodes:
-            go_id = node["id"]
-            go_name = go_id_to_name.get(go_id, go_id)
-            node["label"] = go_name
+
+        write_type = ""
+        if os.path.exists(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}"):
+            write_type = "a"
+        else:
+            write_type = "w"
+        with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type) as f:
+            writer = csv.writer(f, delimiter="\t")
+            for node in nt.nodes:
+                go_id = node["id"]
+                go_name = go_id_to_name.get(go_id, go_id)
+                node["label"] = go_name
+                node["orbit"] = go_attributes[node["id"]][0]
+                node["pValue"] = go_attributes[node["id"]][3]
+                node["fdr"] = go_attributes[node["id"]][4]
+                node["fold_enrichment"] = go_attributes[node["id"]][5]
+                node["expected"] = go_attributes[node["id"]][6]
+                node["number_in_list"] = go_attributes[node["id"]][7]
+                node["number_in_reference"] = go_attributes[node["id"]][8]
+                node["plus_minus"] = go_attributes[node["id"]][9]
+
+                writer.writerows(
+                    [
+                        [
+                            int(node["orbit"]),
+                            go_id,
+                            node["label"],
+                            node["pValue"],
+                            node["fdr"],
+                            node["fold_enrichment"],
+                            node["expected"],
+                            node["number_in_list"],
+                            node["number_in_reference"],
+                            node["plus_minus"],
+                        ]
+                    ]
+                )
 
         for edge in nt.edges:
-            edge["arrows"]="from"
+            edge["arrows"] = "from"
 
         nt.show(output_path, notebook=False)
         abs_path = os.path.abspath(output_path)
-        print(f"Visualization saved to: {abs_path}")
+        # print(f"Visualization saved to: {abs_path}")
         # # webbrowser.open(f"file://{abs_path}")
+        print()
 
 
 def get_mixed_orbit_list():
@@ -892,7 +964,7 @@ def get_mixed_orbit_list():
 def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["drerio"]
+    # species_list = ["fly"]
 
     output_dir = "stats/output"
 
@@ -931,23 +1003,23 @@ def main():
 
             # significance orbit stats
 
-            # stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+            stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
 
-            # fdr_dist_data.extend(
-            #     analyze_stress_proteins(
-            #         three_node_orbit_protein_data,
-            #         three_node_orbit_id,
-            #         stress_proteins_list,
-            #         protein_id,
-            #         species,
-            #         output_dir,
-            #         node_orbit_arr,
-            #     )
-            # )
+            fdr_dist_data.extend(
+                analyze_stress_proteins(
+                    three_node_orbit_protein_data,
+                    three_node_orbit_id,
+                    stress_proteins_list,
+                    protein_id,
+                    species,
+                    output_dir,
+                    node_orbit_arr,
+                )
+            )
 
         merge_pdfs(output_dir, species_list)
 
-    # analyze_go_enrichment(species_list)
+    analyze_go_enrichment(species_list)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)

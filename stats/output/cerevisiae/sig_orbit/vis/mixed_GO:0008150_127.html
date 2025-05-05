@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "expected": "100.10924092409242", "fdr": "4.780859201683126e-05", "fold_enrichment": "1.168723275893331", "id": "GO:0009987", "label": "cellular process", "number_in_list": "117", "number_in_reference": "5098", "orbit": "127", "pValue": "3.9727235876658386e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "21.266831683168316", "fdr": "3.5850665685733863e-60", "fold_enrichment": "4.890244186317187", "id": "GO:0051716", "label": "cellular response to stimulus", "number_in_list": "104", "number_in_reference": "1083", "orbit": "127", "pValue": "7.055674418797392e-63", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.7265676567656765", "fdr": "1.1079709941937358e-28", "fold_enrichment": "31.65568930274813", "id": "GO:1990748", "label": "cellular detoxification", "number_in_list": "23", "number_in_reference": "37", "orbit": "127", "pValue": "2.907424432609847e-31", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.9425742574257426", "fdr": "0.00033256408447828936", "fold_enrichment": "8.487394957983193", "id": "GO:0043562", "label": "cellular response to nitrogen levels", "number_in_list": "8", "number_in_reference": "48", "orbit": "127", "pValue": "3.4179995561949703e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.9425742574257426", "fdr": "0.00032563566605165833", "fold_enrichment": "8.487394957983193", "id": "GO:0006995", "label": "cellular response to nitrogen starvation", "number_in_list": "8", "number_in_reference": "48", "orbit": "127", "pValue": "3.4179995561949703e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.23564356435643566", "fdr": "3.1463171110763e-16", "fold_enrichment": "46.68067226890756", "id": "GO:0042542", "label": "response to hydrogen peroxide", "number_in_list": "11", "number_in_reference": "12", "orbit": "127", "pValue": "1.2384366498878942e-18", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.13745874587458745", "fdr": "6.637410470326063e-08", "fold_enrichment": "43.64945978391357", "id": "GO:0070301", "label": "cellular response to hydrogen peroxide", "number_in_list": "6", "number_in_reference": "7", "orbit": "127", "pValue": "3.4834430633681507e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.2778877887788775", "fdr": "4.7352921713365174e-212", "fold_enrichment": "48.29035062300783", "id": "GO:0006979", "label": "response to oxidative stress", "number_in_list": "110", "number_in_reference": "116", "orbit": "127", "pValue": "1.0354892130628728e-215", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.4712871287128713", "fdr": "2.0001154958317564e-31", "fold_enrichment": "44.55882352941176", "id": "GO:0000302", "label": "response to reactive oxygen species", "number_in_list": "21", "number_in_reference": "24", "orbit": "127", "pValue": "4.373749170854487e-34", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.061881188118812", "fdr": "6.338618865669801e-184", "fold_enrichment": "48.01440576230492", "id": "GO:0034599", "label": "cellular response to oxidative stress", "number_in_list": "99", "number_in_reference": "105", "orbit": "127", "pValue": "2.772192812451258e-187", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.0996699669966996", "fdr": "7.6497707607408065e-25", "fold_enrichment": "21.824729891956785", "id": "GO:0009636", "label": "response to toxic substance", "number_in_list": "24", "number_in_reference": "56", "orbit": "127", "pValue": "2.5092184870131663e-27", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.7462046204620462", "fdr": "2.55139021836681e-28", "fold_enrichment": "30.82264484741265", "id": "GO:0097237", "label": "cellular response to toxic substance", "number_in_list": "23", "number_in_reference": "38", "orbit": "127", "pValue": "7.253022706925111e-31", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.09818481848184818", "fdr": "7.9629755643165e-05", "fold_enrichment": "40.73949579831933", "id": "GO:0019566", "label": "arabinose metabolic process", "number_in_list": "4", "number_in_reference": "5", "orbit": "127", "pValue": "6.965209328070414e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.09818481848184818", "fdr": "8.167154424940001e-05", "fold_enrichment": "40.73949579831933", "id": "GO:0019568", "label": "arabinose catabolic process", "number_in_list": "4", "number_in_reference": "5", "orbit": "127", "pValue": "6.965209328070414e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "4.614686468646864", "fdr": "0.00027516781375701744", "fold_enrichment": "3.683890577507599", "id": "GO:0019725", "label": "cellular homeostasis", "number_in_list": "17", "number_in_reference": "235", "orbit": "127", "pValue": "2.7077523767911184e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.4516501650165017", "fdr": "1.1705177849220886e-09", "fold_enrichment": "22.141030325173546", "id": "GO:0045454", "label": "cell redox homeostasis", "number_in_list": "10", "number_in_reference": "23", "orbit": "127", "pValue": "5.3752183431803765e-12", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "15.14009900990099", "fdr": "1.4339314693444238e-72", "fold_enrichment": "6.737076153418566", "id": "GO:0033554", "label": "cellular response to stress", "number_in_list": "102", "number_in_reference": "771", "orbit": "127", "pValue": "2.1949530473236314e-75", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.5331683168316834", "fdr": "0.00012574458732179076", "fold_enrichment": "5.131913230408442", "id": "GO:0009267", "label": "cellular response to starvation", "number_in_list": "13", "number_in_reference": "129", "orbit": "127", "pValue": "1.1548814055357995e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.2371287128712871", "fdr": "3.939688266889978e-05", "fold_enrichment": "8.083233293317328", "id": "GO:0034605", "label": "cellular response to heat", "number_in_list": "10", "number_in_reference": "63", "orbit": "127", "pValue": "3.101438390729044e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.9848184818481847", "fdr": "7.375627046141128e-152", "fold_enrichment": "33.16784608580274", "id": "GO:0062197", "label": "cellular response to chemical stress", "number_in_list": "99", "number_in_reference": "152", "orbit": "127", "pValue": "4.838591983035947e-155", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.058910891089108915", "fdr": "0.0006622820891230253", "fold_enrichment": "50.924369747899156", "id": "GO:0000304", "label": "response to singlet oxygen", "number_in_list": "3", "number_in_reference": "3", "orbit": "127", "pValue": "7.386045603602513e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.162065682214261e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0000305", "label": "response to oxygen radical", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.29455445544554454", "fdr": "2.1822722863716063e-16", "fold_enrichment": "40.73949579831933", "id": "GO:0034614", "label": "cellular response to reactive oxygen species", "number_in_list": "12", "number_in_reference": "15", "orbit": "127", "pValue": "8.112536380563591e-19", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.6117161716171617", "fdr": "0.00017434679509697944", "fold_enrichment": "4.9775699753585645", "id": "GO:0042594", "label": "response to starvation", "number_in_list": "13", "number_in_reference": "133", "orbit": "127", "pValue": "1.6393860024426232e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "5.243069306930693", "fdr": "0.0013260334273971362", "fold_enrichment": "3.242375601926164", "id": "GO:0042592", "label": "homeostatic process", "number_in_list": "17", "number_in_reference": "267", "orbit": "127", "pValue": "1.5078447020479137e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "16.23976897689769", "fdr": "2.099760146067822e-89", "fold_enrichment": "6.958227063497708", "id": "GO:0006950", "label": "response to stress", "number_in_list": "113", "number_in_reference": "827", "orbit": "127", "pValue": "2.7549881645324582e-92", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.6495049504950494", "fdr": "8.676430638801346e-07", "fold_enrichment": "7.881152460984394", "id": "GO:0006970", "label": "response to osmotic stress", "number_in_list": "13", "number_in_reference": "84", "orbit": "127", "pValue": "6.4508777983653125e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.4924092409240923", "fdr": "2.566820684886984e-07", "fold_enrichment": "8.710747456877488", "id": "GO:0009408", "label": "response to heat", "number_in_list": "13", "number_in_reference": "76", "orbit": "127", "pValue": "1.7961570504348017e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.07854785478547854", "fdr": "0.0024211809347617114", "fold_enrichment": "38.19327731092437", "id": "GO:0051409", "label": "response to nitrosative stress", "number_in_list": "3", "number_in_reference": "4", "orbit": "127", "pValue": "2.9119823182132983e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "3.122277227722772", "fdr": "4.800116307723411e-05", "fold_enrichment": "4.804185825273506", "id": "GO:0031667", "label": "response to nutrient levels", "number_in_list": "15", "number_in_reference": "159", "orbit": "127", "pValue": "3.883759094374945e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.8473597359735976", "fdr": "8.215241033851278e-05", "fold_enrichment": "4.91683569979716", "id": "GO:0031669", "label": "cellular response to nutrient levels", "number_in_list": "14", "number_in_reference": "145", "orbit": "127", "pValue": "7.36551240734534e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.107095709570957", "fdr": "7.651231989003671e-115", "fold_enrichment": "16.53813937150423", "id": "GO:0070887", "label": "cellular response to chemical stimulus", "number_in_list": "101", "number_in_reference": "311", "orbit": "127", "pValue": "6.692527434072749e-118", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.0996699669966996", "fdr": "3.8772199734176695e-10", "fold_enrichment": "12.73109243697479", "id": "GO:1901701", "label": "cellular response to oxygen-containing compound", "number_in_list": "14", "number_in_reference": "56", "orbit": "127", "pValue": "1.6957008412060658e-12", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.13745874587458745", "fdr": "6.371914051513022e-08", "fold_enrichment": "43.64945978391357", "id": "GO:0042743", "label": "hydrogen peroxide metabolic process", "number_in_list": "6", "number_in_reference": "7", "orbit": "127", "pValue": "3.4834430633681507e-10", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.11782178217821783", "fdr": "1.0055147447645839e-08", "fold_enrichment": "50.924369747899156", "id": "GO:0042744", "label": "hydrogen peroxide catabolic process", "number_in_list": "6", "number_in_reference": "6", "orbit": "127", "pValue": "5.057257627287432e-11", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.021122112211221", "fdr": "0.0005838763545515938", "fold_enrichment": "7.8345184227537175", "id": "GO:0071470", "label": "cellular response to osmotic stress", "number_in_list": "8", "number_in_reference": "52", "orbit": "127", "pValue": "6.383953144014802e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.07854785478547854", "fdr": "0.0023779455609266808", "fold_enrichment": "38.19327731092437", "id": "GO:0071500", "label": "cellular response to nitrosative stress", "number_in_list": "3", "number_in_reference": "4", "orbit": "127", "pValue": "2.9119823182132983e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.6480198019801979", "fdr": "1.948180359564083e-30", "fold_enrichment": "35.49274255156609", "id": "GO:0098869", "label": "cellular oxidant detoxification", "number_in_list": "23", "number_in_reference": "33", "orbit": "127", "pValue": "4.6861981096009e-33", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.2392823137219132e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0019430", "label": "removal of superoxide radicals", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.19636963696369636", "fdr": "0.0022950962247018755", "fold_enrichment": "20.369747899159666", "id": "GO:0019321", "label": "pentose metabolic process", "number_in_list": "4", "number_in_reference": "10", "orbit": "127", "pValue": "2.7101508010912153e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.13745874587458745", "fdr": "0.00044131739950914293", "fold_enrichment": "29.099639855942378", "id": "GO:0019323", "label": "pentose catabolic process", "number_in_list": "4", "number_in_reference": "7", "orbit": "127", "pValue": "4.728745369767768e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.11782178217821783", "fdr": "0.0002138745498098367", "fold_enrichment": "33.94957983193277", "id": "GO:0042732", "label": "D-xylose metabolic process", "number_in_list": "4", "number_in_reference": "6", "orbit": "127", "pValue": "2.057835161083056e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.3222186957116138e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0071450", "label": "cellular response to oxygen radical", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.4115347993928297e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0071451", "label": "cellular response to superoxide", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "23.44653465346535", "fdr": "1.3816115827132693e-70", "fold_enrichment": "4.819475528905029", "id": "GO:0050896", "label": "response to stimulus", "number_in_list": "113", "number_in_reference": "1194", "orbit": "127", "pValue": "2.4169894296317853e-73", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "3.5739273927392743", "fdr": "6.343716629382785e-09", "fold_enrichment": "5.875888817065287", "id": "GO:0009628", "label": "response to abiotic stimulus", "number_in_list": "21", "number_in_reference": "182", "orbit": "127", "pValue": "3.0518645494515914e-11", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "8.836633663366337", "fdr": "2.897730331534143e-104", "fold_enrichment": "11.882352941176471", "id": "GO:0042221", "label": "response to chemical", "number_in_list": "105", "number_in_reference": "450", "orbit": "127", "pValue": "3.168303445805973e-107", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.5709570957095709", "fdr": "4.787738480206986e-19", "fold_enrichment": "14.640756302521009", "id": "GO:1901700", "label": "response to oxygen-containing compound", "number_in_list": "23", "number_in_reference": "80", "orbit": "127", "pValue": "1.6751326412270235e-21", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.5316831683168315", "fdr": "3.477054786411204e-07", "fold_enrichment": "8.487394957983195", "id": "GO:0009266", "label": "response to temperature stimulus", "number_in_list": "13", "number_in_reference": "78", "orbit": "127", "pValue": "2.5091364083002346e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.3745874587458744", "fdr": "0.004702747332415628", "fold_enrichment": "5.819927971188476", "id": "GO:0071214", "label": "cellular response to abiotic stimulus", "number_in_list": "8", "number_in_reference": "70", "orbit": "127", "pValue": "5.9645603603784484e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.0899968261404522e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0000303", "label": "response to superoxide", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.9622112211221122", "fdr": "7.542226449190641e-25", "fold_enrichment": "23.903275595952667", "id": "GO:0098754", "label": "detoxification", "number_in_list": "23", "number_in_reference": "49", "orbit": "127", "pValue": "2.3090131268022955e-27", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.3745874587458744", "fdr": "0.004785251671580814", "fold_enrichment": "5.819927971188476", "id": "GO:0104004", "label": "cellular response to environmental stimulus", "number_in_list": "8", "number_in_reference": "70", "orbit": "127", "pValue": "5.9645603603784484e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.07854785478547854", "fdr": "1.848185494590405e-05", "fold_enrichment": "50.92436974789916", "id": "GO:0042843", "label": "D-xylose catabolic process", "number_in_list": "4", "number_in_reference": "4", "orbit": "127", "pValue": "1.414530774342099e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.35346534653465345", "fdr": "7.582402506625508e-15", "fold_enrichment": "33.94957983193277", "id": "GO:0072593", "label": "reactive oxygen species metabolic process", "number_in_list": "12", "number_in_reference": "18", "orbit": "127", "pValue": "3.1503531079353744e-17", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.1570957095709571", "fdr": "2.0225775736843088e-07", "fold_enrichment": "38.19327731092437", "id": "GO:0006801", "label": "superoxide metabolic process", "number_in_list": "6", "number_in_reference": "8", "orbit": "127", "pValue": "1.3710891052747337e-09", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.25528052805280527", "fdr": "0.0003028759474702011", "fold_enrichment": "19.586296056884294", "id": "GO:0046685", "label": "response to arsenic-containing substance", "number_in_list": "5", "number_in_reference": "13", "orbit": "127", "pValue": "3.0466419382526243e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "1.1978547854785477", "fdr": "0.0018600843866911994", "fold_enrichment": "6.678605868576939", "id": "GO:0010506", "label": "regulation of autophagy", "number_in_list": "8", "number_in_reference": "61", "orbit": "127", "pValue": "2.1557942815358313e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.09818481848184818", "fdr": "0.005561603274405411", "fold_enrichment": "30.554621848739497", "id": "GO:1901858", "label": "regulation of mitochondrial DNA metabolic process", "number_in_list": "3", "number_in_reference": "5", "orbit": "127", "pValue": "7.175477655585375e-05", "plus_minus": "+", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "from", "from": "GO:0009987", "to": "GO:0051716", "width": 1}, {"arrows": "from", "from": "GO:0009987", "to": "GO:1990748", "width": 1}, {"arrows": "from", "from": "GO:0043562", "to": "GO:0006995", "width": 1}, {"arrows": "from", "from": "GO:0042542", "to": "GO:0070301", "width": 1}, {"arrows": "from", "from": "GO:0006979", "to": "GO:0000302", "width": 1}, {"arrows": "from", "from": "GO:0006979", "to": "GO:0034599", "width": 1}, {"arrows": "from", "from": "GO:0009636", "to": "GO:0097237", "width": 1}, {"arrows": "from", "from": "GO:0019566", "to": "GO:0019568", "width": 1}, {"arrows": "from", "from": "GO:0019725", "to": "GO:0045454", "width": 1}, {"arrows": "from", "from": "GO:0033554", "to": "GO:0009267", "width": 1}, {"arrows": "from", "from": "GO:0033554", "to": "GO:0034605", "width": 1}, {"arrows": "from", "from": "GO:0033554", "to": "GO:0062197", "width": 1}, {"arrows": "from", "from": "GO:0000302", "to": "GO:0000304", "width": 1}, {"arrows": "from", "from": "GO:0000302", "to": "GO:0000305", "width": 1}, {"arrows": "from", "from": "GO:0000302", "to": "GO:0034614", "width": 1}, {"arrows": "from", "from": "GO:0000302", "to": "GO:0042542", "width": 1}, {"arrows": "from", "from": "GO:0042594", "to": "GO:0009267", "width": 1}, {"arrows": "from", "from": "GO:0042592", "to": "GO:0019725", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0006970", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0006979", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0009408", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0033554", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0042594", "width": 1}, {"arrows": "from", "from": "GO:0006950", "to": "GO:0051409", "width": 1}, {"arrows": "from", "from": "GO:0031667", "to": "GO:0031669", "width": 1}, {"arrows": "from", "from": "GO:0031667", "to": "GO:0042594", "width": 1}, {"arrows": "from", "from": "GO:0070887", "to": "GO:0062197", "width": 1}, {"arrows": "from", "from": "GO:0070887", "to": "GO:0097237", "width": 1}, {"arrows": "from", "from": "GO:0070887", "to": "GO:1901701", "width": 1}, {"arrows": "from", "from": "GO:0042743", "to": "GO:0042744", "width": 1}, {"arrows": "from", "from": "GO:0062197", "to": "GO:0034599", "width": 1}, {"arrows": "from", "from": "GO:0062197", "to": "GO:0071470", "width": 1}, {"arrows": "from", "from": "GO:0062197", "to": "GO:0071500", "width": 1}, {"arrows": "from", "from": "GO:0098869", "to": "GO:0019430", "width": 1}, {"arrows": "from", "from": "GO:0019321", "to": "GO:0019323", "width": 1}, {"arrows": "from", "from": "GO:0019321", "to": "GO:0019566", "width": 1}, {"arrows": "from", "from": "GO:0019321", "to": "GO:0042732", "width": 1}, {"arrows": "from", "from": "GO:0071450", "to": "GO:0071451", "width": 1}, {"arrows": "from", "from": "GO:0009267", "to": "GO:0006995", "width": 1}, {"arrows": "from", "from": "GO:0050896", "to": "GO:0006950", "width": 1}, {"arrows": "from", "from": "GO:0050896", "to": "GO:0009628", "width": 1}, {"arrows": "from", "from": "GO:0050896", "to": "GO:0031667", "width": 1}, {"arrows": "from", "from": "GO:0050896", "to": "GO:0042221", "width": 1}, {"arrows": "from", "from": "GO:0050896", "to": "GO:0051716", "width": 1}, {"arrows": "from", "from": "GO:0006970", "to": "GO:0071470", "width": 1}, {"arrows": "from", "from": "GO:1901700", "to": "GO:0000302", "width": 1}, {"arrows": "from", "from": "GO:1901700", "to": "GO:1901701", "width": 1}, {"arrows": "from", "from": "GO:0051409", "to": "GO:0071500", "width": 1}, {"arrows": "from", "from": "GO:0031669", "to": "GO:0009267", "width": 1}, {"arrows": "from", "from": "GO:0031669", "to": "GO:0043562", "width": 1}, {"arrows": "from", "from": "GO:0034614", "to": "GO:0070301", "width": 1}, {"arrows": "from", "from": "GO:0034614", "to": "GO:0071450", "width": 1}, {"arrows": "from", "from": "GO:0009628", "to": "GO:0006970", "width": 1}, {"arrows": "from", "from": "GO:0009628", "to": "GO:0009266", "width": 1}, {"arrows": "from", "from": "GO:0009628", "to": "GO:0071214", "width": 1}, {"arrows": "from", "from": "GO:0000305", "to": "GO:0000303", "width": 1}, {"arrows": "from", "from": "GO:0000305", "to": "GO:0071450", "width": 1}, {"arrows": "from", "from": "GO:0098754", "to": "GO:1990748", "width": 1}, {"arrows": "from", "from": "GO:1990748", "to": "GO:0098869", "width": 1}, {"arrows": "from", "from": "GO:0000303", "to": "GO:0071451", "width": 1}, {"arrows": "from", "from": "GO:0009266", "to": "GO:0009408", "width": 1}, {"arrows": "from", "from": "GO:1901701", "to": "GO:0034614", "width": 1}, {"arrows": "from", "from": "GO:0051716", "to": "GO:0031669", "width": 1}, {"arrows": "from", "from": "GO:0051716", "to": "GO:0033554", "width": 1}, {"arrows": "from", "from": "GO:0051716", "to": "GO:0070887", "width": 1}, {"arrows": "from", "from": "GO:0051716", "to": "GO:0104004", "width": 1}, {"arrows": "from", "from": "GO:0071214", "to": "GO:0071470", "width": 1}, {"arrows": "from", "from": "GO:0104004", "to": "GO:0071214", "width": 1}, {"arrows": "from", "from": "GO:0042732", "to": "GO:0042843", "width": 1}, {"arrows": "from", "from": "GO:0072593", "to": "GO:0006801", "width": 1}, {"arrows": "from", "from": "GO:0072593", "to": "GO:0042743", "width": 1}, {"arrows": "from", "from": "GO:0042221", "to": "GO:0009636", "width": 1}, {"arrows": "from", "from": "GO:0042221", "to": "GO:0046685", "width": 1}, {"arrows": "from", "from": "GO:0042221", "to": "GO:0070887", "width": 1}, {"arrows": "from", "from": "GO:0042221", "to": "GO:1901700", "width": 1}, {"arrows": "from", "from": "GO:0019323", "to": "GO:0019568", "width": 1}, {"arrows": "from", "from": "GO:0019323", "to": "GO:0042843", "width": 1}, {"arrows": "from", "from": "GO:0009408", "to": "GO:0034605", "width": 1}, {"arrows": "from", "from": "GO:0006801", "to": "GO:0019430", "width": 1}, {"arrows": "from", "from": "GO:0034599", "to": "GO:0034614", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
