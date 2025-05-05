@@ -767,7 +767,7 @@ def filter_and_sort_results(results, fdr_threshold=0.05):
     for r in results:
         try:
             fdr = float(r["fdr"])
-            if fdr <= fdr_threshold:
+            if fdr <= fdr_threshold and r["plus_minus"] == "+":
                 filtered.append(r)
                 # print(r)
         except (ValueError, TypeError):
@@ -861,32 +861,6 @@ def analyze_go_enrichment(species_list):
                         if f"{species}_{go_type}" not in mixed_orbits_summary:
                             mixed_orbits_summary[f"{species}_{go_type}"] = []
                         mixed_orbits_summary[f"{species}_{go_type}"].append(row)
-
-    # for key in mixed_orbits_summary:
-    #     # print(key)
-    #     species = key.split("_")[0]
-    #     go_type = key.split("_")[1]
-    #     with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", "w+") as f:
-    #         writer = csv.writer(f, delimiter="\t")
-    #         writer.writerows(
-    #             [
-    #                 [
-    #                     "orbit",
-    #                     "term_id",
-    #                     "term_label",
-    #                     "pValue",
-    #                     "fdr",
-    #                     "fold_enrichment",
-    #                     "expected",
-    #                     "number_in_list",
-    #                     "number_in_reference",
-    #                     "plus_minus",
-    #                 ]
-    #             ]
-    #         )
-    #         for row in mixed_orbits_summary[key]:
-    #             # print(row)
-    #             writer.writerows([row])
 
     for key in results:
         filename = "_".join(key.split("_")[1:3])
