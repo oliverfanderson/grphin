@@ -375,6 +375,11 @@ def analyze_stress_proteins(
                     (protein, node_orbit_arr[protein][int(three_node_orbit_id[orbit])])
                 ]
 
+    # have int id to orbit hash for sorting in order later
+    id_orbit_hash = {}
+    for key in sig_orbit_stress_protein_dict:
+        id_orbit_hash[three_node_orbit_id[key]] = key
+
     # do go enrichment analysis
     # go_class = "GO:0008150" # biological process
     # go_class = "GO:0003674" # molecular function
@@ -409,8 +414,9 @@ def analyze_stress_proteins(
                 ]
             )
             print(go_class)
-            for orbit in sig_orbit_stress_protein_dict:
-                print()
+            for key in sorted(id_orbit_hash.items(), key=lambda x: int(x[0])):
+                orbit = id_orbit_hash[key[0]]
+                print(three_node_orbit_id[orbit])
                 gene_list = []
 
                 # filter the number of stress proteins
@@ -862,6 +868,20 @@ def analyze_go_enrichment(species_list):
                             mixed_orbits_summary[f"{species}_{go_type}"] = []
                         mixed_orbits_summary[f"{species}_{go_type}"].append(row)
 
+    go_orbit_distribution = {}
+
+    # delete mixed orbit file
+    for species in species_list:
+        file_paths = [
+            f"{output_dir}/{species}/sig_orbit/mixed_GO:0003674",
+            f"{output_dir}/{species}/sig_orbit/mixed_GO:0008150",
+            f"{output_dir}/{species}/sig_orbit/mixed_GO:0005575",
+        ]
+        for file in file_paths:
+            if os.path.exists(file):
+                print("deleted")
+                os.remove(file)
+
     for key in results:
         filename = "_".join(key.split("_")[1:3])
         species = key.split("_")[0]
@@ -915,6 +935,12 @@ def analyze_go_enrichment(species_list):
                     ]
                 )
 
+        if species not in go_orbit_distribution:
+            go_orbit_distribution[species] = []
+        go_orbit_distribution[species].append(
+            {"orbit": int(orbit), "go_type": go_type, "count": len(list(H.nodes()))}
+        )
+
         for edge in nt.edges:
             edge["arrows"] = "from"
 
@@ -923,6 +949,71 @@ def analyze_go_enrichment(species_list):
         # print(f"Visualization saved to: {abs_path}")
         # # webbrowser.open(f"file://{abs_path}")
         print()
+
+    for species in species_list:
+        if species in go_orbit_distribution:
+            data = go_orbit_distribution[species]
+            # go_class = "GO:0008150" # biological process
+            # go_class = "GO:0003674" # molecular function
+            # go_class = "GO:0005575" # Cellular Component
+            bio = [0] * len(mixed_orbits_list)
+            cel = [0] * len(mixed_orbits_list)
+            mol = [0] * len(mixed_orbits_list)
+
+            orbit_index_dict = {}
+            i = 0
+            for orbit in mixed_orbits_list:
+                orbit_index_dict[orbit] = i
+                i += 1
+
+            for entry in data:
+                if entry["go_type"] == "GO:0008150":
+                    bio[orbit_index_dict[int(entry["orbit"])]] = entry["count"]
+                elif entry["go_type"] == "GO:0003674":
+                    mol[orbit_index_dict[int(entry["orbit"])]] = entry["count"]
+                elif entry["go_type"] == "GO:0005575":
+                    cel[orbit_index_dict[int(entry["orbit"])]] = entry["count"]
+
+            x = np.arange(len(mixed_orbits_list))  # the label locations
+            width = 0.25  # the width of the bars
+
+            fig, ax = plt.subplots(figsize=(14, 6))
+
+            # Use orbit values directly for x-axis
+            ax.bar(mixed_orbits_list, bio, label="Biological", color="tab:blue")
+            ax.bar(
+                mixed_orbits_list,
+                mol,
+                bottom=bio,
+                label="Molecular",
+                color="tab:orange",
+            )
+            ax.bar(
+                mixed_orbits_list,
+                cel,
+                bottom=np.array(bio) + np.array(mol),
+                label="Cellular",
+                color="tab:green",
+            )
+
+            # Labels
+            ax.set_xlabel("Orbit")
+            ax.set_ylabel("Counts")
+            ax.set_title(f"{species} Mixed Orbit Counts Distribution")
+            ax.legend()
+
+            # Reduce x-tick clutter (optional)
+            ax.set_xticks(mixed_orbits_list[::3])  # Show every 2nd orbit label
+            ax.set_xticklabels(mixed_orbits_list[::3], fontsize=5)
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/{species}/sig_orbit/mixed_orbit_go_dist.pdf")
+
+    merger = PdfMerger()
+    for species in species_list:
+        pdf_path = f"{output_dir}/{species}/sig_orbit/mixed_orbit_go_dist.pdf"
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+    merger.write(f"{output_dir}/species_wide/mixed_orbit_go_dist.pdf")
 
 
 def get_mixed_orbit_list():
@@ -938,7 +1029,7 @@ def get_mixed_orbit_list():
 def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["fly"]
+    # species_list = ["cerevisiae"]
 
     output_dir = "stats/output"
 
