@@ -822,8 +822,55 @@ def get_go_network(path):
     return G
 
 
-def analyze_go_enrichment(species_list):
+def get_biased_go_terms(stress_proteins):
+
+    return list()
+
+
+def analyze_go_enrichment(species_list, species_protein_id_dict):
     mixed_orbits_list = get_mixed_orbit_list()
+    go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
+
+    stress_proteins_per_species = {}
+    removed_go_terms = {}
+    for species in species_list:
+        for go_class in go_class_list:
+            fdr_dist_data = []
+            stress_proteins_per_species[species] = []
+            removed_go_terms[f"{species}_{go_class}"] = []
+
+            stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
+            stress_proteins_list = []
+            with open(stress_dir, "r") as file:
+                reader = csv.reader(file, delimiter="\t")
+                next(reader)
+                for line in reader:
+                    stress_proteins_list.append(line[0])
+
+            gene_list = (",".join(stress_proteins_list),)
+            query_params = build_query_params(
+                gene_list,
+                species_txid[species],
+                go_class,
+                "FISHER",
+                "FDR",
+                "NONE",
+            )
+            results = call_panther_api(query_params)
+            parsed_results = parse_results(results)
+
+            for entry in parsed_results:
+                fdr_dist_data.append(
+                    {"fdr": entry["fdr"], "species": species, "go_class": go_class}
+                )
+
+            top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
+
+            for hit in top_hits:
+                removed_go_terms[f"{species}_{go_class}"].append(hit["term_id"])
+            print(
+                f"removed {len(removed_go_terms[f"{species}_{go_class}"])} for {species} {go_class}"
+            )
 
     go_enrichment_files_list = [
         "go_enrichment_GO:0003674.txt",
@@ -854,19 +901,22 @@ def analyze_go_enrichment(species_list):
                         go_id = row[1]
                         go_name = row[2]
 
-                        if go_id not in go_id_to_name:
-                            go_id_to_name[go_id] = go_name
+                        if (
+                            go_id not in removed_go_terms[f"{species}_{go_type}"]
+                        ):  # remove go term in biased list
+                            if go_id not in go_id_to_name:
+                                go_id_to_name[go_id] = go_name
 
-                        key = f"{species}_{go_type}_{orbit}"
-                        if key not in results:
-                            results[key] = []
-                            node_attributes_dict[key] = {}
-                        results[key].append(go_id)
-                        node_attributes_dict[key][go_id] = row
+                            key = f"{species}_{go_type}_{orbit}"
+                            if key not in results:
+                                results[key] = []
+                                node_attributes_dict[key] = {}
+                            results[key].append(go_id)
+                            node_attributes_dict[key][go_id] = row
 
-                        if f"{species}_{go_type}" not in mixed_orbits_summary:
-                            mixed_orbits_summary[f"{species}_{go_type}"] = []
-                        mixed_orbits_summary[f"{species}_{go_type}"].append(row)
+                            if f"{species}_{go_type}" not in mixed_orbits_summary:
+                                mixed_orbits_summary[f"{species}_{go_type}"] = []
+                            mixed_orbits_summary[f"{species}_{go_type}"].append(row)
 
     go_orbit_distribution = {}
 
@@ -879,7 +929,6 @@ def analyze_go_enrichment(species_list):
         ]
         for file in file_paths:
             if os.path.exists(file):
-                print("deleted")
                 os.remove(file)
 
     for key in results:
@@ -934,6 +983,7 @@ def analyze_go_enrichment(species_list):
                         ]
                     ]
                 )
+            f.close()
 
         if species not in go_orbit_distribution:
             go_orbit_distribution[species] = []
@@ -1018,10 +1068,10 @@ def analyze_go_enrichment(species_list):
 
 def get_mixed_orbit_list():
     result = []
-    result.extend(list(range(2, 62)))
-    result.extend(list(range(79, 113)))
-    result.extend(list(range(113, 187)))
-    result.extend(list(range(187, 244)))
+    result.extend(list(range(3, 63)))
+    result.extend(list(range(80, 114)))
+    result.extend(list(range(114, 188)))
+    result.extend(list(range(188, 245)))
 
     return result
 
@@ -1035,6 +1085,8 @@ def main():
 
     go_enrichment_data = False
 
+    species_protein_id = {}
+
     if not go_enrichment_data:
         fdr_dist_data = []
 
@@ -1043,8 +1095,8 @@ def main():
             input_ppi = f"data/{species}_ppi.csv"
             input_reg = f"data/{species}_reg.csv"
             stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
-            protein_id, G, G_prime, graphlet_config = initialize_graphlet_data(
-                input_ppi, input_reg
+            species_protein_id[species], G, G_prime, graphlet_config = (
+                initialize_graphlet_data(input_ppi, input_reg)
             )
 
             (
@@ -1068,23 +1120,23 @@ def main():
 
             # significance orbit stats
 
-            stress_proteins_list = get_stress_proteins(protein_id, stress_dir, "\t")
+            # stress_proteins_list = get_stress_proteins(species_protein_id[species], stress_dir, "\t")
 
-            fdr_dist_data.extend(
-                analyze_stress_proteins(
-                    three_node_orbit_protein_data,
-                    three_node_orbit_id,
-                    stress_proteins_list,
-                    protein_id,
-                    species,
-                    output_dir,
-                    node_orbit_arr,
-                )
-            )
+            # fdr_dist_data.extend(
+            #     analyze_stress_proteins(
+            #         three_node_orbit_protein_data,
+            #         three_node_orbit_id,
+            #         stress_proteins_list,
+            #         species_protein_id[species],
+            #         species,
+            #         output_dir,
+            #         node_orbit_arr,
+            #     )
+            # )
 
         merge_pdfs(output_dir, species_list)
 
-    analyze_go_enrichment(species_list)
+    analyze_go_enrichment(species_list, species_protein_id)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
