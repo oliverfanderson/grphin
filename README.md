@@ -6,7 +6,7 @@ GRPhIN takes as input (1) an undirected PPI network and (2) a directed regulator
 
 ## Usage
 1. Install and activate the GRPhIN conda environment in the root directory with `conda env create -f environment.yml` and `conda activate grphin`.
-2. To run the GRPhIN orbit and graphlet counting algorithm on the B. subtilis oxidative stress network, run the `grphin.py` script with `python3 grphin.py -u data/oxidative_stress/txid224038/stress_ppi.csv -d data/oxidative_stress/txid224038/stress_reg.csv -o out_dir/`.
+2. To run the GRPhIN orbit and graphlet counting algorithm on the *B. subtilis* oxidative stress network, run the `grphin.py` script with `python3 grphin.py -u data/oxidative_stress/txid224038/stress_ppi.csv -d data/oxidative_stress/txid224038/stress_reg.csv -o out_dir/`.
 
 ## Directories
 - **`data/`** – Contains raw data files for case studies.
