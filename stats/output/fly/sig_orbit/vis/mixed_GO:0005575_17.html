@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "expected": "42.10288691122206", "fdr": "1.2562711285063107e-05", "fold_enrichment": "1.6625938299100882", "id": "GO:0043227", "label": "membrane-bounded organelle", "number_in_list": "70", "number_in_reference": "5388", "orbit": "17", "pValue": "7.79687279135026e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "40.52441936184068", "fdr": "7.325267439385835e-06", "fold_enrichment": "1.7026770793161075", "id": "GO:0043231", "label": "intracellular membrane-bounded organelle", "number_in_list": "69", "number_in_reference": "5186", "orbit": "17", "pValue": "3.4097443472703654e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "4.524419361840677", "fdr": "0.0002767558372512939", "fold_enrichment": "3.757388217232777", "id": "GO:0031967", "label": "organelle envelope", "number_in_list": "17", "number_in_reference": "579", "orbit": "17", "pValue": "2.3617643209963015e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "3.4460603429563705", "fdr": "9.51646297721538e-06", "fold_enrichment": "4.933169564121945", "id": "GO:0005740", "label": "mitochondrial envelope", "number_in_list": "17", "number_in_reference": "441", "orbit": "17", "pValue": "5.167978342940857e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.01562839157803343", "fdr": "0.004104491301045679", "fold_enrichment": "127.97222222222221", "id": "GO:0150005", "label": "enzyme activator complex", "number_in_list": "2", "number_in_reference": "2", "orbit": "17", "pValue": "6.050064757165857e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.01562839157803343", "fdr": "0.0038992667359933945", "fold_enrichment": "127.97222222222221", "id": "GO:0044796", "label": "DNA polymerase processivity factor complex", "number_in_list": "2", "number_in_reference": "2", "orbit": "17", "pValue": "6.050064757165857e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.4380290861732146", "fdr": "0.0022928789643637767", "fold_enrichment": "4.511841168091168", "id": "GO:0019866", "label": "organelle inner membrane", "number_in_list": "11", "number_in_reference": "312", "orbit": "17", "pValue": "3.201848049538245e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "2.375515519861081", "fdr": "0.0019124255394456521", "fold_enrichment": "4.630573830409356", "id": "GO:0005743", "label": "mitochondrial inner membrane", "number_in_list": "11", "number_in_reference": "304", "orbit": "17", "pValue": "2.5222059092766552e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.7657911873236379", "fdr": "0.00013472707013804477", "fold_enrichment": "10.44671201814059", "id": "GO:0042579", "label": "microbody", "number_in_list": "8", "number_in_reference": "98", "orbit": "17", "pValue": "9.406855168676517e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.7657911873236379", "fdr": "0.00012125436312424029", "fold_enrichment": "10.44671201814059", "id": "GO:0005777", "label": "peroxisome", "number_in_list": "8", "number_in_reference": "98", "orbit": "17", "pValue": "9.406855168676517e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "75.61797265031473", "fdr": "4.323045382498079e-06", "fold_enrichment": "1.3224369352301564", "id": "GO:0110165", "label": "cellular anatomical structure", "number_in_list": "100", "number_in_reference": "9677", "orbit": "17", "pValue": "1.6768989070977807e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.16409811156935097", "fdr": "0.001534646288257358", "fold_enrichment": "24.375661375661377", "id": "GO:0000407", "label": "phagophore assembly site", "number_in_list": "4", "number_in_reference": "21", "orbit": "17", "pValue": "1.904913934221701e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "54.199261992619924", "fdr": "5.6932075892627575e-11", "fold_enrichment": "1.678989651416122", "id": "GO:0005622", "label": "intracellular anatomical structure", "number_in_list": "91", "number_in_reference": "6936", "orbit": "17", "pValue": "1.7667052255276207e-13", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "38.1957890167137", "fdr": "8.633879812798921e-18", "fold_enrichment": "2.251557101291144", "id": "GO:0005737", "label": "cytoplasm", "number_in_list": "86", "number_in_reference": "4888", "orbit": "17", "pValue": "6.698122430410335e-21", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "8.681571521597569", "fdr": "1.1373924133810925e-13", "fold_enrichment": "4.492274227422742", "id": "GO:0005829", "label": "cytosol", "number_in_list": "39", "number_in_reference": "1111", "orbit": "17", "pValue": "1.7647671270459155e-16", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "46.3772520078142", "fdr": "0.00045665243839896014", "fold_enrichment": "1.5093606664794532", "id": "GO:0043226", "label": "organelle", "number_in_list": "70", "number_in_reference": "5935", "orbit": "17", "pValue": "5.314031478653531e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "45.48643368786629", "fdr": "0.00048667507374931595", "fold_enrichment": "1.5169358071350856", "id": "GO:0043229", "label": "intracellular organelle", "number_in_list": "69", "number_in_reference": "5821", "orbit": "17", "pValue": "5.28584253878233e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "8.314304319513782", "fdr": "8.063146427380791e-13", "fold_enrichment": "4.450161862990811", "id": "GO:0005739", "label": "mitochondrion", "number_in_list": "37", "number_in_reference": "1064", "orbit": "17", "pValue": "1.876605064557205e-15", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "3.1178641198176686", "fdr": "0.00028305811022770954", "fold_enrichment": "4.4902534113060435", "id": "GO:0031966", "label": "mitochondrial membrane", "number_in_list": "14", "number_in_reference": "399", "orbit": "17", "pValue": "2.6351414450989253e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.01562839157803343", "fdr": "0.0037135873676127566", "fold_enrichment": "127.97222222222221", "id": "GO:0043626", "label": "PCNA complex", "number_in_list": "2", "number_in_reference": "2", "orbit": "17", "pValue": "6.050064757165857e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "0.039070978945083566", "fdr": "0.00045492030262684127", "fold_enrichment": "76.78333333333333", "id": "GO:0008074", "label": "guanylate cyclase complex, soluble", "number_in_list": "3", "number_in_reference": "5", "orbit": "17", "pValue": "4.588024774359144e-06", "plus_minus": "+", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "GO:0043227", "to": "GO:0043231", "width": 1}, {"arrows": "to", "from": "GO:0031967", "to": "GO:0005740", "width": 1}, {"arrows": "to", "from": "GO:0150005", "to": "GO:0044796", "width": 1}, {"arrows": "to", "from": "GO:0019866", "to": "GO:0005743", "width": 1}, {"arrows": "to", "from": "GO:0042579", "to": "GO:0005777", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0000407", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005622", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005737", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005829", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0031967", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0043226", "width": 1}, {"arrows": "to", "from": "GO:0043226", "to": "GO:0043227", "width": 1}, {"arrows": "to", "from": "GO:0043226", "to": "GO:0043229", "width": 1}, {"arrows": "to", "from": "GO:0043231", "to": "GO:0005739", "width": 1}, {"arrows": "to", "from": "GO:0043231", "to": "GO:0042579", "width": 1}, {"arrows": "to", "from": "GO:0031966", "to": "GO:0005743", "width": 1}, {"arrows": "to", "from": "GO:0043229", "to": "GO:0043231", "width": 1}, {"arrows": "to", "from": "GO:0044796", "to": "GO:0043626", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

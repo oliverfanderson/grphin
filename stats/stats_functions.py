@@ -15,6 +15,7 @@ from PyPDF2 import PdfMerger
 from pyvis.network import Network
 import networkx as nx
 import webbrowser
+from matplotlib_venn import venn3
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -813,8 +814,8 @@ def get_go_network(path):
                 G.add_node(g1)
             if not G.has_node(g2):
                 G.add_node(g2)
-            if not G.has_edge(g1, g2):
-                G.add_edge(g2, g1)
+            if not G.has_edge(g2, g1):
+                G.add_edge(g2, g1)  # direction goes from general to specific
             # if i == 10:
             #     break
             i += 1
@@ -831,46 +832,47 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
     mixed_orbits_list = get_mixed_orbit_list()
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
 
-    stress_proteins_per_species = {}
-    removed_go_terms = {}
-    for species in species_list:
-        for go_class in go_class_list:
-            fdr_dist_data = []
-            stress_proteins_per_species[species] = []
-            removed_go_terms[f"{species}_{go_class}"] = []
+    # This does the bias removing which we dont want to do anymore
+    # stress_proteins_per_species = {}
+    # removed_go_terms = {}
+    # for species in species_list:
+    #     for go_class in go_class_list:
+    #         fdr_dist_data = []
+    #         stress_proteins_per_species[species] = []
+    #         removed_go_terms[f"{species}_{go_class}"] = []
 
-            stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
-            stress_proteins_list = []
-            with open(stress_dir, "r") as file:
-                reader = csv.reader(file, delimiter="\t")
-                next(reader)
-                for line in reader:
-                    stress_proteins_list.append(line[0])
+    #         stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
+    #         stress_proteins_list = []
+    #         with open(stress_dir, "r") as file:
+    #             reader = csv.reader(file, delimiter="\t")
+    #             next(reader)
+    #             for line in reader:
+    #                 stress_proteins_list.append(line[0])
 
-            gene_list = (",".join(stress_proteins_list),)
-            query_params = build_query_params(
-                gene_list,
-                species_txid[species],
-                go_class,
-                "FISHER",
-                "FDR",
-                "NONE",
-            )
-            results = call_panther_api(query_params)
-            parsed_results = parse_results(results)
+    #         gene_list = (",".join(stress_proteins_list),)
+    #         query_params = build_query_params(
+    #             gene_list,
+    #             species_txid[species],
+    #             go_class,
+    #             "FISHER",
+    #             "FDR",
+    #             "NONE",
+    #         )
+    #         results = call_panther_api(query_params)
+    #         parsed_results = parse_results(results)
 
-            for entry in parsed_results:
-                fdr_dist_data.append(
-                    {"fdr": entry["fdr"], "species": species, "go_class": go_class}
-                )
+    #         for entry in parsed_results:
+    #             fdr_dist_data.append(
+    #                 {"fdr": entry["fdr"], "species": species, "go_class": go_class}
+    #             )
 
-            top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
+    #         top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
 
-            for hit in top_hits:
-                removed_go_terms[f"{species}_{go_class}"].append(hit["term_id"])
-            print(
-                f"removed {len(removed_go_terms[f"{species}_{go_class}"])} for {species} {go_class}"
-            )
+    #         for hit in top_hits:
+    #             removed_go_terms[f"{species}_{go_class}"].append(hit["term_id"])
+    #         print(
+    #             f"removed {len(removed_go_terms[f"{species}_{go_class}"])} for {species} {go_class}"
+    #         )
 
     go_enrichment_files_list = [
         "go_enrichment_GO:0003674.txt",
@@ -901,22 +903,19 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
                         go_id = row[1]
                         go_name = row[2]
 
-                        if (
-                            go_id not in removed_go_terms[f"{species}_{go_type}"]
-                        ):  # remove go term in biased list
-                            if go_id not in go_id_to_name:
-                                go_id_to_name[go_id] = go_name
+                        if go_id not in go_id_to_name:
+                            go_id_to_name[go_id] = go_name
 
-                            key = f"{species}_{go_type}_{orbit}"
-                            if key not in results:
-                                results[key] = []
-                                node_attributes_dict[key] = {}
-                            results[key].append(go_id)
-                            node_attributes_dict[key][go_id] = row
+                        key = f"{species}_{go_type}_{orbit}"
+                        if key not in results:
+                            results[key] = []
+                            node_attributes_dict[key] = {}
+                        results[key].append(go_id)
+                        node_attributes_dict[key][go_id] = row
 
-                            if f"{species}_{go_type}" not in mixed_orbits_summary:
-                                mixed_orbits_summary[f"{species}_{go_type}"] = []
-                            mixed_orbits_summary[f"{species}_{go_type}"].append(row)
+                        if f"{species}_{go_type}" not in mixed_orbits_summary:
+                            mixed_orbits_summary[f"{species}_{go_type}"] = []
+                        mixed_orbits_summary[f"{species}_{go_type}"].append(row)
 
     go_orbit_distribution = {}
 
@@ -931,74 +930,152 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
             if os.path.exists(file):
                 os.remove(file)
 
-    for key in results:
-        filename = "_".join(key.split("_")[1:3])
-        species = key.split("_")[0]
-        go_type = filename.split("_")[0]
-        orbit = key.split("_")[-1]
-        output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
-        H = nx.induced_subgraph(G, results[key])
+    # generate focused analysis on G25
 
-        nt = Network("1000px", "1000px")
+    if False:
 
-        # for edge in H.edges():
-        #     nt.add_edge(edge[0], edge[1], arrows="to")
+        species_orbit = ["cerevisiae_114", "cerevisiae_115", "cerevisiae_116"]
+        # species_orbit = ["cerevisiae_114"]
 
-        go_attributes = node_attributes_dict[f"{species}_{go_type}_{orbit}"]
-        nt.from_nx(H)
+        analyze_graph = {}
+        id_label_dict = {}
+        red_nodes = []
+        for key in results:
+            filename = "_".join(key.split("_")[1:3])
+            species = key.split("_")[0]
+            go_type = filename.split("_")[0]
+            orbit = key.split("_")[-1]
+            output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
+            H = nx.induced_subgraph(G, results[key])
 
-        write_type = ""
-        if os.path.exists(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}"):
-            write_type = "a"
-        else:
-            write_type = "w"
-        with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type) as f:
-            writer = csv.writer(f, delimiter="\t")
-            for node in nt.nodes:
-                go_id = node["id"]
-                go_name = go_id_to_name.get(go_id, go_id)
-                node["label"] = go_name
-                node["orbit"] = go_attributes[node["id"]][0]
-                node["pValue"] = go_attributes[node["id"]][3]
-                node["fdr"] = go_attributes[node["id"]][4]
-                node["fold_enrichment"] = go_attributes[node["id"]][5]
-                node["expected"] = go_attributes[node["id"]][6]
-                node["number_in_list"] = go_attributes[node["id"]][7]
-                node["number_in_reference"] = go_attributes[node["id"]][8]
-                node["plus_minus"] = go_attributes[node["id"]][9]
+            nt = Network("1000px", "1000px")
 
-                writer.writerows(
-                    [
+            # for edge in H.edges():
+            #     nt.add_edge(edge[0], edge[1], arrows="to")
+
+            go_attributes = node_attributes_dict[f"{species}_{go_type}_{orbit}"]
+            nt.from_nx(H)
+
+            write_type = ""
+            if os.path.exists(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}"):
+                write_type = "a"
+            else:
+                write_type = "w"
+            with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type) as f:
+                writer = csv.writer(f, delimiter="\t")
+                for node in nt.nodes:
+                    go_id = node["id"]
+                    go_name = go_id_to_name.get(go_id, go_id)
+                    node["label"] = go_name
+                    node["orbit"] = go_attributes[node["id"]][0]
+                    node["pValue"] = go_attributes[node["id"]][3]
+                    node["fdr"] = go_attributes[node["id"]][4]
+                    node["fold_enrichment"] = go_attributes[node["id"]][5]
+                    node["expected"] = go_attributes[node["id"]][6]
+                    node["number_in_list"] = go_attributes[node["id"]][7]
+                    node["number_in_reference"] = go_attributes[node["id"]][8]
+                    node["plus_minus"] = go_attributes[node["id"]][9]
+                    id_label_dict[go_id] = go_name
+
+                    writer.writerows(
                         [
-                            int(node["orbit"]),
-                            go_id,
-                            node["label"],
-                            node["pValue"],
-                            node["fdr"],
-                            node["fold_enrichment"],
-                            node["expected"],
-                            node["number_in_list"],
-                            node["number_in_reference"],
-                            node["plus_minus"],
+                            [
+                                int(node["orbit"]),
+                                go_id,
+                                node["label"],
+                                node["pValue"],
+                                node["fdr"],
+                                node["fold_enrichment"],
+                                node["expected"],
+                                node["number_in_list"],
+                                node["number_in_reference"],
+                                node["plus_minus"],
+                            ]
                         ]
-                    ]
-                )
-            f.close()
+                    )
+                f.close()
 
-        if species not in go_orbit_distribution:
-            go_orbit_distribution[species] = []
-        go_orbit_distribution[species].append(
-            {"orbit": int(orbit), "go_type": go_type, "count": len(list(H.nodes()))}
-        )
+            if species not in go_orbit_distribution:
+                go_orbit_distribution[species] = []
+            go_orbit_distribution[species].append(
+                {"orbit": int(orbit), "go_type": go_type, "count": len(list(H.nodes()))}
+            )
 
+            for edge in nt.edges:
+                edge["arrows"] = "to"
+
+            if f"{species}_{orbit}" in species_orbit and go_type == "GO:0008150":
+                red_nodes.extend(
+                    list(nx.dfs_postorder_nodes(H, source="GO:0006979"))
+                )  # can be changed to do dfs on multiple sources
+                # for node in nt.nodes:
+                #     if node["id"] in dfs_nodes:
+                #         node["color"] = "red"
+
+                analyze_graph[f"{species}_{orbit}"] = [H, nt]
+
+            nt.show(output_path, notebook=False)
+            abs_path = os.path.abspath(output_path)
+            # print(f"Visualization saved to: {abs_path}")
+            # # webbrowser.open(f"file://{abs_path}")
+            print()
+
+        edge_overlap_dict = {}
+        node_overlap_dict = {}
+
+        combination_set = set()
+        for key in analyze_graph:
+            # print(key)
+            orbit = int(key.split("_")[-1])
+            H = analyze_graph[key][0]
+            nt = analyze_graph[key][1]
+
+            for edge in H.edges:
+                if edge not in edge_overlap_dict:
+                    edge_overlap_dict[edge] = []
+                edge_overlap_dict[edge].append(orbit)
+
+            for node in H.nodes:
+                if node not in node_overlap_dict:
+                    node_overlap_dict[node] = []
+                node_overlap_dict[node].append(orbit)
+
+        # for key in edge_overlap_dict:
+        #     print(key, edge_overlap_dict[key])
+
+        for key in node_overlap_dict:
+            print(key, node_overlap_dict[key])
+            combination_set.add(str(node_overlap_dict[key]))
+
+        print(combination_set)
+
+        edge_lists = []
+        red_nodes = list(set(red_nodes))
+        print(red_nodes)
+        for key in analyze_graph:
+            edge_lists.extend(analyze_graph[key][0].edges)
+
+        combined_edge_list = list(set(edge_lists))
+        print(len(edge_lists), len(combined_edge_list))
+        # print(combined_edge_list)
+        P = nx.from_edgelist(list(set(edge_lists)))
+        nt = Network("1000px", "1000px")
+        nt.from_nx(P)
+
+        dfs_nodes = list(
+            nx.dfs_postorder_nodes(P, source="GO:0006979")
+        )  # can be changed to do dfs on multiple sources
         for edge in nt.edges:
-            edge["arrows"] = "from"
+            edge["arrows"] = "to"
+        for node in nt.nodes:
+            if node["id"] in red_nodes:
+                node["color"] = "red"
+            else:
+                node['color'] = get_node_color(node_overlap_dict[node["id"]])
+            node["label"] = id_label_dict[node["id"]]
+        
 
-        nt.show(output_path, notebook=False)
-        abs_path = os.path.abspath(output_path)
-        # print(f"Visualization saved to: {abs_path}")
-        # # webbrowser.open(f"file://{abs_path}")
-        print()
+        nt.show("stats/output/combined.html", notebook=False)
 
     for species in species_list:
         if species in go_orbit_distribution:
@@ -1024,12 +1101,8 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
                 elif entry["go_type"] == "GO:0005575":
                     cel[orbit_index_dict[int(entry["orbit"])]] = entry["count"]
 
-            x = np.arange(len(mixed_orbits_list))  # the label locations
-            width = 0.25  # the width of the bars
-
             fig, ax = plt.subplots(figsize=(14, 6))
 
-            # Use orbit values directly for x-axis
             ax.bar(mixed_orbits_list, bio, label="Biological", color="tab:blue")
             ax.bar(
                 mixed_orbits_list,
@@ -1046,14 +1119,11 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
                 color="tab:green",
             )
 
-            # Labels
             ax.set_xlabel("Orbit")
             ax.set_ylabel("Counts")
             ax.set_title(f"{species} Mixed Orbit Counts Distribution")
             ax.legend()
-
-            # Reduce x-tick clutter (optional)
-            ax.set_xticks(mixed_orbits_list[::3])  # Show every 2nd orbit label
+            ax.set_xticks(mixed_orbits_list[::3])
             ax.set_xticklabels(mixed_orbits_list[::3], fontsize=5)
             plt.tight_layout()
             plt.savefig(f"{output_dir}/{species}/sig_orbit/mixed_orbit_go_dist.pdf")
@@ -1072,8 +1142,20 @@ def get_mixed_orbit_list():
     result.extend(list(range(80, 114)))
     result.extend(list(range(114, 188)))
     result.extend(list(range(188, 245)))
-
+    print("MIXED GRAPHLETS", len(result))
     return result
+
+
+def get_node_color(list_combo):
+    node_color = {
+        "[116]": "pink",
+        "[114, 115, 116]": "blue",
+        "[114]": "green",
+        "[114, 116]": "purple",
+        "[115]": "black",
+        "[114, 115]": "grey",
+    }
+    return node_color[str(list_combo)]
 
 
 def main():
