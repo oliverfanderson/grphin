@@ -115,6 +115,78 @@ def plot_three_node_graphlet_distribution(
     return None
 
 
+def plot_three_node_non_log_graphlet_distribution(
+    three_node_graphlet_count,
+    three_node_graphlet_namespace,
+    three_node_graphlet_id,
+    species,
+    output_dir,
+):
+    print("plotting graphlet distribution")
+    # we onit G1 qand G24
+    hist_data = []
+    # x_label = [*range(1, len(three_node_graphlet_id) + 1 - 2, 1)]
+    x_label = []
+    x_label.extend(list(range(2, 24)))
+    x_label.extend(list(range(25, len(three_node_graphlet_id) + 1)))
+
+    i = 1
+    omit_graplet_list = [1, 24]
+    for graphlet in three_node_graphlet_id:
+        if i not in omit_graplet_list:
+            if graphlet in three_node_graphlet_count:
+                hist_data.append(three_node_graphlet_count[graphlet])
+            else:
+                hist_data.append(0)
+        i += 1
+    # hist_data = [value if value > 0 else 0.1 for value in hist_data]
+    # print(hist_data)
+    # print(len(hist_data), len(x_label))
+
+    # omit coloring top graphlets in red
+    # n = 10
+    # top_n_graphlets = sorted(
+    #     three_node_graphlet_count.items(), key=lambda item: item[1], reverse=True
+    # )[:n]
+    # top_n_graphlet_set = set([g[0] for g in top_n_graphlets])
+
+    # bar_colors = [
+    #     "red" if graphlet in top_n_graphlet_set else "skyblue"
+    #     for graphlet in three_node_graphlet_id
+    # ]
+
+    fig = plt.figure(figsize=(14, 6))
+    plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
+    # plt.yscale("log")
+    plt.title(f"{species} Graphlet Count Distribution", fontsize=16)
+    plt.xlabel("Graphlet Index", fontsize=14)
+    plt.ylabel("Count", fontsize=14)
+    plt.xticks(x_label[::2], fontsize=12)
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/{species}/three_node_graphlet_dist_non_log.pdf")
+    plt.close()
+
+    # Save top graphlet counts
+    sorted_graphlet_dict = {
+        key: value
+        for key, value in sorted(
+            three_node_graphlet_count.items(), key=lambda item: item[1], reverse=True
+        )
+    }
+
+    with open(f"{output_dir}/{species}/top_graphlet_counts_non_log.csv", "w") as f:
+        f.write(f"graphlet\tid\tcount\n")
+        i = 1
+        for graphlet in sorted_graphlet_dict:
+            if i not in omit_graplet_list:
+                f.write(
+                    f"{three_node_graphlet_namespace[graphlet]}\t{three_node_graphlet_id[graphlet]}\t{sorted_graphlet_dict[graphlet]}\n"
+                )
+            i += 1
+    return None
+
+
 def read_output_files(output_dir, species):
     three_node_graphlet_count = {}
     three_node_graphlet_namespace = {}
@@ -799,6 +871,13 @@ def merge_pdfs(output_dir, species_list):
             merger.append(pdf_path)
     merger.write(f"{output_dir}/species_wide/three_node_graphlet_dist.pdf")
 
+    merger = PdfMerger()
+    for species in species_list:
+        pdf_path = f"{output_dir}/{species}/three_node_graphlet_dist_non_log.pdf"
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+    merger.write(f"{output_dir}/species_wide/three_node_graphlet_dist_non_log.pdf")
+
 
 def get_go_network(path):
     G = nx.DiGraph()
@@ -961,7 +1040,9 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
                 write_type = "a"
             else:
                 write_type = "w"
-            with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type) as f:
+            with open(
+                f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type
+            ) as f:
                 writer = csv.writer(f, delimiter="\t")
                 for node in nt.nodes:
                     go_id = node["id"]
@@ -1071,9 +1152,8 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
             if node["id"] in red_nodes:
                 node["color"] = "red"
             else:
-                node['color'] = get_node_color(node_overlap_dict[node["id"]])
+                node["color"] = get_node_color(node_overlap_dict[node["id"]])
             node["label"] = id_label_dict[node["id"]]
-        
 
         nt.show("stats/output/combined.html", notebook=False)
 
@@ -1146,6 +1226,14 @@ def get_mixed_orbit_list():
     return result
 
 
+def get_mixed_graphlet_list():
+    result = []
+    result.extend(list(range(2, 23)))
+    result.extend(list(range(30, 92)))
+
+    return result
+
+
 def get_node_color(list_combo):
     node_color = {
         "[116]": "pink",
@@ -1156,6 +1244,58 @@ def get_node_color(list_combo):
         "[114, 115]": "grey",
     }
     return node_color[str(list_combo)]
+
+
+def get_graphlet_count_list(three_node_graphlet_id, three_node_graphlet_count):
+    result = []
+
+    for graphlet in three_node_graphlet_id:
+        if graphlet in three_node_graphlet_count:
+            result.append(three_node_graphlet_count[graphlet])
+
+    return result
+
+
+def species_wide_mixed_dist(species_list, species_graphlet_counts):
+
+    graphlet_len = len(species_graphlet_counts[0])
+
+    for graphlet_counts_list in species_graphlet_counts:
+        if len(graphlet_counts_list) != graphlet_len:
+            raise Exception("Length of species graphlet counts list is not ther same")
+
+    mixed_graphlet_list = get_mixed_graphlet_list()
+    print(mixed_graphlet_list)
+
+    species_mixed_non_mixed_graphlet_count = []
+    remove_graphlets = [1, 24]
+    for graphlet_counts_list in species_graphlet_counts:
+        i = 1
+        mixed_count = 0
+        non_mixed_count = 0
+        for graphlet in graphlet_counts_list:
+            if i not in remove_graphlets:
+                if i in mixed_graphlet_list:
+                    mixed_count += graphlet
+                else:
+                    non_mixed_count += graphlet
+            i += 1
+        species_mixed_non_mixed_graphlet_count.append((mixed_count, non_mixed_count))
+
+    for i in range(len(species_mixed_non_mixed_graphlet_count)):
+        print(species_list[i])
+        mixed_count = species_mixed_non_mixed_graphlet_count[i][0]
+        non_mixed_count = species_mixed_non_mixed_graphlet_count[i][1]
+        total_count = mixed_count + non_mixed_count
+        print("Mixed graphlet count = ", mixed_count)
+        print("Non-mixed graphlet count = ", non_mixed_count)
+        print(
+            "Mixed : Non-mixed percentage = ",
+            (mixed_count / total_count) * 100,
+            (non_mixed_count / total_count) * 100,
+        )
+        print()
+    return None
 
 
 def main():
@@ -1171,6 +1311,7 @@ def main():
 
     if not go_enrichment_data:
         fdr_dist_data = []
+        species_graphlet_counts = []
 
         for species in species_list:
             print(species)
@@ -1200,6 +1341,14 @@ def main():
                 output_dir,
             )
 
+            plot_three_node_non_log_graphlet_distribution(
+                three_node_graphlet_count,
+                three_node_graphlet_namespace,
+                three_node_graphlet_id,
+                species,
+                output_dir,
+            )
+
             # significance orbit stats
 
             # stress_proteins_list = get_stress_proteins(species_protein_id[species], stress_dir, "\t")
@@ -1216,9 +1365,19 @@ def main():
             #     )
             # )
 
+            graphlet_count_list = get_graphlet_count_list(
+                three_node_graphlet_id, three_node_graphlet_count
+            )
+
+            species_graphlet_counts.append(graphlet_count_list)
+
         merge_pdfs(output_dir, species_list)
 
-    analyze_go_enrichment(species_list, species_protein_id)
+    species_wide_mixed_dist(species_list, species_graphlet_counts)
+
+    # sys.exit()
+
+    # analyze_go_enrichment(species_list, species_protein_id)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
