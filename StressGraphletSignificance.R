@@ -29,6 +29,13 @@ txid6239_onetail_01 <- txid6239 %>% filter(Significance <= 0.01)
 txid7227_onetail_01 <- txid7227 %>% filter(Significance <= 0.01)
 txid559292_onetail_01 <- txid559292 %>% filter(Significance <= 0.01)
 
+# results for a one-tailed test at 0.01 significance
+txid224308_onetail_001 <- txid224308 %>% filter(Significance <= 0.001)
+txid7955_onetail_001 <- txid7955 %>% filter(Significance <= 0.001)
+txid6239_onetail_001 <- txid6239 %>% filter(Significance <= 0.001)
+txid7227_onetail_001 <- txid7227 %>% filter(Significance <= 0.001)
+txid559292_onetail_001 <- txid559292 %>% filter(Significance <= 0.001)
+
 # Get graphlets common to all 5 species
 matrix1 <- rbind(txid224308, txid7955) %>% 
   rbind(txid6239) %>% rbind(txid7227) %>% rbind(txid559292)
@@ -36,63 +43,63 @@ matrix1 <- rbind(txid224308, txid7955) %>%
 all_5_sp <- matrix1 %>% count(Graphlet) %>% filter(n > 4)
 
 # Generate a matrix to count occurences of significance graphlets across species
-sig_matrix1 <- rbind(txid224308_onetail, txid7955_onetail) %>% 
-  rbind(txid6239_onetail) %>% rbind(txid7227_onetail) %>% rbind(txid559292_onetail)
+sig_matrix1 <- rbind(txid224308_onetail_01, txid7955_onetail_01) %>% 
+  rbind(txid6239_onetail_01) %>% rbind(txid7227_onetail_01) %>% rbind(txid559292_onetail_01)
 
-sig_matrix2 <- left_join(txid224308_onetail, txid7955_onetail, by = 'Graphlet') %>%
-  left_join(txid6239_onetail, by = 'Graphlet') %>% 
-  left_join(txid7227_onetail, by = 'Graphlet') %>%
-  left_join(txid559292_onetail, by = 'Graphlet')
+sig_matrix2 <- left_join(txid224308_onetail_01, txid7955_onetail_01, by = 'Graphlet') %>%
+  left_join(txid6239_onetail_01, by = 'Graphlet') %>% 
+  left_join(txid7227_onetail_01, by = 'Graphlet') %>%
+  left_join(txid559292_onetail_01, by = 'Graphlet')
 
 sig_3_plus_sp <- sig_matrix1 %>% count(Graphlet) %>% filter(n > 2)
 
 # Get the number of unique graphlets found to be significant
-length(unique(c(txid224308_onetail$Graphlet, txid7955_onetail$Graphlet, txid6239_onetail$Graphlet, txid7227_onetail$Graphlet, txid559292_onetail$Graphlet)))
+length(unique(c(txid224308_onetail_01$Graphlet, txid7955_onetail_01$Graphlet, txid6239_onetail_01$Graphlet, txid7227_onetail_01$Graphlet, txid559292_onetail_01$Graphlet)))
 
 # Print out the species that the common graphlets are found in
 for (g in sig_3_plus_sp$Graphlet) {
-  if (g %in% txid224308_onetail$Graphlet) {
+  if (g %in% txid224308_onetail_01$Graphlet) {
     print(paste(g, "found in txid224308"))
   } else {print("not found")}
 }
 
 for (g in sig_3_plus_sp$Graphlet) {
-  if (g %in% txid7955_onetail$Graphlet) {
+  if (g %in% txid7955_onetail_01$Graphlet) {
     print(paste(g, "found in txid7955"))
   } else {print("not found")}
 }
 
 for (g in sig_3_plus_sp$Graphlet) {
-  if (g %in% txid6239_onetail$Graphlet) {
+  if (g %in% txid6239_onetail_01$Graphlet) {
     print(paste(g, "found in txid6239"))
   } else {print("not found")}
 }
 
 for (g in sig_3_plus_sp$Graphlet) {
-  if (g %in% txid7227_onetail$Graphlet) {
+  if (g %in% txid7227_onetail_01$Graphlet) {
     print(paste(g, "found in txid7227"))
   } else {print("not found")}
 }
 
 for (g in sig_3_plus_sp$Graphlet) {
-  if (g %in% txid559292_onetail$Graphlet) {
+  if (g %in% txid559292_onetail_01$Graphlet) {
     print(paste(g, "found in txid559292"))
   } else {print("not found")}
 }
 
 # Get the 3 most frequent significant graphlets for each species
-txid224308_onetail %>% sort_by(desc(txid224308_onetail$Count)) %>% head(3)
-txid6239_onetail %>% sort_by(desc(txid6239_onetail$Count)) %>% head(3)
-txid7227_onetail %>% sort_by(desc(txid7227_onetail$Count)) %>% head(3)
-txid7955_onetail %>% sort_by(desc(txid7955_onetail$Count)) %>% head(3)
-txid559292_onetail %>% sort_by(desc(txid559292_onetail$Count)) %>% head(3)
+txid224308_onetail_01 %>% sort_by(desc(txid224308_onetail_01$Count)) %>% head(3)
+txid6239_onetail_01 %>% sort_by(desc(txid6239_onetail_01$Count)) %>% head(3)
+txid7227_onetail_01 %>% sort_by(desc(txid7227_onetail_01$Count)) %>% head(3)
+txid7955_onetail_01 %>% sort_by(desc(txid7955_onetail_01$Count)) %>% head(3)
+txid559292_onetail_01 %>% sort_by(desc(txid559292_onetail_01$Count)) %>% head(3)
 
 # Get most count of unique graphlest in most frequent
-top_3_most_common <- bind_rows(txid224308_onetail %>% sort_by(desc(txid224308_onetail$Count)) %>% head(3),
-          txid6239_onetail %>% sort_by(desc(txid6239_onetail$Count)) %>% head(3),
-          txid7227_onetail %>% sort_by(desc(txid7227_onetail$Count)) %>% head(3),
-          txid7955_onetail %>% sort_by(desc(txid7955_onetail$Count)) %>% head(3),
-          txid559292_onetail %>% sort_by(desc(txid559292_onetail$Count)) %>% head(3)
+top_3_most_common <- bind_rows(txid224308_onetail_01 %>% sort_by(desc(txid224308_onetail_01$Count)) %>% head(3),
+          txid6239_onetail_01 %>% sort_by(desc(txid6239_onetail_01$Count)) %>% head(3),
+          txid7227_onetail_01 %>% sort_by(desc(txid7227_onetail_01$Count)) %>% head(3),
+          txid7955_onetail_01 %>% sort_by(desc(txid7955_onetail_01$Count)) %>% head(3),
+          txid559292_onetail_01 %>% sort_by(desc(txid559292_onetail_01$Count)) %>% head(3)
 )
 
 # Create key to identify graphlets
@@ -208,11 +215,11 @@ graphlet_key <- tibble(
 )
 
 # Join key back to datasets
-txid224308_onetail <- inner_join(txid224308_onetail, graphlet_key)
-txid6239_onetail <- inner_join(txid6239_onetail, graphlet_key)
-txid559292_onetail <- inner_join(txid559292_onetail, graphlet_key)
-txid7227_onetail <- inner_join(txid7227_onetail, graphlet_key)
-txid7955_onetail <- inner_join(txid7955_onetail, graphlet_key)
+txid224308_onetail_01 <- inner_join(txid224308_onetail_01, graphlet_key)
+txid6239_onetail_01 <- inner_join(txid6239_onetail_01, graphlet_key)
+txid559292_onetail_01 <- inner_join(txid559292_onetail_01, graphlet_key)
+txid7227_onetail_01 <- inner_join(txid7227_onetail_01, graphlet_key)
+txid7955_onetail_01 <- inner_join(txid7955_onetail_01, graphlet_key)
 
 # Joining in common names to B. subtilis and D. rerio
 ## B. subtilis
