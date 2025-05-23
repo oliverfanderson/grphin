@@ -120,6 +120,7 @@ def plot_three_node_non_log_graphlet_distribution(
     three_node_graphlet_namespace,
     three_node_graphlet_id,
     species,
+    species_name,
     output_dir,
 ):
     print("plotting graphlet distribution")
@@ -158,7 +159,7 @@ def plot_three_node_non_log_graphlet_distribution(
     fig = plt.figure(figsize=(14, 6))
     plt.bar(x_label, hist_data, color="skyblue", edgecolor="black")
     # plt.yscale("log")
-    plt.title(f"{species} Graphlet Count Distribution", fontsize=16)
+    plt.title(f"$\\it{{{species_name}}}$ Graphlet Count Distribution", fontsize=16)
     plt.xlabel("Graphlet Index", fontsize=14)
     plt.ylabel("Count", fontsize=14)
     plt.xticks(x_label[::2], fontsize=12)
@@ -1234,6 +1235,12 @@ def get_mixed_graphlet_list():
     return result
 
 
+def get_line_graphlet_list():
+    result = []
+    result.extend(list(range(1, 30)))
+    return result
+
+
 def get_node_color(list_combo):
     node_color = {
         "[116]": "pink",
@@ -1256,7 +1263,7 @@ def get_graphlet_count_list(three_node_graphlet_id, three_node_graphlet_count):
     return result
 
 
-def species_wide_mixed_dist(species_list, species_graphlet_counts):
+def species_wide_mixed_dist(species_list, species_graphlet_counts, output_dir):
 
     graphlet_len = len(species_graphlet_counts[0])
 
@@ -1265,10 +1272,10 @@ def species_wide_mixed_dist(species_list, species_graphlet_counts):
             raise Exception("Length of species graphlet counts list is not ther same")
 
     mixed_graphlet_list = get_mixed_graphlet_list()
-    print(mixed_graphlet_list)
+    # print(mixed_graphlet_list)
 
     species_mixed_non_mixed_graphlet_count = []
-    remove_graphlets = [1, 24]
+    remove_graphlets = [1, 24]  # change depending on which graphlets to remove
     for graphlet_counts_list in species_graphlet_counts:
         i = 1
         mixed_count = 0
@@ -1282,19 +1289,57 @@ def species_wide_mixed_dist(species_list, species_graphlet_counts):
             i += 1
         species_mixed_non_mixed_graphlet_count.append((mixed_count, non_mixed_count))
 
-    for i in range(len(species_mixed_non_mixed_graphlet_count)):
-        print(species_list[i])
-        mixed_count = species_mixed_non_mixed_graphlet_count[i][0]
-        non_mixed_count = species_mixed_non_mixed_graphlet_count[i][1]
-        total_count = mixed_count + non_mixed_count
-        print("Mixed graphlet count = ", mixed_count)
-        print("Non-mixed graphlet count = ", non_mixed_count)
-        print(
-            "Mixed : Non-mixed percentage = ",
-            (mixed_count / total_count) * 100,
-            (non_mixed_count / total_count) * 100,
-        )
-        print()
+    with open(f"{output_dir}/species_wide/mixed_non_mixed_dist.txt", "w+") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerows([["species", "mixed_count", "non_mixed_count", "total_count"]])
+        for i in range(len(species_mixed_non_mixed_graphlet_count)):
+            mixed_count = species_mixed_non_mixed_graphlet_count[i][0]
+            non_mixed_count = species_mixed_non_mixed_graphlet_count[i][1]
+            total_count = mixed_count + non_mixed_count
+            writer.writerows(
+                [[species_list[i], mixed_count, non_mixed_count, total_count]]
+            )
+        f.close()
+    return None
+
+
+def species_wide_line_triangle_dist(species_list, species_graphlet_counts, output_dir):
+
+    graphlet_len = len(species_graphlet_counts[0])
+
+    for graphlet_counts_list in species_graphlet_counts:
+        if len(graphlet_counts_list) != graphlet_len:
+            raise Exception("Length of species graphlet counts list is not ther same")
+
+    line_graphlet_list = get_line_graphlet_list()
+    # print(mixed_graphlet_list)
+
+    species_line_triangle_graphlet_count = []
+    remove_graphlets = []  # remove or not
+    for graphlet_counts_list in species_graphlet_counts:
+        i = 1
+        line_count = 0
+        triangle_count = 0
+        for graphlet in graphlet_counts_list:
+            if i not in remove_graphlets:
+                if i in line_graphlet_list:
+                    line_count += graphlet
+                else:
+                    triangle_count += graphlet
+            i += 1
+        species_line_triangle_graphlet_count.append((line_count, triangle_count))
+
+    with open(f"{output_dir}/species_wide/line_triangle_dist.txt", "w+") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerows([["species", "line_count", "triangle_count", "total_count"]])
+        for i in range(len(species_line_triangle_graphlet_count)):
+            line_count = species_line_triangle_graphlet_count[i][0]
+            triangle_count = species_line_triangle_graphlet_count[i][1]
+            total_count = line_count + triangle_count
+            writer.writerows(
+                [[species_list[i], line_count, triangle_count, total_count]]
+            )
+        f.close()
     return None
 
 
@@ -1302,6 +1347,13 @@ def main():
     print("running stats")
     species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
     # species_list = ["cerevisiae"]
+    species_name_list = [
+        "B. subtilis",
+        "D. rerio",
+        "D. melanogaster",
+        "C. elegans",
+        "S. cerevisiae",
+    ]
 
     output_dir = "stats/output"
 
@@ -1313,7 +1365,7 @@ def main():
         fdr_dist_data = []
         species_graphlet_counts = []
 
-        for species in species_list:
+        for species, species_name in zip(species_list, species_name_list):
             print(species)
             input_ppi = f"data/{species}_ppi.csv"
             input_reg = f"data/{species}_reg.csv"
@@ -1346,6 +1398,7 @@ def main():
                 three_node_graphlet_namespace,
                 three_node_graphlet_id,
                 species,
+                species_name,
                 output_dir,
             )
 
@@ -1373,8 +1426,9 @@ def main():
 
         merge_pdfs(output_dir, species_list)
 
-    species_wide_mixed_dist(species_list, species_graphlet_counts)
+    species_wide_mixed_dist(species_list, species_graphlet_counts, output_dir)
 
+    species_wide_line_triangle_dist(species_list, species_graphlet_counts, output_dir)
     # sys.exit()
 
     # analyze_go_enrichment(species_list, species_protein_id)
