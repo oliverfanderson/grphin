@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import random
 import re
+import statistics
 import sys
 from matplotlib import pyplot as plt
 import numpy as np
@@ -16,6 +17,7 @@ from pyvis.network import Network
 import networkx as nx
 import webbrowser
 from matplotlib_venn import venn3
+from statistics import mean, median, mode
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -350,6 +352,20 @@ def analyze_stress_proteins(
         )
         # TODO: why do we do median instead of mean?
 
+    # stress_median_hist = []
+    # x_label = [x for x in range(1, len(orbit_stress_median_dict) + 1)]
+    # for orbit in orbit_stress_median_dict:
+    #     # print(three_node_orbit_id[orbit], orbit_stress_median_dict[orbit])
+    #     stress_median_hist.append(orbit_stress_median_dict[orbit])
+    #     print(three_node_orbit_id[orbit], orbit_stress_median_dict[orbit])
+
+    # fig = plt.figure(figsize=(14, 6))
+    # plt.bar(x_label, stress_median_hist)
+    # plt.show()  # for the median counts of all the stress proteins, most of the orbits have a median of zero. largest peaks are the line PPI and Reg
+    # # remove the orbits of line and reg PPI?
+
+    # sys.exit()
+
     sample = 1000
     sample_size = len(
         stress_proteins_list
@@ -396,14 +412,13 @@ def analyze_stress_proteins(
     significance = {}
     # Calculate if an orbit is significant
     for orbit in three_node_orbit_protein_data:
-        count = 0
+        count = 0.0
         # from the vector of all the random medians at a given orbit
         for random_median in sample_results[orbit]:
             if orbit_stress_median_dict[orbit] > random_median:
                 count += 1
         if count >= float(sample) * 0.99:
             significance[orbit] = 1
-            print(three_node_orbit_id[orbit], ": significant")
         else:
             significance[orbit] = 0
 
@@ -450,113 +465,120 @@ def analyze_stress_proteins(
                 ]
 
     # have int id to orbit hash for sorting in order later
-    id_orbit_hash = {}
-    for key in sig_orbit_stress_protein_dict:
-        id_orbit_hash[three_node_orbit_id[key]] = key
+    if False:
+        id_orbit_hash = {}
+        for key in sig_orbit_stress_protein_dict:
+            id_orbit_hash[three_node_orbit_id[key]] = key
 
-    # do go enrichment analysis
-    # go_class = "GO:0008150" # biological process
-    # go_class = "GO:0003674" # molecular function
-    # go_class = "GO:0005575" # Cellular Component
+        # do go enrichment analysis
+        # go_class = "GO:0008150" # biological process
+        # go_class = "GO:0003674" # molecular function
+        # go_class = "GO:0005575" # Cellular Component
 
-    fdr_dist_data = []
-    go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
-    # go_class_list = ["GO:0008150"]
-    # stress_protein_data = []
-    protein_size_data = []
-    orbit_data = []
-    go_data = []
-    for go_class in go_class_list:
-        with open(
-            f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+"
-        ) as f:
-            writer = csv.writer(f, delimiter="\t")
-            writer.writerows(
-                [
+        fdr_dist_data = []
+        go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
+        # go_class_list = ["GO:0008150"]
+        # stress_protein_data = []
+        protein_size_data = []
+        orbit_data = []
+        go_data = []
+        for go_class in go_class_list:
+            with open(
+                f"{output_dir}/{species}/sig_orbit/go_enrichment_{go_class}.txt", "w+"
+            ) as f:
+                writer = csv.writer(f, delimiter="\t")
+                writer.writerows(
                     [
-                        "orbit",
-                        "term_id",
-                        "term_label",
-                        "pValue",
-                        "fdr",
-                        "fold_enrichment",
-                        "expected",
-                        "number_in_list",
-                        "number_in_reference",
-                        "plus_minus",
-                    ]
-                ]
-            )
-            print(go_class)
-            for key in sorted(id_orbit_hash.items(), key=lambda x: int(x[0])):
-                orbit = id_orbit_hash[key[0]]
-                print(three_node_orbit_id[orbit])
-                gene_list = []
-
-                # filter the number of stress proteins
-                # default
-                for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
-                    protein = id_to_protein[protein_count_tuple[0]]
-                    # print(protein)
-                    count = protein_count_tuple[1]
-                    gene_list.append(protein)
-
-                # # filter based on only top 25th percentile of counts
-                # sorted_protein_count_list = sorted(sig_orbit_stress_protein_dict[orbit], key=lambda x:[1])
-                # sorted_count_list = [x[1] for x in sorted_protein_count_list]
-                # percentile = np.percentile(sorted_count_list, 75)
-                # for protein_count_tuple in sorted_protein_count_list:
-                #     protein = id_to_protein[protein_count_tuple[0]]
-                #     count = protein_count_tuple[1]
-                #     if count >= percentile:
-                #         gene_list.append(protein)
-                # if go_class == "GO:0008150":
-                #     protein_size_data.append(len(gene_list))
-                #     orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
-                # # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
-                # gene_list = format_gene_list(gene_list)
-                # print(f"{three_node_orbit_id[orbit]} - {len(gene_list)}")
-
-                gene_list = (",".join(gene_list),)
-                query_params = build_query_params(
-                    gene_list,
-                    species_txid[species],
-                    go_class,
-                    "FISHER",
-                    "FDR",
-                    "NONE",
-                )
-                results = call_panther_api(query_params)
-                parsed_results = parse_results(results)
-
-                for entry in parsed_results:
-                    fdr_dist_data.append(
-                        {"fdr": entry["fdr"], "species": species, "go_class": go_class}
-                    )
-
-                top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
-                print(
-                    f"orbit-{three_node_orbit_id[orbit]}significant p-value hits = {len(top_hits)}"
-                )
-
-                for hit in top_hits:
-                    writer.writerows(
                         [
-                            [
-                                str(int(three_node_orbit_id[orbit]) + 1),
-                                hit["term_id"],
-                                hit["term_label"],
-                                hit["pValue"],
-                                hit["fdr"],
-                                hit["fold_enrichment"],
-                                hit["expected"],
-                                hit["number_in_list"],
-                                hit["number_in_reference"],
-                                hit["plus_minus"],
-                            ]
+                            "orbit",
+                            "term_id",
+                            "term_label",
+                            "pValue",
+                            "fdr",
+                            "fold_enrichment",
+                            "expected",
+                            "number_in_list",
+                            "number_in_reference",
+                            "plus_minus",
                         ]
+                    ]
+                )
+                print(go_class)
+                for key in sorted(id_orbit_hash.items(), key=lambda x: int(x[0])):
+                    orbit = id_orbit_hash[key[0]]
+                    print(three_node_orbit_id[orbit])
+                    gene_list = []
+
+                    # filter the number of stress proteins
+                    # default
+                    for protein_count_tuple in sig_orbit_stress_protein_dict[orbit]:
+                        protein = id_to_protein[protein_count_tuple[0]]
+                        # print(protein)
+                        count = protein_count_tuple[1]
+                        gene_list.append(protein)
+
+                    # # filter based on only top 25th percentile of counts
+                    # sorted_protein_count_list = sorted(sig_orbit_stress_protein_dict[orbit], key=lambda x:[1])
+                    # sorted_count_list = [x[1] for x in sorted_protein_count_list]
+                    # percentile = np.percentile(sorted_count_list, 75)
+                    # for protein_count_tuple in sorted_protein_count_list:
+                    #     protein = id_to_protein[protein_count_tuple[0]]
+                    #     count = protein_count_tuple[1]
+                    #     if count >= percentile:
+                    #         gene_list.append(protein)
+                    # if go_class == "GO:0008150":
+                    #     protein_size_data.append(len(gene_list))
+                    #     orbit_data.append(f"{int(three_node_orbit_id[orbit])}")
+                    # # stress_protein_data.append({"gene_size": len(gene_list), "orbit": int(three_node_orbit_id[orbit]), "go_class": go_class, "species" :species})
+                    # gene_list = format_gene_list(gene_list)
+                    # print(f"{three_node_orbit_id[orbit]} - {len(gene_list)}")
+
+                    gene_list = (",".join(gene_list),)
+                    query_params = build_query_params(
+                        gene_list,
+                        species_txid[species],
+                        go_class,
+                        "FISHER",
+                        "FDR",
+                        "NONE",
                     )
-            f.close()
+                    results = call_panther_api(query_params)
+                    parsed_results = parse_results(results)
+
+                    for entry in parsed_results:
+                        fdr_dist_data.append(
+                            {
+                                "fdr": entry["fdr"],
+                                "species": species,
+                                "go_class": go_class,
+                            }
+                        )
+
+                    top_hits = filter_and_sort_results(
+                        parsed_results, fdr_threshold=0.01
+                    )
+                    print(
+                        f"orbit-{three_node_orbit_id[orbit]}significant p-value hits = {len(top_hits)}"
+                    )
+
+                    for hit in top_hits:
+                        writer.writerows(
+                            [
+                                [
+                                    str(int(three_node_orbit_id[orbit]) + 1),
+                                    hit["term_id"],
+                                    hit["term_label"],
+                                    hit["pValue"],
+                                    hit["fdr"],
+                                    hit["fold_enrichment"],
+                                    hit["expected"],
+                                    hit["number_in_list"],
+                                    hit["number_in_reference"],
+                                    hit["plus_minus"],
+                                ]
+                            ]
+                        )
+                f.close()
 
     with open(f"{output_dir}/{species}/sig_orbit/summary.txt", "w+") as f:
         headers = ["orbit", "protein", "count"]
@@ -575,15 +597,18 @@ def analyze_stress_proteins(
     # print(stress_protein_data["orbit"])
     # print(type(stress_protein_data["orbit"]))
 
-    plt.figure(figsize=(12, 8))
-    plt.title(f"{species} GO enrichment gene set size per orbit")
-    plt.ylabel("Gene set size")
-    plt.xlabel("Orbit")
-    plt.bar(orbit_data, protein_size_data, color="skyblue")
-    plt.savefig(f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf")
-    # plt.show()
-    plt.close()
-    return fdr_dist_data
+    if False:
+        plt.figure(figsize=(12, 8))
+        plt.title(f"{species} GO enrichment gene set size per orbit")
+        plt.ylabel("Gene set size")
+        plt.xlabel("Orbit")
+        plt.bar(orbit_data, protein_size_data, color="skyblue")
+        plt.savefig(
+            f"{output_dir}/{species}/sig_orbit/{species}_orbit_gene_set_plt.pdf"
+        )
+        # plt.show()
+        plt.close()
+    return []
 
 
 def compare_files(file1, file2):
@@ -912,48 +937,6 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
     mixed_orbits_list = get_mixed_orbit_list()
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
 
-    # This does the bias removing which we dont want to do anymore
-    # stress_proteins_per_species = {}
-    # removed_go_terms = {}
-    # for species in species_list:
-    #     for go_class in go_class_list:
-    #         fdr_dist_data = []
-    #         stress_proteins_per_species[species] = []
-    #         removed_go_terms[f"{species}_{go_class}"] = []
-
-    #         stress_dir = f"data/oxidative_stress/txid{species_txid[species]}/txid{species_txid[species]}-stress-proteins.csv"
-    #         stress_proteins_list = []
-    #         with open(stress_dir, "r") as file:
-    #             reader = csv.reader(file, delimiter="\t")
-    #             next(reader)
-    #             for line in reader:
-    #                 stress_proteins_list.append(line[0])
-
-    #         gene_list = (",".join(stress_proteins_list),)
-    #         query_params = build_query_params(
-    #             gene_list,
-    #             species_txid[species],
-    #             go_class,
-    #             "FISHER",
-    #             "FDR",
-    #             "NONE",
-    #         )
-    #         results = call_panther_api(query_params)
-    #         parsed_results = parse_results(results)
-
-    #         for entry in parsed_results:
-    #             fdr_dist_data.append(
-    #                 {"fdr": entry["fdr"], "species": species, "go_class": go_class}
-    #             )
-
-    #         top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
-
-    #         for hit in top_hits:
-    #             removed_go_terms[f"{species}_{go_class}"].append(hit["term_id"])
-    #         print(
-    #             f"removed {len(removed_go_terms[f"{species}_{go_class}"])} for {species} {go_class}"
-    #         )
-
     go_enrichment_files_list = [
         "go_enrichment_GO:0003674.txt",
         "go_enrichment_GO:0005575.txt",
@@ -1223,7 +1206,6 @@ def get_mixed_orbit_list():
     result.extend(list(range(80, 114)))
     result.extend(list(range(114, 188)))
     result.extend(list(range(188, 245)))
-    print("MIXED GRAPHLETS", len(result))
     return result
 
 
@@ -1343,15 +1325,108 @@ def species_wide_line_triangle_dist(species_list, species_graphlet_counts, outpu
     return None
 
 
+def species_wide_sig_stress_orbits(species_list, output_dir):
+
+    sig_orbit_list = []
+    for species in species_list:
+        sig_orbits_set = set()
+        summary_file = ""
+        if os.path.exists(Path(f"{output_dir}/{species}/sig_orbit/summary.txt")):
+            summary_file = Path(f"{output_dir}/{species}/sig_orbit/summary.txt")
+            with open(summary_file, "r") as f:
+                csvreader = csv.reader(f, delimiter="\t")
+                next(csvreader)
+                for row in csvreader:
+                    sig_orbits_set.add(int(row[0]))
+        sig_orbit_list.append(sig_orbits_set)
+
+    bsub_orbit_set = sig_orbit_list[0]
+    drerio_orbit_set = sig_orbit_list[0]
+    fly_orbit_set = sig_orbit_list[0]
+    elegans_orbit_set = sig_orbit_list[0]
+    cerevisiae_orbit_set = sig_orbit_list[0]
+
+    print()
+
+    return None
+
+
+def get_stress_subnetwork_genes():
+    gene_list = []
+    with open("data/oxidative_stress/G45_stress_nodes.txt", "r") as f:
+        csvreader = csv.reader(f, delimiter="\t")
+        for row in csvreader:
+            gene_list.append(row[0])
+
+    return gene_list
+
+
+def analyze_graphlet_stress_network(output_dir, species):
+    print("analyzing graphley stress network")
+    txid = "559292"
+    go_class = "GO:0008150"
+    gene_list = get_stress_subnetwork_genes()
+
+    gene_list = (",".join(gene_list),)
+    query_params = build_query_params(
+        gene_list,
+        txid,
+        go_class,
+        "FISHER",
+        "FDR",
+        "NONE",
+    )
+    results = call_panther_api(query_params)
+    parsed_results = parse_results(results)
+
+    top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
+    with open(
+        f"{output_dir}/{species}/sig_orbit/go_enrichment_stress_subnetwork.txt", "w+"
+    ) as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerows(
+            [
+                [
+                    "term_id",
+                    "term_label",
+                    "pValue",
+                    "fdr",
+                    "fold_enrichment",
+                    "expected",
+                    "number_in_list",
+                    "number_in_reference",
+                    "plus_minus",
+                ]
+            ]
+        )
+        for hit in top_hits:
+            writer.writerows(
+                [
+                    [
+                        hit["term_id"],
+                        hit["term_label"],
+                        hit["pValue"],
+                        hit["fdr"],
+                        hit["fold_enrichment"],
+                        hit["expected"],
+                        hit["number_in_list"],
+                        hit["number_in_reference"],
+                        hit["plus_minus"],
+                    ]
+                ]
+            )
+    f.close()
+
+
 def main():
     print("running stats")
-    species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    # species_list = ["cerevisiae"]
+    # species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
+    species_list = ["cerevisiae"]
     species_name_list = [
-        "B. subtilis",
-        "D. rerio",
-        "D. melanogaster",
-        "C. elegans",
+        # "B. subtilis",
+        # "D. rerio",
+        # "D. melanogaster",
+        # "C. elegans",
         "S. cerevisiae",
     ]
 
@@ -1404,19 +1479,21 @@ def main():
 
             # significance orbit stats
 
-            # stress_proteins_list = get_stress_proteins(species_protein_id[species], stress_dir, "\t")
+            stress_proteins_list = get_stress_proteins(
+                species_protein_id[species], stress_dir, "\t"
+            )
 
-            # fdr_dist_data.extend(
-            #     analyze_stress_proteins(
-            #         three_node_orbit_protein_data,
-            #         three_node_orbit_id,
-            #         stress_proteins_list,
-            #         species_protein_id[species],
-            #         species,
-            #         output_dir,
-            #         node_orbit_arr,
-            #     )
-            # )
+            fdr_dist_data.extend(
+                analyze_stress_proteins(
+                    three_node_orbit_protein_data,
+                    three_node_orbit_id,
+                    stress_proteins_list,
+                    species_protein_id[species],
+                    species,
+                    output_dir,
+                    node_orbit_arr,
+                )
+            )
 
             graphlet_count_list = get_graphlet_count_list(
                 three_node_graphlet_id, three_node_graphlet_count
@@ -1429,15 +1506,18 @@ def main():
     species_wide_mixed_dist(species_list, species_graphlet_counts, output_dir)
 
     species_wide_line_triangle_dist(species_list, species_graphlet_counts, output_dir)
-    # sys.exit()
 
-    # analyze_go_enrichment(species_list, species_protein_id)
+    analyze_go_enrichment(species_list, species_protein_id)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
 
     # two node graphlet stats
     species_wide_two_node_plots(output_dir)
+
+    species_wide_sig_stress_orbits(species_list, output_dir)
+
+    analyze_graphlet_stress_network(output_dir, "cerevisiae")
 
 
 if __name__ == "__main__":
