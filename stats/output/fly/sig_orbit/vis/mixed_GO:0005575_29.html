@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 1000px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "expected": "6.858114463497576", "fdr": "0.0003326518157894386", "fold_enrichment": "3.062066127909185", "id": "GO:0031974", "label": "membrane-enclosed lumen", "number_in_list": "21", "number_in_reference": "1142", "orbit": "29", "pValue": "2.580696786574388e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.858114463497576", "fdr": "0.0003696131286549318", "fold_enrichment": "3.062066127909185", "id": "GO:0043233", "label": "organelle lumen", "number_in_list": "21", "number_in_reference": "1142", "orbit": "29", "pValue": "2.580696786574388e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "34.95716663048983", "fdr": "0.0011799910584881835", "fold_enrichment": "1.5733540587362336", "id": "GO:0043229", "label": "intracellular organelle", "number_in_list": "55", "number_in_reference": "5821", "orbit": "29", "pValue": "1.0069745262505833e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "31.143766731784964", "fdr": "3.0049050490543888e-05", "fold_enrichment": "1.766003466236717", "id": "GO:0043231", "label": "intracellular membrane-bounded organelle", "number_in_list": "55", "number_in_reference": "5186", "orbit": "29", "pValue": "1.3987145302037498e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "58.11381231459373", "fdr": "4.947898492983078e-06", "fold_enrichment": "1.3594014375161076", "id": "GO:0110165", "label": "cellular anatomical structure", "number_in_list": "79", "number_in_reference": "9677", "orbit": "29", "pValue": "1.9192779259049953e-08", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "41.65313653136531", "fdr": "9.293020186666475e-09", "fold_enrichment": "1.704553508150248", "id": "GO:0005622", "label": "intracellular anatomical structure", "number_in_list": "71", "number_in_reference": "6936", "orbit": "29", "pValue": "2.162844108611282e-11", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "29.35417118877071", "fdr": "4.063333126859372e-15", "fold_enrichment": "2.3165361938753377", "id": "GO:0005737", "label": "cytoplasm", "number_in_list": "68", "number_in_reference": "4888", "orbit": "29", "pValue": "3.152314295468869e-18", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.671948484190724", "fdr": "4.945059420751508e-11", "fold_enrichment": "4.646318848752345", "id": "GO:0005829", "label": "cytosol", "number_in_list": "31", "number_in_reference": "1111", "orbit": "29", "pValue": "7.672706626456956e-14", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "35.641777006005356", "fdr": "0.003040536734415263", "fold_enrichment": "1.543132936125293", "id": "GO:0043226", "label": "organelle", "number_in_list": "55", "number_in_reference": "5935", "orbit": "29", "pValue": "2.8306005285479563e-05", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.8521091093263875", "fdr": "0.0004100472773575373", "fold_enrichment": "3.064749796732944", "id": "GO:0070013", "label": "intracellular organelle lumen", "number_in_list": "21", "number_in_reference": "1141", "orbit": "29", "pValue": "2.544901643801628e-06", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "32.3568482743651", "fdr": "0.00011873762308263971", "fold_enrichment": "1.6997947245552365", "id": "GO:0043227", "label": "membrane-bounded organelle", "number_in_list": "55", "number_in_reference": "5388", "orbit": "29", "pValue": "6.448125380748471e-07", "plus_minus": "+", "shape": "dot", "size": 10}, {"color": "#97c2fc", "expected": "6.389696838144852", "fdr": "4.993752481489888e-07", "fold_enrichment": "3.91254869100462", "id": "GO:0005739", "label": "mitochondrion", "number_in_list": "25", "number_in_reference": "1064", "orbit": "29", "pValue": "1.5496516622156364e-09", "plus_minus": "+", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "GO:0031974", "to": "GO:0043233", "width": 1}, {"arrows": "to", "from": "GO:0043229", "to": "GO:0043231", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005622", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005737", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0005829", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0031974", "width": 1}, {"arrows": "to", "from": "GO:0110165", "to": "GO:0043226", "width": 1}, {"arrows": "to", "from": "GO:0043233", "to": "GO:0070013", "width": 1}, {"arrows": "to", "from": "GO:0043227", "to": "GO:0043231", "width": 1}, {"arrows": "to", "from": "GO:0043226", "to": "GO:0043227", "width": 1}, {"arrows": "to", "from": "GO:0043226", "to": "GO:0043229", "width": 1}, {"arrows": "to", "from": "GO:0043231", "to": "GO:0005739", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
