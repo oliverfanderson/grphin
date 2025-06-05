@@ -128,10 +128,10 @@ def plot_three_node_non_log_graphlet_distribution(
     print("plotting graphlet distribution")
     # we onit G1 qand G24
     hist_data = []
-    # x_label = [*range(1, len(three_node_graphlet_id) + 1 - 2, 1)]
-    x_label = []
-    x_label.extend(list(range(2, 24)))
-    x_label.extend(list(range(25, len(three_node_graphlet_id) + 1)))
+    x_label = [*range(1, len(three_node_graphlet_id) + 1, 1)]
+    # x_label = []
+    # x_label.extend(list(range(2, 24)))
+    # x_label.extend(list(range(25, len(three_node_graphlet_id) + 1)))
 
     i = 1
     omit_graplet_list = [1, 24]
@@ -141,6 +141,8 @@ def plot_three_node_non_log_graphlet_distribution(
                 hist_data.append(three_node_graphlet_count[graphlet])
             else:
                 hist_data.append(0)
+        else:
+            hist_data.append(0)
         i += 1
     # hist_data = [value if value > 0 else 0.1 for value in hist_data]
     # print(hist_data)
@@ -933,7 +935,8 @@ def get_biased_go_terms(stress_proteins):
     return list()
 
 
-def analyze_go_enrichment(species_list, species_protein_id_dict):
+def analyze_go_enrichment(species_list, species_protein_id_dict, species_names):
+    print("analyze_go_enrichment")
     mixed_orbits_list = get_mixed_orbit_list()
     go_class_list = ["GO:0008150", "GO:0003674", "GO:0005575"]
 
@@ -995,152 +998,149 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
 
     # generate focused analysis on G25
 
-    if False:
+    species_orbit = ["cerevisiae_114", "cerevisiae_115", "cerevisiae_116"]
+    # species_orbit = ["cerevisiae_114"]
 
-        species_orbit = ["cerevisiae_114", "cerevisiae_115", "cerevisiae_116"]
-        # species_orbit = ["cerevisiae_114"]
+    analyze_graph = {}
+    id_label_dict = {}
+    red_nodes = []
+    for key in results:
+        filename = "_".join(key.split("_")[1:3])
+        species = key.split("_")[0]
+        go_type = filename.split("_")[0]
+        orbit = key.split("_")[-1]
+        output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
+        H = nx.induced_subgraph(G, results[key])
 
-        analyze_graph = {}
-        id_label_dict = {}
-        red_nodes = []
-        for key in results:
-            filename = "_".join(key.split("_")[1:3])
-            species = key.split("_")[0]
-            go_type = filename.split("_")[0]
-            orbit = key.split("_")[-1]
-            output_path = f"{output_dir}/{species}/sig_orbit/vis/mixed_{filename}.html"
-            H = nx.induced_subgraph(G, results[key])
-
-            nt = Network("1000px", "1000px")
-
-            # for edge in H.edges():
-            #     nt.add_edge(edge[0], edge[1], arrows="to")
-
-            go_attributes = node_attributes_dict[f"{species}_{go_type}_{orbit}"]
-            nt.from_nx(H)
-
-            write_type = ""
-            if os.path.exists(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}"):
-                write_type = "a"
-            else:
-                write_type = "w"
-            with open(
-                f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type
-            ) as f:
-                writer = csv.writer(f, delimiter="\t")
-                for node in nt.nodes:
-                    go_id = node["id"]
-                    go_name = go_id_to_name.get(go_id, go_id)
-                    node["label"] = go_name
-                    node["orbit"] = go_attributes[node["id"]][0]
-                    node["pValue"] = go_attributes[node["id"]][3]
-                    node["fdr"] = go_attributes[node["id"]][4]
-                    node["fold_enrichment"] = go_attributes[node["id"]][5]
-                    node["expected"] = go_attributes[node["id"]][6]
-                    node["number_in_list"] = go_attributes[node["id"]][7]
-                    node["number_in_reference"] = go_attributes[node["id"]][8]
-                    node["plus_minus"] = go_attributes[node["id"]][9]
-                    id_label_dict[go_id] = go_name
-
-                    writer.writerows(
-                        [
-                            [
-                                int(node["orbit"]),
-                                go_id,
-                                node["label"],
-                                node["pValue"],
-                                node["fdr"],
-                                node["fold_enrichment"],
-                                node["expected"],
-                                node["number_in_list"],
-                                node["number_in_reference"],
-                                node["plus_minus"],
-                            ]
-                        ]
-                    )
-                f.close()
-
-            if species not in go_orbit_distribution:
-                go_orbit_distribution[species] = []
-            go_orbit_distribution[species].append(
-                {"orbit": int(orbit), "go_type": go_type, "count": len(list(H.nodes()))}
-            )
-
-            for edge in nt.edges:
-                edge["arrows"] = "to"
-
-            if f"{species}_{orbit}" in species_orbit and go_type == "GO:0008150":
-                red_nodes.extend(
-                    list(nx.dfs_postorder_nodes(H, source="GO:0006979"))
-                )  # can be changed to do dfs on multiple sources
-                # for node in nt.nodes:
-                #     if node["id"] in dfs_nodes:
-                #         node["color"] = "red"
-
-                analyze_graph[f"{species}_{orbit}"] = [H, nt]
-
-            nt.show(output_path, notebook=False)
-            abs_path = os.path.abspath(output_path)
-            # print(f"Visualization saved to: {abs_path}")
-            # # webbrowser.open(f"file://{abs_path}")
-            print()
-
-        edge_overlap_dict = {}
-        node_overlap_dict = {}
-
-        combination_set = set()
-        for key in analyze_graph:
-            # print(key)
-            orbit = int(key.split("_")[-1])
-            H = analyze_graph[key][0]
-            nt = analyze_graph[key][1]
-
-            for edge in H.edges:
-                if edge not in edge_overlap_dict:
-                    edge_overlap_dict[edge] = []
-                edge_overlap_dict[edge].append(orbit)
-
-            for node in H.nodes:
-                if node not in node_overlap_dict:
-                    node_overlap_dict[node] = []
-                node_overlap_dict[node].append(orbit)
-
-        # for key in edge_overlap_dict:
-        #     print(key, edge_overlap_dict[key])
-
-        for key in node_overlap_dict:
-            print(key, node_overlap_dict[key])
-            combination_set.add(str(node_overlap_dict[key]))
-
-        print(combination_set)
-
-        edge_lists = []
-        red_nodes = list(set(red_nodes))
-        print(red_nodes)
-        for key in analyze_graph:
-            edge_lists.extend(analyze_graph[key][0].edges)
-
-        combined_edge_list = list(set(edge_lists))
-        print(len(edge_lists), len(combined_edge_list))
-        # print(combined_edge_list)
-        P = nx.from_edgelist(list(set(edge_lists)))
         nt = Network("1000px", "1000px")
-        nt.from_nx(P)
 
-        dfs_nodes = list(
-            nx.dfs_postorder_nodes(P, source="GO:0006979")
-        )  # can be changed to do dfs on multiple sources
-        for edge in nt.edges:
-            edge["arrows"] = "to"
-        for node in nt.nodes:
-            if node["id"] in red_nodes:
-                node["color"] = "red"
-            else:
-                node["color"] = get_node_color(node_overlap_dict[node["id"]])
-            node["label"] = id_label_dict[node["id"]]
+        # for edge in H.edges():
+        #     nt.add_edge(edge[0], edge[1], arrows="to")
 
-        nt.show("stats/output/combined.html", notebook=False)
+        # go_attributes = node_attributes_dict[f"{species}_{go_type}_{orbit}"]
+        nt.from_nx(H)
 
+        # write_type = ""
+        # if os.path.exists(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}"):
+        #     write_type = "a"
+        # else:
+        #     write_type = "w"
+        # with open(f"{output_dir}/{species}/sig_orbit/mixed_{go_type}", write_type) as f:
+        #     writer = csv.writer(f, delimiter="\t")
+        #     for node in nt.nodes:
+        #         go_id = node["id"]
+        #         go_name = go_id_to_name.get(go_id, go_id)
+        #         node["label"] = go_name
+        #         node["orbit"] = go_attributes[node["id"]][0]
+        #         node["pValue"] = go_attributes[node["id"]][3]
+        #         node["fdr"] = go_attributes[node["id"]][4]
+        #         node["fold_enrichment"] = go_attributes[node["id"]][5]
+        #         node["expected"] = go_attributes[node["id"]][6]
+        #         node["number_in_list"] = go_attributes[node["id"]][7]
+        #         node["number_in_reference"] = go_attributes[node["id"]][8]
+        #         node["plus_minus"] = go_attributes[node["id"]][9]
+        #         id_label_dict[go_id] = go_name
+
+        #         writer.writerows(
+        #             [
+        #                 [
+        #                     int(node["orbit"]),
+        #                     go_id,
+        #                     node["label"],
+        #                     node["pValue"],
+        #                     node["fdr"],
+        #                     node["fold_enrichment"],
+        #                     node["expected"],
+        #                     node["number_in_list"],
+        #                     node["number_in_reference"],
+        #                     node["plus_minus"],
+        #                 ]
+        #             ]
+        #         )
+        #     f.close()
+
+        if species not in go_orbit_distribution:
+            go_orbit_distribution[species] = []
+        go_orbit_distribution[species].append(
+            {"orbit": int(orbit), "go_type": go_type, "count": len(list(H.nodes()))}
+        )
+
+        # for edge in nt.edges:
+        #     edge["arrows"] = "to"
+
+        # if f"{species}_{orbit}" in species_orbit and go_type == "GO:0008150":
+        #     red_nodes.extend(
+        #         list(nx.dfs_postorder_nodes(H, source="GO:0006979"))
+        #     )  # can be changed to do dfs on multiple sources
+        #     # for node in nt.nodes:
+        #     #     if node["id"] in dfs_nodes:
+        #     #         node["color"] = "red"
+
+        #     analyze_graph[f"{species}_{orbit}"] = [H, nt]
+
+        # nt.show(output_path, notebook=False)
+        # abs_path = os.path.abspath(output_path)
+        # print(f"Visualization saved to: {abs_path}")
+        # # webbrowser.open(f"file://{abs_path}")
+
+    # edge_overlap_dict = {}
+    # node_overlap_dict = {}
+
+    # combination_set = set()
+    # for key in analyze_graph:
+    #     # print(key)
+    #     orbit = int(key.split("_")[-1])
+    #     H = analyze_graph[key][0]
+    #     nt = analyze_graph[key][1]
+
+    #     for edge in H.edges:
+    #         if edge not in edge_overlap_dict:
+    #             edge_overlap_dict[edge] = []
+    #         edge_overlap_dict[edge].append(orbit)
+
+    #     for node in H.nodes:
+    #         if node not in node_overlap_dict:
+    #             node_overlap_dict[node] = []
+    #         node_overlap_dict[node].append(orbit)
+
+    # # for key in edge_overlap_dict:
+    # #     print(key, edge_overlap_dict[key])
+
+    # for key in node_overlap_dict:
+    #     print(key, node_overlap_dict[key])
+    #     combination_set.add(str(node_overlap_dict[key]))
+
+    # print(combination_set)
+
+    # edge_lists = []
+    # red_nodes = list(set(red_nodes))
+    # print(red_nodes)
+    # for key in analyze_graph:
+    #     edge_lists.extend(analyze_graph[key][0].edges)
+
+    # combined_edge_list = list(set(edge_lists))
+    # print(len(edge_lists), len(combined_edge_list))
+    # # print(combined_edge_list)
+    # P = nx.from_edgelist(list(set(edge_lists)))
+    # nt = Network("1000px", "1000px")
+    # nt.from_nx(P)
+
+    # dfs_nodes = list(
+    #     nx.dfs_postorder_nodes(P, source="GO:0006979")
+    # )  # can be changed to do dfs on multiple sources
+    # for edge in nt.edges:
+    #     edge["arrows"] = "to"
+    # for node in nt.nodes:
+    #     if node["id"] in red_nodes:
+    #         node["color"] = "red"
+    #     else:
+    #         node["color"] = get_node_color(node_overlap_dict[node["id"]])
+    #     node["label"] = id_label_dict[node["id"]]
+
+    # # nt.show("stats/output/combined.html", notebook=False)
+
+    j = 0
+    print(species_names)
     for species in species_list:
         if species in go_orbit_distribution:
             data = go_orbit_distribution[species]
@@ -1185,12 +1185,15 @@ def analyze_go_enrichment(species_list, species_protein_id_dict):
 
             ax.set_xlabel("Orbit")
             ax.set_ylabel("Counts")
-            ax.set_title(f"{species} Mixed Orbit Counts Distribution")
+            ax.set_title(
+                f"{str(species_names[j])} Mixed Orbit GO Encrichment Counts Distribution"
+            )
             ax.legend()
             ax.set_xticks(mixed_orbits_list[::3])
             ax.set_xticklabels(mixed_orbits_list[::3], fontsize=5)
             plt.tight_layout()
             plt.savefig(f"{output_dir}/{species}/sig_orbit/mixed_orbit_go_dist.pdf")
+            j += 1
 
     merger = PdfMerger()
     for species in species_list:
@@ -1297,11 +1300,11 @@ def species_wide_line_triangle_dist(species_list, species_graphlet_counts, outpu
     # print(mixed_graphlet_list)
 
     species_line_triangle_graphlet_count = []
-    remove_graphlets = []  # remove or not
+    remove_graphlets = [1, 24]  # remove or not
     for graphlet_counts_list in species_graphlet_counts:
         i = 1
-        line_count = 0
-        triangle_count = 0
+        line_count = 0.0
+        triangle_count = 0.0
         for graphlet in graphlet_counts_list:
             if i not in remove_graphlets:
                 if i in line_graphlet_list:
@@ -1319,7 +1322,14 @@ def species_wide_line_triangle_dist(species_list, species_graphlet_counts, outpu
             triangle_count = species_line_triangle_graphlet_count[i][1]
             total_count = line_count + triangle_count
             writer.writerows(
-                [[species_list[i], line_count, triangle_count, total_count]]
+                [
+                    [
+                        species_list[i],
+                        (line_count / total_count) * 100,
+                        (triangle_count / total_count) * 100,
+                        total_count,
+                    ]
+                ]
             )
         f.close()
     return None
@@ -1362,10 +1372,11 @@ def get_stress_subnetwork_genes():
 
 
 def analyze_graphlet_stress_network(output_dir, species):
-    print("analyzing graphley stress network")
+    print("analyzing graphley stress network", "\n")
     txid = "559292"
     go_class = "GO:0008150"
     gene_list = get_stress_subnetwork_genes()
+    id_label_dict = {}
 
     gene_list = (",".join(gene_list),)
     query_params = build_query_params(
@@ -1380,6 +1391,7 @@ def analyze_graphlet_stress_network(output_dir, species):
     parsed_results = parse_results(results)
 
     top_hits = filter_and_sort_results(parsed_results, fdr_threshold=0.01)
+    g45_set = set()
     with open(
         f"{output_dir}/{species}/sig_orbit/go_enrichment_stress_subnetwork.txt", "w+"
     ) as f:
@@ -1415,18 +1427,66 @@ def analyze_graphlet_stress_network(output_dir, species):
                     ]
                 ]
             )
+            g45_set.add(hit["term_id"])
+            id_label_dict[hit["term_id"]] = hit["term_label"]
+
     f.close()
+
+    o_115_set = set()
+    with open(f"{output_dir}/{species}/sig_orbit/go_enrichment_114_115_116", "r") as f:
+        csvreader = csv.reader(f, delimiter="\t")
+        for row in csvreader:
+            if row[0] == "115":
+                o_115_set.add(row[1])
+            id_label_dict[row[1]] = row[2]
+
+    print("G45 set : ", len(g45_set))
+    print(sorted(list(g45_set)), "\n")
+
+    print("Orbit 115 set : ", len(o_115_set))
+    # print(sorted(list(o_115_set)), "\n")
+
+    print(
+        "intersection between orbit 115 set and G45 : ",
+        len(o_115_set.intersection(g45_set)),
+    )
+    print(
+        "GO terms found in orbit 115 set but not G45 :",
+        len(o_115_set.difference(g45_set)),
+    )
+    print(o_115_set.difference(g45_set))
+
+    induced_nodes_list = list(o_115_set.union(g45_set))
+
+    go_path = Path("data/go_hierarchy/is_a_import_2024-07-17.tsv")
+    G = get_go_network(go_path)
+    H = nx.induced_subgraph(G, induced_nodes_list)
+
+    nt = Network("1000px", "1000px")
+    nt.from_nx(H)
+
+    for edge in nt.edges:
+        edge["arrows"] = "to"
+        edge["width"] = 5
+    for node in nt.nodes:
+        if node["id"] in g45_set:
+            node["color"] = "red"
+        node["label"] = id_label_dict[node["id"]]
+        node["size"] = 25
+        node["font"] = {"size": 25}
+
+    nt.show("stats/output/GO_enrichment.html", notebook=False)
 
 
 def main():
     print("running stats")
-    # species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
-    species_list = ["cerevisiae"]
+    species_list = ["bsub", "drerio", "fly", "elegans", "cerevisiae"]
+    # species_list = ["cerevisiae"]
     species_name_list = [
-        # "B. subtilis",
-        # "D. rerio",
-        # "D. melanogaster",
-        # "C. elegans",
+        "B. subtilis",
+        "D. rerio",
+        "D. melanogaster",
+        "C. elegans",
         "S. cerevisiae",
     ]
 
@@ -1507,7 +1567,7 @@ def main():
 
     species_wide_line_triangle_dist(species_list, species_graphlet_counts, output_dir)
 
-    analyze_go_enrichment(species_list, species_protein_id)
+    analyze_go_enrichment(species_list, species_protein_id, species_name_list)
 
     # species wide stats
     species_wide_3_node_plots(10, output_dir)
