@@ -63,6 +63,7 @@ def plot_three_node_graphlet_distribution(
     three_node_graphlet_namespace,
     three_node_graphlet_id,
     species,
+    species_name,
     output_dir,
 ):
     print("plotting graphlet distribution")
@@ -90,7 +91,7 @@ def plot_three_node_graphlet_distribution(
     fig = plt.figure(figsize=(14, 6))
     plt.bar(x_label, hist_data, color=bar_colors, edgecolor="black")
     plt.yscale("log")
-    plt.title(f"{species} Graphlet Count Distribution", fontsize=16)
+    plt.title(f"$\\mathit{{{species_name}}}$ Graphlet Count Distribution", fontsize=16)
     plt.xlabel("Graphlet Index", fontsize=14)
     plt.ylabel("Count (log scale)", fontsize=14)
     plt.xticks(x_label[::2], fontsize=12)
@@ -1525,6 +1526,7 @@ def main():
                 three_node_graphlet_namespace,
                 three_node_graphlet_id,
                 species,
+                species_name,
                 output_dir,
             )
 
