@@ -9,6 +9,7 @@ import networkx as nx
 import csv
 import numpy as np
 from collections import defaultdict
+import os
 
 
 def count_two_node_graphlet(G, output_dir):
@@ -44,6 +45,7 @@ def generate_two_node_output_files(
     two_node_orbit_dict,
     output_dir,
 ):
+    os.makedirs(output_dir, exist_ok=True)
     with open(f"{output_dir}/two_node_graphlet_counts.csv", "w") as f:
         for key in two_node_graphlet_id:
             f.write(f"G_{two_node_graphlet_id[key]}, {two_node_graphlet_count[key]}\n")
